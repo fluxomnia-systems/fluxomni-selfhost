@@ -1,0 +1,30 @@
+services:
+  fluxomni:
+    image: ${FLUXOMNI_IMAGE:-ghcr.io/fluxomnia-systems/fluxomni}:${FLUXOMNI_VERSION:-edge}
+    container_name: fluxomni
+    restart: unless-stopped
+    env_file: .env
+    ports:
+      - "80:80"
+      - "1935:1935"
+      - "8000:8000"
+      - "10080:10080/udp"
+    volumes:
+      - ./data/state.json:/app/fluxomni-data/state.json
+      - ./data/videos:/app/fluxomni-data/videos
+      - ./data/dvr:/app/fluxomni-data/dvr
+      - ./data/srs.conf:/usr/local/srs/conf/srs.conf
+    labels:
+      - com.centurylinklabs.watchtower.enable=true
+
+  watchtower:
+    image: containrrr/watchtower
+    container_name: watchtower
+    restart: unless-stopped
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+    environment:
+      WATCHTOWER_CLEANUP: "true"
+      WATCHTOWER_POLL_INTERVAL: "86400"
+      WATCHTOWER_LABEL_ENABLE: "true"
+    profiles: ["auto-update"]
