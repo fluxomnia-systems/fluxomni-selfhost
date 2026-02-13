@@ -1,0 +1,10 @@
+.env
+*.local
+.idea
+.zed
+
+# Local runtime data
+data/
+
+# Generated mdBook output
+docs/book/
