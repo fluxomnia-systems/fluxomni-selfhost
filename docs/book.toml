@@ -1,0 +1,29 @@
+[book]
+title = "FluxOmni Self-Hosted Documentation"
+description = "User guides for installing and running FluxOmni with Docker"
+authors = ["FluxOmni Contributors"]
+language = "en"
+src = "src"
+
+[build]
+build-dir = "book"
+create-missing = true
+
+[output.html]
+default-theme = "navy"
+preferred-dark-theme = "navy"
+git-repository-url = "https://github.com/fluxomnia-systems/fluxomni-selfhost"
+edit-url-template = "https://github.com/fluxomnia-systems/fluxomni-selfhost/edit/main/docs/src/{path}"
+site-url = "/fluxomni-selfhost/"
+
+[output.html.search]
+enable = true
+limit-results = 30
+use-boolean-and = true
+
+[output.html.print]
+enable = true
+
+[output.html.fold]
+enable = true
+level = 1
