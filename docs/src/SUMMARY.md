@@ -4,13 +4,13 @@
 
 ---
 
-# Getting Started
+## Getting Started
 
 - [Quick Start](getting-started/quick-start.md)
 - [Configuration](getting-started/configuration.md)
 - [Troubleshooting](getting-started/troubleshooting.md)
 
-# Deployment
+## Deployment
 
 - [DigitalOcean](deployment/digitalocean.md)
 - [Hetzner Cloud](deployment/hetzner.md)
