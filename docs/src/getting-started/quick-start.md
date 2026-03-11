@@ -14,9 +14,11 @@ Get FluxOmni running in minutes.
 curl -fsSL https://raw.githubusercontent.com/fluxomnia-systems/fluxomni-selfhost/main/install.sh | bash
 ```
 
-By default, FluxOmni installs to `~/fluxomni`.
+By default, FluxOmni installs to `~/fluxomni` and follows the newest stable release channel (`latest`).
 
 ## Install with Custom Values
+
+This example opts into the `edge` channel and a custom install path:
 
 ```bash
 FLUXOMNI_DIR=/opt/fluxomni \
@@ -24,6 +26,8 @@ FLUXOMNI_VERSION=edge \
 FLUXOMNI_IMAGE=ghcr.io/fluxomnia-systems/fluxomni \
   curl -fsSL https://raw.githubusercontent.com/fluxomnia-systems/fluxomni-selfhost/main/install.sh | bash
 ```
+
+To pin a specific stable release instead, set `FLUXOMNI_VERSION=vX.Y.Z`.
 
 ## Manual Install
 

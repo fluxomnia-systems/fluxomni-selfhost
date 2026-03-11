@@ -12,9 +12,15 @@ Example:
 
 ```bash
 FLUXOMNI_IMAGE=ghcr.io/fluxomnia-systems/fluxomni
-FLUXOMNI_VERSION=edge
+FLUXOMNI_VERSION=latest
 FLUXOMNI_PUBLIC_HOST=203.0.113.10
 ```
+
+## Release Channels
+
+- `latest`: newest stable release and the default in this repository
+- `vX.Y.Z`: immutable image tag for a specific stable release
+- `edge`: latest successful publish from `main`
 
 ## Optional Variables
 

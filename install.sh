@@ -5,7 +5,7 @@
 set -euo pipefail
 
 FLUXOMNI_DIR="${FLUXOMNI_DIR:-$HOME/fluxomni}"
-FLUXOMNI_VERSION="${FLUXOMNI_VERSION:-edge}"
+FLUXOMNI_VERSION="${FLUXOMNI_VERSION:-latest}"
 FLUXOMNI_IMAGE="${FLUXOMNI_IMAGE:-ghcr.io/fluxomnia-systems/fluxomni}"
 REPO_RAW="${FLUXOMNI_REPO_RAW:-https://raw.githubusercontent.com/fluxomnia-systems/fluxomni-selfhost/main}"
 

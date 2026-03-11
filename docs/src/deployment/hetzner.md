@@ -48,7 +48,7 @@ To automatically install FluxOmni on the new server, paste the following script 
 
 ```bash
 #!/bin/bash
-curl -fsSL https://raw.githubusercontent.com/fluxomnia-systems/fluxomni-selfhost/main/provision.sh | FLUXOMNI_VERSION=edge bash -s
+curl -fsSL https://raw.githubusercontent.com/fluxomnia-systems/fluxomni-selfhost/main/provision.sh | bash -s
 ```
 
 ![Provision](../images/hcloud_1.5.jpg)

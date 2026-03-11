@@ -46,7 +46,7 @@ To automatically install FluxOmni on the new droplet, paste the following script
 
 ```bash
 #!/bin/bash
-curl -fsSL https://raw.githubusercontent.com/fluxomnia-systems/fluxomni-selfhost/main/provision.sh | FLUXOMNI_VERSION=edge bash -s
+curl -fsSL https://raw.githubusercontent.com/fluxomnia-systems/fluxomni-selfhost/main/provision.sh | bash -s
 ```
 
 ![Provision](../images/do_1.5.jpg)

@@ -16,6 +16,8 @@ Install FluxOmni in one command:
 curl -fsSL https://raw.githubusercontent.com/fluxomnia-systems/fluxomni-selfhost/main/install.sh | bash
 ```
 
+The installer defaults to the newest stable image (`latest`). Use `FLUXOMNI_VERSION=edge` only if you want the latest main-branch build.
+
 After installation:
 
 - Web UI: `http://<your-server-ip>`
@@ -28,6 +30,13 @@ After installation:
 - [Cloud Deployment Guides](deployment/)
 - [Server Provisioning Script](deployment/provision.md)
 
+## Release Channels
+
+- `latest`: newest stable release
+- `vX.Y.Z`: immutable release image for a specific release
+- `edge`: latest successful publish from `main`
+
 ## Support
 
 - Found an issue? Open it in the [self-host repository issue tracker](https://github.com/fluxomnia-systems/fluxomni-selfhost/issues)
+- Stable release notes are published on the [FluxOmni GitHub Releases](https://github.com/fluxomnia-systems/fluxomni/releases) page.

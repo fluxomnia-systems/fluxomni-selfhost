@@ -16,9 +16,15 @@ curl -fsSL https://raw.githubusercontent.com/fluxomnia-systems/fluxomni-selfhost
 
 Optional variables:
 
-- `FLUXOMNI_VERSION` or `FLUXOMNI_VER` (default: `edge`)
+- `FLUXOMNI_VERSION` (default: `latest`)
 - `FLUXOMNI_IMAGE` (default: `ghcr.io/fluxomnia-systems/fluxomni`)
 - `FLUXOMNI_DIR` (default: `/opt/fluxomni`)
 - `WITH_INITIAL_UPGRADE=1`
 - `WITH_FIREWALLD=1`
 - `ALLOWED_IPS` (default: `*`)
+
+Release channels:
+
+- `latest`: newest stable release
+- `vX.Y.Z`: immutable stable release image
+- `edge`: latest successful publish from `main`

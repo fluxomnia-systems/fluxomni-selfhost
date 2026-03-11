@@ -49,7 +49,7 @@ Expand the **Show advanced options** section. Go to the **Management** tab and p
 
 ```bash
 #!/bin/bash
-curl -fsSL https://raw.githubusercontent.com/fluxomnia-systems/fluxomni-selfhost/main/provision.sh | FLUXOMNI_VERSION=edge WITH_FIREWALLD=1 bash -s
+curl -fsSL https://raw.githubusercontent.com/fluxomnia-systems/fluxomni-selfhost/main/provision.sh | WITH_FIREWALLD=1 bash -s
 ```
 
 ![Cloud-init script](../images/oci_1.5.2.png)

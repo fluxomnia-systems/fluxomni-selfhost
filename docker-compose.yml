@@ -1,6 +1,6 @@
 services:
   fluxomni:
-    image: ${FLUXOMNI_IMAGE:-ghcr.io/fluxomnia-systems/fluxomni}:${FLUXOMNI_VERSION:-edge}
+    image: ${FLUXOMNI_IMAGE:-ghcr.io/fluxomnia-systems/fluxomni}:${FLUXOMNI_VERSION:-latest}
     container_name: fluxomni
     restart: unless-stopped
     env_file: .env

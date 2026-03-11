@@ -17,7 +17,11 @@ Useful overrides:
 FLUXOMNI_DIR=/opt/fluxomni \
   curl -fsSL https://raw.githubusercontent.com/fluxomnia-systems/fluxomni-selfhost/main/install.sh | bash
 
-# Pin a specific image tag
+# Pin a specific release tag
+FLUXOMNI_VERSION=vX.Y.Z \
+  curl -fsSL https://raw.githubusercontent.com/fluxomnia-systems/fluxomni-selfhost/main/install.sh | bash
+
+# Follow the latest mainline build instead of stable releases
 FLUXOMNI_VERSION=edge \
   curl -fsSL https://raw.githubusercontent.com/fluxomnia-systems/fluxomni-selfhost/main/install.sh | bash
 ```
@@ -29,6 +33,14 @@ FLUXOMNI_VERSION=edge \
 - `data/` with runtime state and recordings
 
 Default install path: `~/fluxomni`
+
+## Release Channels
+
+- `latest` tracks the newest stable release and is the default for this repository.
+- `vX.Y.Z` tags are immutable release images for a specific stable cut.
+- `edge` tracks the latest successful publish from `main`.
+
+Stable release notes are published on the [GitHub Releases](https://github.com/fluxomnia-systems/fluxomni/releases) page.
 
 ## Manage Your Instance
 
@@ -53,3 +65,4 @@ docker compose down
 - [Configuration](./docs/src/getting-started/configuration.md)
 - [Troubleshooting](./docs/src/getting-started/troubleshooting.md)
 - [Deployment Guides](./docs/src/deployment/)
+- [GitHub Releases](https://github.com/fluxomnia-systems/fluxomni/releases)
