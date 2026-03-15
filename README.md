@@ -10,6 +10,8 @@ This repository intentionally does **not** include application source code.
 curl -fsSL https://raw.githubusercontent.com/fluxomnia-systems/fluxomni-selfhost/main/install.sh | bash
 ```
 
+On Debian/Ubuntu hosts, this installer will bootstrap Docker automatically if it is missing. That path requires `root` or `sudo` access.
+
 Useful overrides:
 
 ```bash

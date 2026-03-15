@@ -4,9 +4,10 @@ Get FluxOmni running in minutes.
 
 ## Prerequisites
 
-- Docker Engine
-- Docker Compose v2
 - `curl`
+- `root` or `sudo` access on Debian/Ubuntu if Docker is not already installed
+
+If Docker is already available, the installer uses it directly. Manual installs and non-Debian hosts still require Docker Engine with Docker Compose v2.
 
 ## One-line Install
 
