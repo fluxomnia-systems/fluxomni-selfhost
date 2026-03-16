@@ -18,6 +18,9 @@ ALLOWED_IPS="${ALLOWED_IPS:-*}"
 FLUXOMNI_VERSION="${FLUXOMNI_VERSION:-latest}"
 FLUXOMNI_IMAGE="${FLUXOMNI_IMAGE:-ghcr.io/fluxomnia-systems/fluxomni}"
 FLUXOMNI_DIR="${FLUXOMNI_DIR:-/opt/fluxomni}"
+SELFHOST_REPO="${FLUXOMNI_SELFHOST_REPO:-fluxomnia-systems/fluxomni-selfhost}"
+FLUXOMNI_SELFHOST_REF="${FLUXOMNI_SELFHOST_REF:-}"
+FLUXOMNI_REPO_RAW="${FLUXOMNI_REPO_RAW:-}"
 
 require_cmd() {
   if ! command -v "$1" >/dev/null 2>&1; then
@@ -43,6 +46,47 @@ split_allowed_ips() {
     return
   fi
   echo "$input" | tr ',' ' ' | xargs -n1 echo
+}
+
+resolve_selfhost_ref() {
+  if [ -n "$FLUXOMNI_SELFHOST_REF" ]; then
+    printf '%s\n' "$FLUXOMNI_SELFHOST_REF"
+    return
+  fi
+
+  case "$FLUXOMNI_VERSION" in
+    latest|edge)
+      printf '%s\n' "main"
+      ;;
+    *)
+      printf '%s\n' "$FLUXOMNI_VERSION"
+      ;;
+  esac
+}
+
+resolve_repo_raw() {
+  if [ -n "$FLUXOMNI_REPO_RAW" ]; then
+    printf '%s\n' "$FLUXOMNI_REPO_RAW"
+    return
+  fi
+
+  printf 'https://raw.githubusercontent.com/%s/%s\n' "$SELFHOST_REPO" "$(resolve_selfhost_ref)"
+}
+
+download_installer() {
+  local installer_repo_raw="$1"
+
+  if curl -fsSL "${installer_repo_raw}/install.sh" 2>/dev/null; then
+    return
+  fi
+
+  echo "Error: failed to download 'install.sh' from '${installer_repo_raw}'." >&2
+  if [ -n "$FLUXOMNI_SELFHOST_REF" ]; then
+    echo "Check FLUXOMNI_SELFHOST_REF='${FLUXOMNI_SELFHOST_REF}' or use FLUXOMNI_REPO_RAW." >&2
+  elif [ "$FLUXOMNI_VERSION" != "latest" ] && [ "$FLUXOMNI_VERSION" != "edge" ]; then
+    echo "Publish matching self-host assets for '${FLUXOMNI_VERSION}' or override with FLUXOMNI_SELFHOST_REF/FLUXOMNI_REPO_RAW." >&2
+  fi
+  exit 1
 }
 
 configure_firewall() {
@@ -119,9 +163,13 @@ systemctl enable --now docker || true
 configure_firewall
 
 echo "Running FluxOmni installer..."
+INSTALLER_REPO_RAW="$(resolve_repo_raw)"
 FLUXOMNI_DIR="$FLUXOMNI_DIR" \
 FLUXOMNI_VERSION="$FLUXOMNI_VERSION" \
 FLUXOMNI_IMAGE="$FLUXOMNI_IMAGE" \
-  bash -c "$(curl -fsSL https://raw.githubusercontent.com/fluxomnia-systems/fluxomni-selfhost/main/install.sh)"
+FLUXOMNI_SELFHOST_REPO="$SELFHOST_REPO" \
+FLUXOMNI_SELFHOST_REF="$FLUXOMNI_SELFHOST_REF" \
+FLUXOMNI_REPO_RAW="$FLUXOMNI_REPO_RAW" \
+  bash -c "$(download_installer "${INSTALLER_REPO_RAW}")"
 
 echo "Provisioning complete"

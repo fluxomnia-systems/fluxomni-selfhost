@@ -30,13 +30,16 @@ FLUXOMNI_IMAGE=ghcr.io/fluxomnia-systems/fluxomni \
 
 To pin a specific stable release instead, set `FLUXOMNI_VERSION=vX.Y.Z`.
 
+For pinned installs, the installer uses the same self-host ref by default. Use `FLUXOMNI_SELFHOST_REF` only if the config bundle needs to come from a different ref.
+
 ## Manual Install
 
 ```bash
+ASSET_REF=main # or the same pinned version, for example vX.Y.Z
 mkdir -p ~/fluxomni
 cd ~/fluxomni
-curl -fsSL https://raw.githubusercontent.com/fluxomnia-systems/fluxomni-selfhost/main/docker-compose.yml -o docker-compose.yml
-curl -fsSL https://raw.githubusercontent.com/fluxomnia-systems/fluxomni-selfhost/main/.env.example -o .env
+curl -fsSL "https://raw.githubusercontent.com/fluxomnia-systems/fluxomni-selfhost/${ASSET_REF}/docker-compose.yml" -o docker-compose.yml
+curl -fsSL "https://raw.githubusercontent.com/fluxomnia-systems/fluxomni-selfhost/${ASSET_REF}/.env.example" -o .env
 mkdir -p data/videos data/dvr
 touch data/state.json data/srs.conf
 docker compose up -d

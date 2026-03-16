@@ -28,6 +28,8 @@ FLUXOMNI_VERSION=edge \
   curl -fsSL https://raw.githubusercontent.com/fluxomnia-systems/fluxomni-selfhost/main/install.sh | bash
 ```
 
+When `FLUXOMNI_VERSION` is pinned, the installer uses the same self-host ref by default. That means one version value controls both the image tag and the self-host config bundle. Use `FLUXOMNI_SELFHOST_REF` only if the config bundle needs to come from a different ref, or `FLUXOMNI_REPO_RAW` to point at a custom raw asset base.
+
 ## What Gets Installed
 
 - `docker-compose.yml`

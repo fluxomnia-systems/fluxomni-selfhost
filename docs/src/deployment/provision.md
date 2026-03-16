@@ -19,9 +19,13 @@ Optional variables:
 - `FLUXOMNI_VERSION` (default: `latest`)
 - `FLUXOMNI_IMAGE` (default: `ghcr.io/fluxomnia-systems/fluxomni`)
 - `FLUXOMNI_DIR` (default: `/opt/fluxomni`)
+- `FLUXOMNI_SELFHOST_REF` (force a specific self-host config ref)
+- `FLUXOMNI_REPO_RAW` (override the raw asset base entirely)
 - `WITH_INITIAL_UPGRADE=1`
 - `WITH_FIREWALLD=1`
 - `ALLOWED_IPS` (default: `*`)
+
+When `FLUXOMNI_VERSION` is pinned, provisioning uses the same self-host ref by default. Use `FLUXOMNI_SELFHOST_REF` only if the config bundle needs to come from a different ref.
 
 Release channels:
 

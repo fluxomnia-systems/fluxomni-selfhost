@@ -7,7 +7,9 @@ set -euo pipefail
 FLUXOMNI_DIR="${FLUXOMNI_DIR:-$HOME/fluxomni}"
 FLUXOMNI_VERSION="${FLUXOMNI_VERSION:-latest}"
 FLUXOMNI_IMAGE="${FLUXOMNI_IMAGE:-ghcr.io/fluxomnia-systems/fluxomni}"
-REPO_RAW="${FLUXOMNI_REPO_RAW:-https://raw.githubusercontent.com/fluxomnia-systems/fluxomni-selfhost/main}"
+SELFHOST_REPO="${FLUXOMNI_SELFHOST_REPO:-fluxomnia-systems/fluxomni-selfhost}"
+SELFHOST_REF_OVERRIDE="${FLUXOMNI_SELFHOST_REF:-}"
+REPO_RAW="${FLUXOMNI_REPO_RAW:-}"
 DOCKER_CMD=(docker)
 DOCKER_DISPLAY="docker"
 
@@ -87,11 +89,58 @@ detect_host_ip() {
   printf '%s\n' "$ip"
 }
 
+resolve_selfhost_ref() {
+  if [ -n "$SELFHOST_REF_OVERRIDE" ]; then
+    printf '%s\n' "$SELFHOST_REF_OVERRIDE"
+    return
+  fi
+
+  case "$FLUXOMNI_VERSION" in
+    latest|edge)
+      printf '%s\n' "main"
+      ;;
+    *)
+      printf '%s\n' "$FLUXOMNI_VERSION"
+      ;;
+  esac
+}
+
+resolve_repo_raw() {
+  local selfhost_ref
+
+  if [ -n "$REPO_RAW" ]; then
+    printf '%s\n' "$REPO_RAW"
+    return
+  fi
+
+  selfhost_ref="$(resolve_selfhost_ref)"
+  printf 'https://raw.githubusercontent.com/%s/%s\n' "$SELFHOST_REPO" "$selfhost_ref"
+}
+
+download_asset() {
+  local asset_path="$1"
+  local destination="$2"
+
+  if curl -fsSL "${REPO_RAW}/${asset_path}" -o "$destination" >/dev/null 2>&1; then
+    return
+  fi
+
+  echo "Error: failed to download '${asset_path}' from '${REPO_RAW}'." >&2
+  if [ -n "$SELFHOST_REF_OVERRIDE" ]; then
+    echo "Check FLUXOMNI_SELFHOST_REF='${SELFHOST_REF_OVERRIDE}' or use FLUXOMNI_REPO_RAW." >&2
+  elif [ "$FLUXOMNI_VERSION" != "latest" ] && [ "$FLUXOMNI_VERSION" != "edge" ]; then
+    echo "Publish matching self-host assets for '${FLUXOMNI_VERSION}' or override with FLUXOMNI_SELFHOST_REF/FLUXOMNI_REPO_RAW." >&2
+  fi
+  exit 1
+}
+
 echo "Installing FluxOmni to ${FLUXOMNI_DIR}"
 
 require_cmd curl
 install_docker_if_missing
 configure_docker_access
+
+REPO_RAW="$(resolve_repo_raw)"
 
 if ! "${DOCKER_CMD[@]}" compose version >/dev/null 2>&1; then
   echo "Error: Docker Compose v2 is required."
@@ -102,8 +151,8 @@ fi
 mkdir -p "${FLUXOMNI_DIR}" "${FLUXOMNI_DIR}/data/videos" "${FLUXOMNI_DIR}/data/dvr"
 
 echo "Downloading deployment files..."
-curl -fsSL "${REPO_RAW}/docker-compose.yml" -o "${FLUXOMNI_DIR}/docker-compose.yml"
-curl -fsSL "${REPO_RAW}/.env.example" -o "${FLUXOMNI_DIR}/.env.example"
+download_asset "docker-compose.yml" "${FLUXOMNI_DIR}/docker-compose.yml"
+download_asset ".env.example" "${FLUXOMNI_DIR}/.env.example"
 
 if [ ! -f "${FLUXOMNI_DIR}/.env" ]; then
   HOST_IP="$(detect_host_ip)"
