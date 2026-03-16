@@ -11,9 +11,7 @@ services:
       - "8000:8000/udp"
       - "10080:10080/udp"
     volumes:
-      - ./data/state.json:/app/fluxomni-data/state.json
-      - ./data/videos:/app/fluxomni-data/videos
-      - ./data/dvr:/app/fluxomni-data/dvr
+      - ./data:/app/fluxomni-data
       - ./data/srs.conf:/usr/local/srs/conf/srs.conf
     labels:
       - com.centurylinklabs.watchtower.enable=true
