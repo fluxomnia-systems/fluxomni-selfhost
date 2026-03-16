@@ -8,6 +8,7 @@ services:
       - "80:80"
       - "1935:1935"
       - "8000:8000"
+      - "8000:8000/udp"
       - "10080:10080/udp"
     volumes:
       - ./data/state.json:/app/fluxomni-data/state.json

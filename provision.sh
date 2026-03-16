@@ -46,7 +46,8 @@ split_allowed_ips() {
 }
 
 configure_firewall() {
-  local ports=(80 443 1935 8000)
+  local tcp_ports=(80 443 1935 8000)
+  local udp_ports=(8000 10080)
   local ips
   ips="$(split_allowed_ips "$ALLOWED_IPS")"
 
@@ -58,14 +59,20 @@ configure_firewall() {
     firewall-cmd --zone=public --permanent --add-service=ssh
 
     if [ "$ips" = "*" ]; then
-      for port in "${ports[@]}"; do
+      for port in "${tcp_ports[@]}"; do
         firewall-cmd --zone=public --permanent --add-port="${port}/tcp"
+      done
+      for port in "${udp_ports[@]}"; do
+        firewall-cmd --zone=public --permanent --add-port="${port}/udp"
       done
     else
       while IFS= read -r ip; do
         [ -z "$ip" ] && continue
-        for port in "${ports[@]}"; do
+        for port in "${tcp_ports[@]}"; do
           firewall-cmd --permanent --zone=public --add-rich-rule="rule family='ipv4' source address='${ip}' port port='${port}' protocol='tcp' accept"
+        done
+        for port in "${udp_ports[@]}"; do
+          firewall-cmd --permanent --zone=public --add-rich-rule="rule family='ipv4' source address='${ip}' port port='${port}' protocol='udp' accept"
         done
       done <<< "$ips"
     fi
@@ -79,14 +86,20 @@ configure_firewall() {
 
   ufw allow 22/tcp
   if [ "$ips" = "*" ]; then
-    for port in "${ports[@]}"; do
+    for port in "${tcp_ports[@]}"; do
       ufw allow "${port}/tcp"
+    done
+    for port in "${udp_ports[@]}"; do
+      ufw allow "${port}/udp"
     done
   else
     while IFS= read -r ip; do
       [ -z "$ip" ] && continue
-      for port in "${ports[@]}"; do
+      for port in "${tcp_ports[@]}"; do
         ufw allow from "$ip" to any port "$port" proto tcp
+      done
+      for port in "${udp_ports[@]}"; do
+        ufw allow from "$ip" to any port "$port" proto udp
       done
     done <<< "$ips"
   fi

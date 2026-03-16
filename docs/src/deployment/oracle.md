@@ -80,7 +80,7 @@ Remove the existing stateful ingress rule for port 22 (or edit it if you need SS
 - **Source CIDR**: `0.0.0.0/0`
 - **IP Protocol**: All Protocols
 
-This allows all incoming traffic to your instance. For a production environment, you should create more restrictive rules that only allow traffic on the necessary ports (e.g., 80 for HTTP, 1935 for RTMP).
+This allows all incoming traffic to your instance. For a production environment, you should create more restrictive rules that only allow traffic on the necessary ports (e.g., 80 for HTTP, 1935 for RTMP, 8000/tcp for SRS HTTP, 8000/udp for WebRTC, and 10080/udp for SRT).
 
 ![Allow all Ingress Rule](../images/oci_2.3.2.png)
 

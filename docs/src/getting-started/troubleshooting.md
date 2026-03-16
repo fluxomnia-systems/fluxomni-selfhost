@@ -11,7 +11,7 @@ Common causes:
 
 - Docker daemon is not running.
 - The selected image tag does not exist.
-- Port 80 or 1935 is already in use.
+- Port 80, 1935, 8000/tcp, 8000/udp, or 10080/udp is already in use.
 
 ## Check Running State
 
