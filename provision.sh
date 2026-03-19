@@ -29,6 +29,25 @@ require_cmd() {
   fi
 }
 
+repo_raw_for_ref() {
+  local selfhost_ref="$1"
+  printf 'https://raw.githubusercontent.com/%s/%s\n' "$SELFHOST_REPO" "$selfhost_ref"
+}
+
+remote_asset_exists() {
+  local asset_base="$1"
+  local asset_path="$2"
+  curl -fsSL "${asset_base}/${asset_path}" -o /dev/null >/dev/null 2>&1
+}
+
+repo_raw_has_install_assets() {
+  local asset_base="$1"
+
+  remote_asset_exists "$asset_base" "install.sh" &&
+    remote_asset_exists "$asset_base" "docker-compose.yml" &&
+    remote_asset_exists "$asset_base" ".env.example"
+}
+
 install_docker_if_missing() {
   if command -v docker >/dev/null 2>&1; then
     return
@@ -65,12 +84,37 @@ resolve_selfhost_ref() {
 }
 
 resolve_repo_raw() {
+  local selfhost_ref
+  local candidate_repo_raw
+  local fallback_repo_raw
+
   if [ -n "$FLUXOMNI_REPO_RAW" ]; then
     printf '%s\n' "$FLUXOMNI_REPO_RAW"
     return
   fi
 
-  printf 'https://raw.githubusercontent.com/%s/%s\n' "$SELFHOST_REPO" "$(resolve_selfhost_ref)"
+  selfhost_ref="$(resolve_selfhost_ref)"
+  candidate_repo_raw="$(repo_raw_for_ref "$selfhost_ref")"
+
+  if [ -n "$FLUXOMNI_SELFHOST_REF" ] || [ "$selfhost_ref" = "main" ]; then
+    printf '%s\n' "$candidate_repo_raw"
+    return
+  fi
+
+  if repo_raw_has_install_assets "$candidate_repo_raw"; then
+    printf '%s\n' "$candidate_repo_raw"
+    return
+  fi
+
+  fallback_repo_raw="$(repo_raw_for_ref "main")"
+  if repo_raw_has_install_assets "$fallback_repo_raw"; then
+    echo "Warning: self-host assets for '${FLUXOMNI_VERSION}' were not found." >&2
+    echo "Falling back to self-host ref 'main'. Set FLUXOMNI_SELFHOST_REF to force a different ref." >&2
+    printf '%s\n' "$fallback_repo_raw"
+    return
+  fi
+
+  printf '%s\n' "$candidate_repo_raw"
 }
 
 download_installer() {
@@ -169,7 +213,7 @@ FLUXOMNI_VERSION="$FLUXOMNI_VERSION" \
 FLUXOMNI_IMAGE="$FLUXOMNI_IMAGE" \
 FLUXOMNI_SELFHOST_REPO="$SELFHOST_REPO" \
 FLUXOMNI_SELFHOST_REF="$FLUXOMNI_SELFHOST_REF" \
-FLUXOMNI_REPO_RAW="$FLUXOMNI_REPO_RAW" \
+FLUXOMNI_REPO_RAW="$INSTALLER_REPO_RAW" \
   bash -c "$(download_installer "${INSTALLER_REPO_RAW}")"
 
 echo "Provisioning complete"

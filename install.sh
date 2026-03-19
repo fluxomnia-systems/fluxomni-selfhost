@@ -20,6 +20,17 @@ require_cmd() {
   fi
 }
 
+repo_raw_for_ref() {
+  local selfhost_ref="$1"
+  printf 'https://raw.githubusercontent.com/%s/%s\n' "$SELFHOST_REPO" "$selfhost_ref"
+}
+
+remote_asset_exists() {
+  local asset_base="$1"
+  local asset_path="$2"
+  curl -fsSL "${asset_base}/${asset_path}" -o /dev/null >/dev/null 2>&1
+}
+
 run_privileged() {
   if [ "${EUID:-$(id -u)}" -eq 0 ]; then
     "$@"
@@ -107,6 +118,8 @@ resolve_selfhost_ref() {
 
 resolve_repo_raw() {
   local selfhost_ref
+  local candidate_repo_raw
+  local fallback_repo_raw
 
   if [ -n "$REPO_RAW" ]; then
     printf '%s\n' "$REPO_RAW"
@@ -114,7 +127,29 @@ resolve_repo_raw() {
   fi
 
   selfhost_ref="$(resolve_selfhost_ref)"
-  printf 'https://raw.githubusercontent.com/%s/%s\n' "$SELFHOST_REPO" "$selfhost_ref"
+  candidate_repo_raw="$(repo_raw_for_ref "$selfhost_ref")"
+
+  if [ -n "$SELFHOST_REF_OVERRIDE" ] || [ "$selfhost_ref" = "main" ]; then
+    printf '%s\n' "$candidate_repo_raw"
+    return
+  fi
+
+  if remote_asset_exists "$candidate_repo_raw" "docker-compose.yml" &&
+    remote_asset_exists "$candidate_repo_raw" ".env.example"; then
+    printf '%s\n' "$candidate_repo_raw"
+    return
+  fi
+
+  fallback_repo_raw="$(repo_raw_for_ref "main")"
+  if remote_asset_exists "$fallback_repo_raw" "docker-compose.yml" &&
+    remote_asset_exists "$fallback_repo_raw" ".env.example"; then
+    echo "Warning: self-host assets for '${FLUXOMNI_VERSION}' were not found." >&2
+    echo "Falling back to self-host ref 'main'. Set FLUXOMNI_SELFHOST_REF to force a different ref." >&2
+    printf '%s\n' "$fallback_repo_raw"
+    return
+  fi
+
+  printf '%s\n' "$candidate_repo_raw"
 }
 
 download_asset() {

@@ -17,7 +17,7 @@ curl -fsSL https://raw.githubusercontent.com/fluxomnia-systems/fluxomni-selfhost
 ```
 
 The installer defaults to the newest stable image (`latest`). Use `FLUXOMNI_VERSION=edge` only if you want the latest main-branch build.
-For pinned versions, the installer uses the same self-host ref by default.
+For pinned versions, the installer first tries the same self-host ref and falls back to `main` if versioned self-host assets are not published yet.
 
 After installation:
 

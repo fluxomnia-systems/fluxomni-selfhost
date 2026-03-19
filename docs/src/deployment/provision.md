@@ -25,7 +25,7 @@ Optional variables:
 - `WITH_FIREWALLD=1`
 - `ALLOWED_IPS` (default: `*`)
 
-When `FLUXOMNI_VERSION` is pinned, provisioning uses the same self-host ref by default. Use `FLUXOMNI_SELFHOST_REF` only if the config bundle needs to come from a different ref.
+When `FLUXOMNI_VERSION` is pinned, provisioning first tries the same self-host ref and falls back to `main` if versioned self-host assets are not published yet. Use `FLUXOMNI_SELFHOST_REF` only if the config bundle needs to come from a different ref.
 
 Release channels:
 
