@@ -17,7 +17,9 @@ curl -fsSL https://raw.githubusercontent.com/fluxomnia-systems/fluxomni-selfhost
 Optional variables:
 
 - `FLUXOMNI_VERSION` (default: `latest`)
-- `FLUXOMNI_IMAGE` (default: `ghcr.io/fluxomnia-systems/fluxomni`)
+- `FLUXOMNI_CONTROL_PLANE_IMAGE` (default: derived from `ghcr.io/fluxomnia-systems/fluxomni`)
+- `FLUXOMNI_MEDIA_NODE_IMAGE` (default: derived from `ghcr.io/fluxomnia-systems/fluxomni`)
+- `FLUXOMNI_IMAGE` (legacy base repository override used only when the explicit split-image variables are unset)
 - `FLUXOMNI_DIR` (default: `/opt/fluxomni`)
 - `FLUXOMNI_SELFHOST_REF` (force a specific self-host config ref)
 - `FLUXOMNI_REPO_RAW` (override the raw asset base entirely)

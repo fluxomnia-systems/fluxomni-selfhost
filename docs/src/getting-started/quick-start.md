@@ -16,6 +16,7 @@ curl -fsSL https://raw.githubusercontent.com/fluxomnia-systems/fluxomni-selfhost
 ```
 
 By default, FluxOmni installs to `~/fluxomni` and follows the newest stable release channel (`latest`).
+The installer creates a single-host compose stack with separate `control-plane` and `media-node` services that share `./data`.
 
 ## Install with Custom Values
 
@@ -24,13 +25,14 @@ This example opts into the `edge` channel and a custom install path:
 ```bash
 FLUXOMNI_DIR=/opt/fluxomni \
 FLUXOMNI_VERSION=edge \
-FLUXOMNI_IMAGE=ghcr.io/fluxomnia-systems/fluxomni \
   curl -fsSL https://raw.githubusercontent.com/fluxomnia-systems/fluxomni-selfhost/main/install.sh | bash
 ```
 
 To pin a specific stable release instead, set `FLUXOMNI_VERSION=vX.Y.Z`.
+To override the split image repositories directly, set `FLUXOMNI_CONTROL_PLANE_IMAGE` and `FLUXOMNI_MEDIA_NODE_IMAGE` before running the installer.
 
 For pinned installs, the installer first tries the same self-host ref and falls back to `main` if versioned self-host assets are not published yet. Use `FLUXOMNI_SELFHOST_REF` only if the config bundle needs to come from a different ref.
+Legacy automation that still exports `FLUXOMNI_IMAGE=<base-repository>` continues to work because the installer derives the split image names from that base when the explicit variables are unset.
 
 ## Manual Install
 
@@ -39,9 +41,25 @@ ASSET_REF=main # or a published versioned self-host ref, for example vX.Y.Z
 mkdir -p ~/fluxomni
 cd ~/fluxomni
 curl -fsSL "https://raw.githubusercontent.com/fluxomnia-systems/fluxomni-selfhost/${ASSET_REF}/docker-compose.yml" -o docker-compose.yml
-curl -fsSL "https://raw.githubusercontent.com/fluxomnia-systems/fluxomni-selfhost/${ASSET_REF}/.env.example" -o .env
-mkdir -p data/videos data/dvr
-touch data/state.json data/srs.conf
+curl -fsSL "https://raw.githubusercontent.com/fluxomnia-systems/fluxomni-selfhost/${ASSET_REF}/.env.example" -o .env.example
+AUTH_TOKEN="$(openssl rand -hex 24)"
+cat > .env <<ENVVARS
+FLUXOMNI_VERSION=latest
+FLUXOMNI_PUBLIC_HOST=127.0.0.1
+FLUXOMNI_MEDIA_NODE_PUBLIC_HOST=127.0.0.1
+FLUXOMNI_CONTROL_PLANE_IMAGE=ghcr.io/fluxomnia-systems/fluxomni-control-plane
+FLUXOMNI_MEDIA_NODE_IMAGE=ghcr.io/fluxomnia-systems/fluxomni-media-node
+FLUXOMNI_CONTROL_PLANE_INTERNAL_AUTH_TOKEN=${AUTH_TOKEN}
+FLUXOMNI_CONTROL_PLANE_HTTP_PORT=80
+FLUXOMNI_MEDIA_NODE_RTMP_PORT=1935
+FLUXOMNI_MEDIA_NODE_HLS_PORT=8000
+FLUXOMNI_MEDIA_NODE_SRT_PORT=10080
+FLUXOMNI_CONTROL_PLANE_DATA_DIR=./data
+FLUXOMNI_MEDIA_NODE_DATA_DIR=./data
+FLUXOMNI_SHARED_VIDEO_DIR=./data/videos
+ENVVARS
+mkdir -p data/videos data/dvr data/srs-http
+touch data/state.json
 docker compose up -d
 ```
 
