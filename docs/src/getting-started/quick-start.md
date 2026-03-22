@@ -43,8 +43,12 @@ cd ~/fluxomni
 curl -fsSL "https://raw.githubusercontent.com/fluxomnia-systems/fluxomni-selfhost/${ASSET_REF}/docker-compose.yml" -o docker-compose.yml
 curl -fsSL "https://raw.githubusercontent.com/fluxomnia-systems/fluxomni-selfhost/${ASSET_REF}/.env.example" -o .env.example
 AUTH_TOKEN="$(openssl rand -hex 24)"
+IMAGE_TAG="${ASSET_REF}"
+if [ "${IMAGE_TAG}" = "main" ]; then
+  IMAGE_TAG="latest"
+fi
 cat > .env <<ENVVARS
-FLUXOMNI_VERSION=latest
+FLUXOMNI_VERSION=${IMAGE_TAG}
 FLUXOMNI_PUBLIC_HOST=127.0.0.1
 FLUXOMNI_MEDIA_NODE_PUBLIC_HOST=127.0.0.1
 FLUXOMNI_CONTROL_PLANE_IMAGE=ghcr.io/fluxomnia-systems/fluxomni-control-plane

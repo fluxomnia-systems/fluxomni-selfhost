@@ -319,7 +319,7 @@ cd "${FLUXOMNI_DIR}"
 
 echo "Pulling image and starting containers..."
 "${DOCKER_CMD[@]}" compose pull
-"${DOCKER_CMD[@]}" compose up -d
+"${DOCKER_CMD[@]}" compose up -d --remove-orphans
 
 HOST="$(read_env_file_value "FLUXOMNI_PUBLIC_HOST" .env)"
 MEDIA_HOST="$(read_env_file_value "FLUXOMNI_MEDIA_NODE_PUBLIC_HOST" .env)"
