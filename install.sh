@@ -6,7 +6,9 @@ set -euo pipefail
 
 FLUXOMNI_DIR="${FLUXOMNI_DIR:-$HOME/fluxomni}"
 FLUXOMNI_VERSION="${FLUXOMNI_VERSION:-latest}"
-FLUXOMNI_IMAGE="${FLUXOMNI_IMAGE:-ghcr.io/fluxomnia-systems/fluxomni}"
+LEGACY_FLUXOMNI_IMAGE="${FLUXOMNI_IMAGE:-}"
+FLUXOMNI_CONTROL_PLANE_IMAGE="${FLUXOMNI_CONTROL_PLANE_IMAGE:-}"
+FLUXOMNI_MEDIA_NODE_IMAGE="${FLUXOMNI_MEDIA_NODE_IMAGE:-}"
 SELFHOST_REPO="${FLUXOMNI_SELFHOST_REPO:-fluxomnia-systems/fluxomni-selfhost}"
 SELFHOST_REF_OVERRIDE="${FLUXOMNI_SELFHOST_REF:-}"
 REPO_RAW="${FLUXOMNI_REPO_RAW:-}"
@@ -18,6 +20,40 @@ require_cmd() {
     echo "Error: required command '$1' was not found."
     exit 1
   fi
+}
+
+derive_split_image_repo() {
+  local base_repo="$1"
+  local suffix="$2"
+
+  if [[ "$base_repo" == */* ]]; then
+    printf '%s/%s-%s\n' "${base_repo%/*}" "${base_repo##*/}" "$suffix"
+    return
+  fi
+
+  printf '%s-%s\n' "$base_repo" "$suffix"
+}
+
+resolve_control_plane_image() {
+  local base_repo="${1:-${LEGACY_FLUXOMNI_IMAGE:-ghcr.io/fluxomnia-systems/fluxomni}}"
+
+  if [ -n "$FLUXOMNI_CONTROL_PLANE_IMAGE" ]; then
+    printf '%s\n' "$FLUXOMNI_CONTROL_PLANE_IMAGE"
+    return
+  fi
+
+  derive_split_image_repo "$base_repo" "control-plane"
+}
+
+resolve_media_node_image() {
+  local base_repo="${1:-${LEGACY_FLUXOMNI_IMAGE:-ghcr.io/fluxomnia-systems/fluxomni}}"
+
+  if [ -n "$FLUXOMNI_MEDIA_NODE_IMAGE" ]; then
+    printf '%s\n' "$FLUXOMNI_MEDIA_NODE_IMAGE"
+    return
+  fi
+
+  derive_split_image_repo "$base_repo" "media-node"
 }
 
 repo_raw_for_ref() {
@@ -98,6 +134,43 @@ detect_host_ip() {
   fi
 
   printf '%s\n' "$ip"
+}
+
+generate_internal_auth_token() {
+  if [ -r /proc/sys/kernel/random/uuid ]; then
+    tr -d '-' < /proc/sys/kernel/random/uuid
+    return
+  fi
+
+  if command -v openssl >/dev/null 2>&1; then
+    openssl rand -hex 24
+    return
+  fi
+
+  date +%s%N
+}
+
+read_env_file_value() {
+  local key="$1"
+  local env_file="$2"
+
+  if [ ! -f "$env_file" ]; then
+    return
+  fi
+
+  grep -E "^${key}=" "$env_file" | tail -n1 | cut -d= -f2- || true
+}
+
+append_env_if_missing() {
+  local env_file="$1"
+  local key="$2"
+  local value="$3"
+
+  if grep -qE "^${key}=" "$env_file" 2>/dev/null; then
+    return
+  fi
+
+  printf '%s=%s\n' "$key" "$value" >> "$env_file"
 }
 
 resolve_selfhost_ref() {
@@ -183,40 +256,80 @@ if ! "${DOCKER_CMD[@]}" compose version >/dev/null 2>&1; then
   exit 1
 fi
 
-mkdir -p "${FLUXOMNI_DIR}" "${FLUXOMNI_DIR}/data/videos" "${FLUXOMNI_DIR}/data/dvr"
+mkdir -p "${FLUXOMNI_DIR}" "${FLUXOMNI_DIR}/data/videos" "${FLUXOMNI_DIR}/data/dvr" "${FLUXOMNI_DIR}/data/srs-http"
 
 echo "Downloading deployment files..."
 download_asset "docker-compose.yml" "${FLUXOMNI_DIR}/docker-compose.yml"
 download_asset ".env.example" "${FLUXOMNI_DIR}/.env.example"
 
-if [ ! -f "${FLUXOMNI_DIR}/.env" ]; then
-  HOST_IP="$(detect_host_ip)"
-  cat > "${FLUXOMNI_DIR}/.env" <<ENVVARS
+ENV_FILE="${FLUXOMNI_DIR}/.env"
+HOST_IP="$(detect_host_ip)"
+LEGACY_IMAGE_BASE="${LEGACY_FLUXOMNI_IMAGE:-$(read_env_file_value "FLUXOMNI_IMAGE" "$ENV_FILE")}"
+CONTROL_PLANE_IMAGE_DEFAULT="$(resolve_control_plane_image "$LEGACY_IMAGE_BASE")"
+MEDIA_NODE_IMAGE_DEFAULT="$(resolve_media_node_image "$LEGACY_IMAGE_BASE")"
+AUTH_TOKEN_DEFAULT="$(generate_internal_auth_token)"
+
+if [ ! -f "$ENV_FILE" ]; then
+  cat > "$ENV_FILE" <<ENVVARS
 # Created by install.sh
-FLUXOMNI_IMAGE=${FLUXOMNI_IMAGE}
 FLUXOMNI_VERSION=${FLUXOMNI_VERSION}
 FLUXOMNI_PUBLIC_HOST=${HOST_IP}
+FLUXOMNI_MEDIA_NODE_PUBLIC_HOST=${HOST_IP}
+FLUXOMNI_CONTROL_PLANE_IMAGE=${CONTROL_PLANE_IMAGE_DEFAULT}
+FLUXOMNI_MEDIA_NODE_IMAGE=${MEDIA_NODE_IMAGE_DEFAULT}
+FLUXOMNI_CONTROL_PLANE_INTERNAL_AUTH_TOKEN=${AUTH_TOKEN_DEFAULT}
+FLUXOMNI_CONTROL_PLANE_HTTP_PORT=80
+FLUXOMNI_MEDIA_NODE_RTMP_PORT=1935
+FLUXOMNI_MEDIA_NODE_HLS_PORT=8000
+FLUXOMNI_MEDIA_NODE_SRT_PORT=10080
+FLUXOMNI_CONTROL_PLANE_DATA_DIR=./data
+FLUXOMNI_MEDIA_NODE_DATA_DIR=./data
+FLUXOMNI_SHARED_VIDEO_DIR=./data/videos
 ENVVARS
   echo "Created ${FLUXOMNI_DIR}/.env"
 else
   echo "Keeping existing ${FLUXOMNI_DIR}/.env"
+
+  EXISTING_PUBLIC_HOST="$(read_env_file_value "FLUXOMNI_PUBLIC_HOST" "$ENV_FILE")"
+  if [ -n "$EXISTING_PUBLIC_HOST" ]; then
+    HOST_IP="$EXISTING_PUBLIC_HOST"
+  fi
+
+  EXISTING_AUTH_TOKEN="$(read_env_file_value "FLUXOMNI_CONTROL_PLANE_INTERNAL_AUTH_TOKEN" "$ENV_FILE")"
+  if [ -n "$EXISTING_AUTH_TOKEN" ]; then
+    AUTH_TOKEN_DEFAULT="$EXISTING_AUTH_TOKEN"
+  fi
+
+  append_env_if_missing "$ENV_FILE" "FLUXOMNI_MEDIA_NODE_PUBLIC_HOST" "$HOST_IP"
+  append_env_if_missing "$ENV_FILE" "FLUXOMNI_CONTROL_PLANE_IMAGE" "$CONTROL_PLANE_IMAGE_DEFAULT"
+  append_env_if_missing "$ENV_FILE" "FLUXOMNI_MEDIA_NODE_IMAGE" "$MEDIA_NODE_IMAGE_DEFAULT"
+  append_env_if_missing "$ENV_FILE" "FLUXOMNI_CONTROL_PLANE_INTERNAL_AUTH_TOKEN" "$AUTH_TOKEN_DEFAULT"
+  append_env_if_missing "$ENV_FILE" "FLUXOMNI_CONTROL_PLANE_HTTP_PORT" "80"
+  append_env_if_missing "$ENV_FILE" "FLUXOMNI_MEDIA_NODE_RTMP_PORT" "1935"
+  append_env_if_missing "$ENV_FILE" "FLUXOMNI_MEDIA_NODE_HLS_PORT" "8000"
+  append_env_if_missing "$ENV_FILE" "FLUXOMNI_MEDIA_NODE_SRT_PORT" "10080"
+  append_env_if_missing "$ENV_FILE" "FLUXOMNI_CONTROL_PLANE_DATA_DIR" "./data"
+  append_env_if_missing "$ENV_FILE" "FLUXOMNI_MEDIA_NODE_DATA_DIR" "./data"
+  append_env_if_missing "$ENV_FILE" "FLUXOMNI_SHARED_VIDEO_DIR" "./data/videos"
 fi
 
-touch "${FLUXOMNI_DIR}/data/state.json" "${FLUXOMNI_DIR}/data/srs.conf"
+touch "${FLUXOMNI_DIR}/data/state.json"
 
 cd "${FLUXOMNI_DIR}"
 
 echo "Pulling image and starting containers..."
 "${DOCKER_CMD[@]}" compose pull
-"${DOCKER_CMD[@]}" compose up -d
+"${DOCKER_CMD[@]}" compose up -d --remove-orphans
 
-HOST="$(grep -E '^FLUXOMNI_PUBLIC_HOST=' .env | cut -d= -f2 || true)"
+HOST="$(read_env_file_value "FLUXOMNI_PUBLIC_HOST" .env)"
+MEDIA_HOST="$(read_env_file_value "FLUXOMNI_MEDIA_NODE_PUBLIC_HOST" .env)"
 HOST="${HOST:-127.0.0.1}"
+MEDIA_HOST="${MEDIA_HOST:-$HOST}"
 
 echo
 echo "FluxOmni is starting"
 echo "Web UI: http://${HOST}"
-echo "RTMP : rtmp://${HOST}:1935/app"
+echo "RTMP : rtmp://${MEDIA_HOST}:1935/app"
 echo "Data : ${FLUXOMNI_DIR}/data"
 echo
 echo "Common commands:"

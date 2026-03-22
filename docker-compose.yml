@@ -1,18 +1,54 @@
 services:
-  fluxomni:
-    image: ${FLUXOMNI_IMAGE:-ghcr.io/fluxomnia-systems/fluxomni}:${FLUXOMNI_VERSION:-latest}
-    container_name: fluxomni
+  control-plane:
+    image: ${FLUXOMNI_CONTROL_PLANE_IMAGE:-ghcr.io/fluxomnia-systems/fluxomni-control-plane}:${FLUXOMNI_VERSION:-latest}
+    container_name: fluxomni-control-plane
     restart: unless-stopped
     env_file: .env
+    environment:
+      FLUXOMNI_APP_ROOT: /app/fluxomni-data
+      FLUXOMNI_COMPAT_SRT_PORT: ${FLUXOMNI_MEDIA_NODE_SRT_PORT:-10080}
+      FLUXOMNI_COMPAT_SRS_HTTP_PORT: ${FLUXOMNI_MEDIA_NODE_HLS_PORT:-8000}
+      FLUXOMNI_CONTROL_PLANE_INTERNAL_AUTH_TOKEN: ${FLUXOMNI_CONTROL_PLANE_INTERNAL_AUTH_TOKEN:?Set FLUXOMNI_CONTROL_PLANE_INTERNAL_AUTH_TOKEN in .env}
+      FLUXOMNI_PUBLIC_HOST: ${FLUXOMNI_PUBLIC_HOST:-127.0.0.1}
+      FLUXOMNI_SERVICE_NAME: fluxomni-control-plane
     ports:
-      - "80:80"
-      - "1935:1935"
-      - "8000:8000"
-      - "8000:8000/udp"
-      - "10080:10080/udp"
+      - "${FLUXOMNI_CONTROL_PLANE_HTTP_PORT:-80}:80"
     volumes:
-      - ./data:/app/fluxomni-data
-      - ./data/srs.conf:/usr/local/srs/conf/srs.conf
+      - ${FLUXOMNI_CONTROL_PLANE_DATA_DIR:-./data}:/app/fluxomni-data
+    labels:
+      - com.centurylinklabs.watchtower.enable=true
+
+  media-node:
+    image: ${FLUXOMNI_MEDIA_NODE_IMAGE:-ghcr.io/fluxomnia-systems/fluxomni-media-node}:${FLUXOMNI_VERSION:-latest}
+    container_name: fluxomni-media-node
+    depends_on:
+      - control-plane
+    restart: unless-stopped
+    env_file: .env
+    environment:
+      FLUXOMNI_APP_ROOT: /app/fluxomni-data
+      FLUXOMNI_CONTROL_PLANE_INTERNAL_AUTH_TOKEN: ${FLUXOMNI_CONTROL_PLANE_INTERNAL_AUTH_TOKEN:?Set FLUXOMNI_CONTROL_PLANE_INTERNAL_AUTH_TOKEN in .env}
+      FLUXOMNI_CONTROL_PLANE_RPC_ENDPOINT: http://control-plane:50052
+      FLUXOMNI_MEDIA_NODE_ENDPOINT: http://media-node:50051
+      FLUXOMNI_MEDIA_NODE_GRPC_BIND: 0.0.0.0:50051
+      FLUXOMNI_MEDIA_NODE_HEARTBEAT_INTERVAL_SECS: ${FLUXOMNI_MEDIA_NODE_HEARTBEAT_INTERVAL_SECS:-5}
+      FLUXOMNI_MEDIA_NODE_ID: ${FLUXOMNI_MEDIA_NODE_ID:-media-node-1}
+      FLUXOMNI_MEDIA_NODE_LABELS: ${FLUXOMNI_MEDIA_NODE_LABELS:-selfhost}
+      FLUXOMNI_MEDIA_NODE_NAME: ${FLUXOMNI_MEDIA_NODE_NAME:-Media Node 1}
+      FLUXOMNI_MEDIA_NODE_PUBLIC_HOST: ${FLUXOMNI_MEDIA_NODE_PUBLIC_HOST:-127.0.0.1}
+      FLUXOMNI_MEDIA_NODE_SRS_CALLBACK_BIND: 0.0.0.0:8081
+      FLUXOMNI_MEDIA_NODE_ZONE: ${FLUXOMNI_MEDIA_NODE_ZONE:-local}
+      FLUXOMNI_SERVICE_NAME: fluxomni-media-node
+      FLUXOMNI_SRS_HTTP_DIR: /app/fluxomni-data/srs-http
+    ports:
+      - "${FLUXOMNI_MEDIA_NODE_RTMP_PORT:-1935}:1935"
+      - "${FLUXOMNI_MEDIA_NODE_HLS_PORT:-8000}:8000"
+      - "${FLUXOMNI_MEDIA_NODE_HLS_PORT:-8000}:8000/udp"
+      - "127.0.0.1:${FLUXOMNI_MEDIA_NODE_SRS_CALLBACK_PORT:-8081}:8081"
+      - "${FLUXOMNI_MEDIA_NODE_SRT_PORT:-10080}:10080/udp"
+    volumes:
+      - ${FLUXOMNI_MEDIA_NODE_DATA_DIR:-./data}:/app/fluxomni-data
+      - ${FLUXOMNI_SHARED_VIDEO_DIR:-./data/videos}:/app/fluxomni-data/videos:ro
     labels:
       - com.centurylinklabs.watchtower.enable=true
 
