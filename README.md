@@ -28,6 +28,14 @@ FLUXOMNI_VERSION=vX.Y.Z \
 FLUXOMNI_VERSION=edge \
   curl -fsSL https://raw.githubusercontent.com/fluxomnia-systems/fluxomni-selfhost/main/install.sh | bash
 
+# Install only a standalone media-node for an existing control-plane.
+# The positional `media-node` target is safer than relying on env-only mode.
+FLUXOMNI_VERSION=edge \
+FLUXOMNI_CONTROL_PLANE_RPC_ENDPOINT=http://control.example.com:50052 \
+FLUXOMNI_CONTROL_PLANE_INTERNAL_AUTH_TOKEN=replace-with-shared-token \
+FLUXOMNI_MEDIA_NODE_PUBLIC_HOST=media2.example.com \
+  curl -fsSL https://raw.githubusercontent.com/fluxomnia-systems/fluxomni-selfhost/main/install.sh | bash -s -- media-node
+
 # Override the published image repositories explicitly
 FLUXOMNI_CONTROL_PLANE_IMAGE=registry.example.com/fluxomni-control-plane \
 FLUXOMNI_MEDIA_NODE_IMAGE=registry.example.com/fluxomni-media-node \
@@ -41,10 +49,11 @@ When `FLUXOMNI_VERSION` is pinned, the installer first tries the same self-host 
 ## What Gets Installed
 
 - `docker-compose.yml`
-- `.env` (created once, never overwritten automatically)
+- `.env` (created if missing and updated in place on reruns)
 - `data/` with shared single-host runtime state, downloaded videos, and recordings
 
 Default install path: `~/fluxomni`
+For `media-node` installs, the default path is `~/fluxomni-media-node`, and `docker-compose.yml` contains only the standalone `media-node` service plus watchtower.
 
 ## Release Channels
 
@@ -70,7 +79,9 @@ docker compose logs -f control-plane media-node
 docker compose down
 ```
 
-Re-running `install.sh` on an older single-container installation keeps the existing `./data` directory and appends any missing split-runtime variables to `.env`.
+Re-running `install.sh` on an older installation keeps the existing `./data` directory and updates the managed `.env` keys in place so incorrect ports, targets, and node settings can be repaired without a manual rewrite.
+Media-node installs now verify control-plane reachability before startup and only print success after the local node logs confirm registration with the control-plane.
+`FLUXOMNI_MEDIA_NODE_PUBLIC_HOST` is required for standalone media-node installs because FluxOmni uses that host when it advertises ingest/playback URLs and when it derives the default media-node gRPC endpoint.
 
 ## Documentation
 

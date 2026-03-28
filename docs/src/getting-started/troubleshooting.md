@@ -7,12 +7,21 @@ cd ~/fluxomni
 docker compose logs -f control-plane media-node
 ```
 
+For standalone remote media-node installs:
+
+```bash
+cd ~/fluxomni-media-node
+docker compose logs -f media-node
+```
+
 Common causes:
 
 - Docker daemon is not running.
 - The selected image tag does not exist.
 - `FLUXOMNI_CONTROL_PLANE_INTERNAL_AUTH_TOKEN` is missing from `.env` after a manual install.
-- Port 80, 1935, 8000/tcp, 8000/udp, or 10080/udp is already in use.
+- Port 80, 1935, 8000/tcp, 8000/udp, 10080/udp, 50051/tcp, or 50052/tcp is already in use.
+- For standalone media-node installs, the control-plane RPC endpoint in `.env` is unreachable from the media server.
+- For standalone media-node installs, the advertised `FLUXOMNI_MEDIA_NODE_ENDPOINT` does not point back to the media server.
 
 ## Check Running State
 
@@ -20,6 +29,8 @@ Common causes:
 cd ~/fluxomni
 docker compose ps
 ```
+
+Standalone media-node installs use the same command from `~/fluxomni-media-node`.
 
 ## Clean Restart
 

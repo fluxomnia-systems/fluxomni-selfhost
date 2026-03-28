@@ -34,6 +34,22 @@ To override the split image repositories directly, set `FLUXOMNI_CONTROL_PLANE_I
 For pinned installs, the installer first tries the same self-host ref and falls back to `main` if versioned self-host assets are not published yet. Use `FLUXOMNI_SELFHOST_REF` only if the config bundle needs to come from a different ref.
 Legacy automation that still exports `FLUXOMNI_IMAGE=<base-repository>` continues to work because the installer derives the split image names from that base when the explicit variables are unset.
 
+## Attach Another Media Node
+
+Run this on the remote media server:
+
+```bash
+FLUXOMNI_VERSION=edge \
+FLUXOMNI_CONTROL_PLANE_RPC_ENDPOINT=http://control.example.com:50052 \
+FLUXOMNI_CONTROL_PLANE_INTERNAL_AUTH_TOKEN=replace-with-shared-token \
+FLUXOMNI_MEDIA_NODE_PUBLIC_HOST=media2.example.com \
+  curl -fsSL https://raw.githubusercontent.com/fluxomnia-systems/fluxomni-selfhost/main/install.sh | bash -s -- media-node
+```
+
+The media-node installer now defaults to `~/fluxomni-media-node`, writes a media-node-only compose bundle, verifies it can reach the control-plane RPC endpoint before startup, and only reports success after the local media-node confirms registration in its logs.
+`FLUXOMNI_MEDIA_NODE_PUBLIC_HOST` must be the real hostname or IP that should be advertised for that media server. In this example, the node joins `control.example.com` but advertises itself as `media2.example.com`.
+If you want to advertise a different gRPC endpoint than `http://<media-node-public-host>:50051`, set `FLUXOMNI_MEDIA_NODE_ENDPOINT` explicitly before running the installer.
+
 ## Manual Install
 
 ```bash
