@@ -65,7 +65,7 @@ else
   FLUXOMNI_DIR="$HOME/fluxomni"
 fi
 
-FLUXOMNI_VERSION="${FLUXOMNI_VERSION:-latest}"
+REQUESTED_FLUXOMNI_VERSION="${FLUXOMNI_VERSION:-}"
 LEGACY_FLUXOMNI_IMAGE="${FLUXOMNI_IMAGE:-}"
 FLUXOMNI_CONTROL_PLANE_IMAGE="${FLUXOMNI_CONTROL_PLANE_IMAGE:-}"
 FLUXOMNI_MEDIA_NODE_IMAGE="${FLUXOMNI_MEDIA_NODE_IMAGE:-}"
@@ -655,6 +655,10 @@ require_cmd curl
 install_docker_if_missing
 configure_docker_access
 
+CANDIDATE_ENV_FILE="${FLUXOMNI_DIR}/.env"
+EXISTING_FLUXOMNI_VERSION="$(read_env_file_value "FLUXOMNI_VERSION" "$CANDIDATE_ENV_FILE")"
+FLUXOMNI_VERSION="${REQUESTED_FLUXOMNI_VERSION:-${EXISTING_FLUXOMNI_VERSION:-latest}}"
+
 REPO_RAW="$(resolve_repo_raw)"
 COMPOSE_ASSET="$(compose_asset_name)"
 
@@ -671,7 +675,7 @@ download_asset "$COMPOSE_ASSET" "${FLUXOMNI_DIR}/docker-compose.yml"
 download_asset ".env.example" "${FLUXOMNI_DIR}/.env.example"
 assert_install_assets_match_target "${FLUXOMNI_DIR}/docker-compose.yml" "${FLUXOMNI_DIR}/.env.example"
 
-ENV_FILE="${FLUXOMNI_DIR}/.env"
+ENV_FILE="${CANDIDATE_ENV_FILE}"
 HOST_IP="$(detect_host_ip)"
 LEGACY_IMAGE_BASE="${LEGACY_FLUXOMNI_IMAGE:-$(read_env_file_value "FLUXOMNI_IMAGE" "$ENV_FILE")}"
 CONTROL_PLANE_IMAGE_DEFAULT="$(resolve_control_plane_image "$LEGACY_IMAGE_BASE")"
