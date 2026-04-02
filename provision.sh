@@ -4,6 +4,58 @@
 
 set -euo pipefail
 
+INSTALL_TARGET_ARG=""
+
+usage() {
+  cat <<'EOF'
+Usage:
+  provision.sh [full|media-node]
+  provision.sh --install-target <full|media-node>
+
+Defaults:
+  - No argument provisions the full single-host stack.
+  - media-node provisions a standalone remote media node.
+  - FLUXOMNI_INSTALL_TARGET can also select the target when no CLI argument is passed.
+EOF
+}
+
+while [ "$#" -gt 0 ]; do
+  case "$1" in
+    full|media-node)
+      if [ -n "$INSTALL_TARGET_ARG" ]; then
+        echo "Error: install target was specified more than once." >&2
+        usage
+        exit 1
+      fi
+      INSTALL_TARGET_ARG="$1"
+      shift
+      ;;
+    --install-target)
+      if [ "$#" -lt 2 ]; then
+        echo "Error: --install-target requires a value." >&2
+        usage
+        exit 1
+      fi
+      if [ -n "$INSTALL_TARGET_ARG" ]; then
+        echo "Error: install target was specified more than once." >&2
+        usage
+        exit 1
+      fi
+      INSTALL_TARGET_ARG="$2"
+      shift 2
+      ;;
+    -h|--help)
+      usage
+      exit 0
+      ;;
+    *)
+      echo "Error: unsupported argument '$1'." >&2
+      usage
+      exit 1
+      ;;
+  esac
+done
+
 if [ "${EUID:-$(id -u)}" -ne 0 ]; then
   echo "Error: run this script as root."
   exit 1
@@ -14,12 +66,19 @@ export DEBIAN_FRONTEND=noninteractive
 WITH_INITIAL_UPGRADE="${WITH_INITIAL_UPGRADE:-0}"
 WITH_FIREWALLD="${WITH_FIREWALLD:-0}"
 ALLOWED_IPS="${ALLOWED_IPS:-*}"
+FLUXOMNI_INSTALL_TARGET="${INSTALL_TARGET_ARG:-${FLUXOMNI_INSTALL_TARGET:-full}}"
 
 FLUXOMNI_VERSION="${FLUXOMNI_VERSION:-latest}"
 FLUXOMNI_IMAGE="${FLUXOMNI_IMAGE:-}"
 FLUXOMNI_CONTROL_PLANE_IMAGE="${FLUXOMNI_CONTROL_PLANE_IMAGE:-}"
 FLUXOMNI_MEDIA_NODE_IMAGE="${FLUXOMNI_MEDIA_NODE_IMAGE:-}"
-FLUXOMNI_DIR="${FLUXOMNI_DIR:-/opt/fluxomni}"
+if [ -n "${FLUXOMNI_DIR:-}" ]; then
+  FLUXOMNI_DIR="${FLUXOMNI_DIR}"
+elif [ "$FLUXOMNI_INSTALL_TARGET" = "media-node" ]; then
+  FLUXOMNI_DIR="/opt/fluxomni-media-node"
+else
+  FLUXOMNI_DIR="/opt/fluxomni"
+fi
 SELFHOST_REPO="${FLUXOMNI_SELFHOST_REPO:-fluxomnia-systems/fluxomni-selfhost}"
 FLUXOMNI_SELFHOST_REF="${FLUXOMNI_SELFHOST_REF:-}"
 FLUXOMNI_REPO_RAW="${FLUXOMNI_REPO_RAW:-}"
@@ -29,6 +88,18 @@ require_cmd() {
     echo "Error: required command '$1' not found"
     exit 1
   fi
+}
+
+validate_install_target() {
+  case "$FLUXOMNI_INSTALL_TARGET" in
+    full|media-node)
+      ;;
+    *)
+      echo "Error: unsupported install target '${FLUXOMNI_INSTALL_TARGET}'." >&2
+      usage
+      exit 1
+      ;;
+  esac
 }
 
 repo_raw_for_ref() {
@@ -136,9 +207,21 @@ download_installer() {
 }
 
 configure_firewall() {
-  local tcp_ports=(80 443 1935 8000)
-  local udp_ports=(8000 10080)
+  local tcp_ports
+  local udp_ports
   local ips
+
+  case "$FLUXOMNI_INSTALL_TARGET" in
+    media-node)
+      tcp_ports=(1935 8000 50051)
+      udp_ports=(8000 10080)
+      ;;
+    *)
+      tcp_ports=(80 443 1935 8000 50052)
+      udp_ports=(8000 10080)
+      ;;
+  esac
+
   ips="$(split_allowed_ips "$ALLOWED_IPS")"
 
   if [ "$WITH_FIREWALLD" = "1" ]; then
@@ -202,6 +285,7 @@ if [ "$WITH_INITIAL_UPGRADE" = "1" ]; then
   apt-get -qy upgrade
 fi
 
+validate_install_target
 require_cmd curl
 install_docker_if_missing
 systemctl enable --now docker || true
@@ -211,6 +295,7 @@ configure_firewall
 echo "Running FluxOmni installer..."
 INSTALLER_REPO_RAW="$(resolve_repo_raw)"
 FLUXOMNI_DIR="$FLUXOMNI_DIR" \
+FLUXOMNI_INSTALL_TARGET="$FLUXOMNI_INSTALL_TARGET" \
 FLUXOMNI_VERSION="$FLUXOMNI_VERSION" \
 FLUXOMNI_IMAGE="$FLUXOMNI_IMAGE" \
 FLUXOMNI_CONTROL_PLANE_IMAGE="$FLUXOMNI_CONTROL_PLANE_IMAGE" \

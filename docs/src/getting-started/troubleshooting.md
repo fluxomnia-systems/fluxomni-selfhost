@@ -39,3 +39,25 @@ cd ~/fluxomni
 docker compose down
 docker compose up -d
 ```
+
+## Rollback to a Previous Version
+
+If an update causes issues, pin the previous version in `.env`:
+
+```bash
+cd ~/fluxomni
+# Edit .env and change FLUXOMNI_VERSION to the previous release tag
+sed -i 's/FLUXOMNI_VERSION=.*/FLUXOMNI_VERSION=v0.9.1/' .env
+docker compose pull
+docker compose up -d
+```
+
+Available release tags are listed on the [GitHub Releases](https://github.com/fluxomnia-systems/fluxomni/releases) page. Use `vX.Y.Z` format for immutable tags.
+
+To return to tracking the latest stable release:
+
+```bash
+sed -i 's/FLUXOMNI_VERSION=.*/FLUXOMNI_VERSION=latest/' .env
+docker compose pull
+docker compose up -d
+```

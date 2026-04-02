@@ -3,6 +3,9 @@
 .idea
 .zed
 
+# Pi local task state
+.pi/tasks/
+
 # Local runtime data
 data/
 

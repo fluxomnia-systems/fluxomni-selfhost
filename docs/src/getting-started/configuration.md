@@ -6,11 +6,15 @@ FluxOmni is configured through environment variables in `.env`.
 
 - `FLUXOMNI_CONTROL_PLANE_IMAGE`: control-plane image repository.
 - `FLUXOMNI_MEDIA_NODE_IMAGE`: media-node image repository.
-- `FLUXOMNI_VERSION`: Image tag to deploy.
-- `FLUXOMNI_PUBLIC_HOST`: Public hostname/IP shown for the control surface.
-- `FLUXOMNI_MEDIA_NODE_PUBLIC_HOST`: Public hostname/IP shown in RTMP, HLS, SRT, and WebRTC media URLs.
-- `FLUXOMNI_CONTROL_PLANE_RPC_PORT`: Host port that publishes the control-plane gRPC listener.
-- `FLUXOMNI_MEDIA_NODE_GRPC_PORT`: Host port that publishes the standalone media-node gRPC listener.
+- `FLUXOMNI_VERSION`: image tag to deploy.
+- `FLUXOMNI_PUBLIC_HOST`: public hostname/IP shown for the control surface.
+- `FLUXOMNI_MEDIA_NODE_PUBLIC_HOST`: public hostname/IP shown in RTMP, HLS, SRT, and WebRTC media URLs.
+- `FLUXOMNI_CONTROL_PLANE_RPC_PORT`: host port that publishes the control-plane gRPC listener.
+- `FLUXOMNI_MEDIA_NODE_GRPC_PORT`: host port that publishes the standalone media-node gRPC listener.
+- `FLUXOMNI_MEDIA_NODE_ID`: stable media-node identifier shown in fleet views.
+- `FLUXOMNI_MEDIA_NODE_NAME`: human-readable media-node name shown in the control-plane.
+- `FLUXOMNI_MEDIA_NODE_LABELS`: optional comma-separated capability labels for routing and fleet filters.
+- `FLUXOMNI_MEDIA_NODE_ZONE`: optional placement zone used to describe where the node runs.
 
 `FLUXOMNI_MEDIA_NODE_PUBLIC_HOST` is especially important for standalone media-node installs.
 FluxOmni uses it in two places:
@@ -44,6 +48,7 @@ FLUXOMNI_MEDIA_NODE_PUBLIC_HOST=control.example.com
 - `FLUXOMNI_CONTROL_PLANE_RPC_PORT`: host gRPC port for remote media-node registration and delivery.
 - `FLUXOMNI_MEDIA_NODE_RTMP_PORT`: host RTMP ingest port.
 - `FLUXOMNI_MEDIA_NODE_HLS_PORT`: host HLS/WebRTC port.
+- `FLUXOMNI_MEDIA_NODE_SRS_CALLBACK_PORT`: host loopback port for the internal SRS callback listener.
 - `FLUXOMNI_MEDIA_NODE_SRT_PORT`: host SRT UDP port.
 - `FLUXOMNI_MEDIA_NODE_GRPC_PORT`: host gRPC port for a standalone media-node.
 - `FLUXOMNI_CONTROL_PLANE_DATA_DIR`: control-plane app data directory on the host.
@@ -64,7 +69,8 @@ docker compose up -d
 ## Attach an External Media Node
 
 The full self-host install now publishes the control-plane RPC listener on TCP `50052` by default.
-To attach another media server, run the installer on that server in explicit `media-node` mode:
+To attach another media server, run the installer on that server in explicit `media-node` mode.
+`FLUXOMNI_CONTROL_PLANE_RPC_ENDPOINT`, `FLUXOMNI_CONTROL_PLANE_INTERNAL_AUTH_TOKEN`, and `FLUXOMNI_MEDIA_NODE_PUBLIC_HOST` are required for that mode:
 
 ```bash
 FLUXOMNI_VERSION=edge \
@@ -82,6 +88,8 @@ Set these only when you need to override the defaults:
 - `FLUXOMNI_MEDIA_NODE_ENDPOINT`: advertised media-node gRPC endpoint. Defaults to `http://<FLUXOMNI_MEDIA_NODE_PUBLIC_HOST>:50051`.
 - `FLUXOMNI_MEDIA_NODE_ID`: stable node ID. Defaults to `media-node-<hostname>`.
 - `FLUXOMNI_MEDIA_NODE_NAME`: display name shown in the control-plane. Defaults to `Media Node <hostname>`.
+- `FLUXOMNI_MEDIA_NODE_LABELS`: comma-separated labels for node capabilities or operator grouping. Defaults to `selfhost`.
+- `FLUXOMNI_MEDIA_NODE_ZONE`: optional location or placement label. Defaults to `local`.
 
 ## Update to Newest Image for Current Tag
 

@@ -83,6 +83,14 @@ Re-running `install.sh` on an older installation keeps the existing `./data` dir
 Media-node installs now verify control-plane reachability before startup and only print success after the local node logs confirm registration with the control-plane.
 `FLUXOMNI_MEDIA_NODE_PUBLIC_HOST` is required for standalone media-node installs because FluxOmni uses that host when it advertises ingest/playback URLs and when it derives the default media-node gRPC endpoint.
 
+Useful standalone media-node overrides:
+
+- `FLUXOMNI_MEDIA_NODE_ENDPOINT` when the advertised gRPC address should differ from `http://<FLUXOMNI_MEDIA_NODE_PUBLIC_HOST>:50051`
+- `FLUXOMNI_MEDIA_NODE_ID` when the hostname-derived node ID is not what you want
+- `FLUXOMNI_MEDIA_NODE_NAME` when you want a custom display name in the control-plane
+- `FLUXOMNI_MEDIA_NODE_LABELS` for capability or grouping labels
+- `FLUXOMNI_MEDIA_NODE_ZONE` for placement/location metadata
+
 ## Documentation
 
 - [Book Introduction](./docs/src/README.md)

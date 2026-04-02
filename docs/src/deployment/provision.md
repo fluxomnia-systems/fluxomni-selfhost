@@ -10,17 +10,31 @@ Development-only assets (for internal build workflows) are kept outside this use
 
 ## Quick Usage
 
+Provision the full single-host stack:
+
 ```bash
 curl -fsSL https://raw.githubusercontent.com/fluxomnia-systems/fluxomni-selfhost/main/provision.sh | bash
 ```
 
+Provision only a standalone media-node:
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/fluxomnia-systems/fluxomni-selfhost/main/provision.sh | \
+  FLUXOMNI_VERSION=edge \
+  FLUXOMNI_CONTROL_PLANE_RPC_ENDPOINT=http://control.example.com:50052 \
+  FLUXOMNI_CONTROL_PLANE_INTERNAL_AUTH_TOKEN=replace-with-shared-token \
+  FLUXOMNI_MEDIA_NODE_PUBLIC_HOST=media2.example.com \
+  bash -s -- media-node
+```
+
 Optional variables:
 
+- `FLUXOMNI_INSTALL_TARGET` (default: `full`; same values as the positional `full|media-node` argument)
 - `FLUXOMNI_VERSION` (default: `latest`)
 - `FLUXOMNI_CONTROL_PLANE_IMAGE` (default: derived from `ghcr.io/fluxomnia-systems/fluxomni`)
 - `FLUXOMNI_MEDIA_NODE_IMAGE` (default: derived from `ghcr.io/fluxomnia-systems/fluxomni`)
 - `FLUXOMNI_IMAGE` (legacy base repository override used only when the explicit split-image variables are unset)
-- `FLUXOMNI_DIR` (default: `/opt/fluxomni`)
+- `FLUXOMNI_DIR` (default: `/opt/fluxomni` for full installs, `/opt/fluxomni-media-node` for `media-node` installs)
 - `FLUXOMNI_SELFHOST_REF` (force a specific self-host config ref)
 - `FLUXOMNI_REPO_RAW` (override the raw asset base entirely)
 - `WITH_INITIAL_UPGRADE=1`
@@ -28,6 +42,12 @@ Optional variables:
 - `ALLOWED_IPS` (default: `*`)
 
 When `FLUXOMNI_VERSION` is pinned, provisioning first tries the same self-host ref and falls back to `main` if versioned self-host assets are not published yet. Use `FLUXOMNI_SELFHOST_REF` only if the config bundle needs to come from a different ref.
+
+`media-node` provisioning notes:
+
+- Required installer inputs: `FLUXOMNI_CONTROL_PLANE_RPC_ENDPOINT`, `FLUXOMNI_CONTROL_PLANE_INTERNAL_AUTH_TOKEN`, and `FLUXOMNI_MEDIA_NODE_PUBLIC_HOST`
+- Firewall defaults for full installs open the control-plane RPC port (`50052`)
+- Firewall defaults for `media-node` installs open the advertised media-node gRPC port (`50051`)
 
 Release channels:
 

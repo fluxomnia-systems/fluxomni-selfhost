@@ -49,6 +49,7 @@ FLUXOMNI_MEDIA_NODE_PUBLIC_HOST=media2.example.com \
 The media-node installer now defaults to `~/fluxomni-media-node`, writes a media-node-only compose bundle, verifies it can reach the control-plane RPC endpoint before startup, and only reports success after the local media-node confirms registration in its logs.
 `FLUXOMNI_MEDIA_NODE_PUBLIC_HOST` must be the real hostname or IP that should be advertised for that media server. In this example, the node joins `control.example.com` but advertises itself as `media2.example.com`.
 If you want to advertise a different gRPC endpoint than `http://<media-node-public-host>:50051`, set `FLUXOMNI_MEDIA_NODE_ENDPOINT` explicitly before running the installer.
+You can also set `FLUXOMNI_MEDIA_NODE_ID`, `FLUXOMNI_MEDIA_NODE_NAME`, `FLUXOMNI_MEDIA_NODE_LABELS`, and `FLUXOMNI_MEDIA_NODE_ZONE` when the default hostname-derived identity is not what you want.
 
 ## Manual Install
 
