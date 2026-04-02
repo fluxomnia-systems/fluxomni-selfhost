@@ -49,8 +49,7 @@ FLUXOMNI_MEDIA_NODE_PUBLIC_HOST=control.example.com
 - `FLUXOMNI_CONTROL_PLANE_DATA_DIR`: control-plane app data directory on the host.
 - `FLUXOMNI_MEDIA_NODE_DATA_DIR`: media-node app data directory on the host.
 - `FLUXOMNI_SHARED_VIDEO_DIR`: host directory mounted read-only into the media-node video cache path.
-- `FLUXOMNI_OTLP_COLLECTOR_IP`: OpenTelemetry collector host.
-- `FLUXOMNI_OTLP_COLLECTOR_PORT`: OpenTelemetry collector port.
+- `FLUXOMNI_OTLP_ENDPOINT`: OpenTelemetry collector endpoint (e.g. `http://collector:4318`).
 
 For single-host installs, keep both data-directory variables on `./data` unless you intentionally want separate storage surfaces.
 If you move `FLUXOMNI_MEDIA_NODE_DATA_DIR` elsewhere, keep `FLUXOMNI_SHARED_VIDEO_DIR` pointed at the control-plane video cache so downloaded or imported playlist files remain readable from the media-node.
