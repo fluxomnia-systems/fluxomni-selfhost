@@ -7,8 +7,8 @@ FluxOmni is configured through environment variables in `.env`.
 - `FLUXOMNI_CONTROL_PLANE_IMAGE`: control-plane image repository.
 - `FLUXOMNI_MEDIA_NODE_IMAGE`: media-node image repository.
 - `FLUXOMNI_VERSION`: image tag to deploy.
-- `FLUXOMNI_PUBLIC_HOST`: public hostname/IP shown for the control surface.
-- `FLUXOMNI_MEDIA_NODE_PUBLIC_HOST`: public hostname/IP shown in RTMP, HLS, SRT, and WebRTC media URLs.
+- `FLUXOMNI_PUBLIC_HOST`: public hostname/IP used for the control surface and generated control-plane URLs.
+- `FLUXOMNI_MEDIA_NODE_PUBLIC_HOST`: public hostname/IP shown in generated RTMP, HLS, SRT, and WebRTC media URLs.
 - `FLUXOMNI_CONTROL_PLANE_RPC_PORT`: host port that publishes the control-plane gRPC listener.
 - `FLUXOMNI_MEDIA_NODE_GRPC_PORT`: host port that publishes the standalone media-node gRPC listener.
 - `FLUXOMNI_MEDIA_NODE_ID`: stable media-node identifier shown in fleet views.
@@ -35,6 +35,8 @@ FLUXOMNI_MEDIA_NODE_PUBLIC_HOST=control.example.com
 ```
 
 `install.sh` also writes `FLUXOMNI_CONTROL_PLANE_INTERNAL_AUTH_TOKEN` automatically. Keep the same token on both services; rotate it only if you are restarting the whole stack together.
+Published self-host releases currently serve the operator UI from the `control-plane` container, so `FLUXOMNI_PUBLIC_HOST` and `FLUXOMNI_CONTROL_PLANE_HTTP_PORT` determine the browser URL you share with operators.
+If you deploy behind a domain or reverse proxy, set both `FLUXOMNI_PUBLIC_HOST` and `FLUXOMNI_MEDIA_NODE_PUBLIC_HOST` to the public hostnames you want operators and publishers to copy from the UI.
 
 ## Release Channels
 
@@ -65,6 +67,12 @@ If you move `FLUXOMNI_MEDIA_NODE_DATA_DIR` elsewhere, keep `FLUXOMNI_SHARED_VIDE
 cd ~/fluxomni
 docker compose up -d
 ```
+
+The operator UI is served from the control-plane host:
+
+- `http://<FLUXOMNI_PUBLIC_HOST>` for the landing page
+- `/routes` for route management
+- `/fleet` for media-node monitoring
 
 ## Attach an External Media Node
 

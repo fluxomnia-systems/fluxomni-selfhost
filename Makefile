@@ -6,16 +6,28 @@ DOCS_BUILD := $(DOCS_DIR)/book
 
 .DEFAULT_GOAL := help
 
-.PHONY: help check.tools.docs docs.build docs.serve docs.clean docs.lint.links docs.lint docs.lint.ci
+.PHONY: help check.tools.docs build serve clean lint lint.ci docs.build docs.serve docs.clean docs.lint.links docs.lint docs.lint.ci
 
 help:
 	@echo "FluxOmni Self-Hosted: common targets"
 	@echo ""
-	@echo "  make docs.build     Build mdBook docs"
-	@echo "  make docs.serve     Serve docs locally (PORT=3000 by default)"
-	@echo "  make docs.clean     Remove generated docs/book output"
-	@echo "  make docs.lint      Build + local link lint (+ markdownlint if installed)"
-	@echo "  make docs.lint.ci   Strict lint for CI (requires markdownlint-cli2)"
+	@echo "  make build          Build mdBook docs"
+	@echo "  make serve          Serve docs locally (PORT=3000 by default)"
+	@echo "  make clean          Remove generated docs/book output"
+	@echo "  make lint           Build + local link lint (+ markdownlint if installed)"
+	@echo "  make lint.ci        Strict lint for CI (requires markdownlint-cli2)"
+	@echo ""
+	@echo "  Compatibility aliases: docs.build docs.serve docs.clean docs.lint docs.lint.ci"
+
+build: docs.build
+
+serve: docs.serve
+
+clean: docs.clean
+
+lint: docs.lint
+
+lint.ci: docs.lint.ci
 
 check.tools.docs:
 	@command -v mdbook >/dev/null 2>&1 || { \

@@ -17,6 +17,7 @@ curl -fsSL https://raw.githubusercontent.com/fluxomnia-systems/fluxomni-selfhost
 
 By default, FluxOmni installs to `~/fluxomni` and follows the newest stable release channel (`latest`).
 The installer creates a single-host compose stack with separate `control-plane` and `media-node` services that share `./data`.
+The published `control-plane` image currently serves the operator UI directly, so the default release path does not require a separate frontend container.
 
 ## Install with Custom Values
 
@@ -51,6 +52,15 @@ The media-node installer now defaults to `~/fluxomni-media-node`, writes a media
 If you want to advertise a different gRPC endpoint than `http://<media-node-public-host>:50051`, set `FLUXOMNI_MEDIA_NODE_ENDPOINT` explicitly before running the installer.
 You can also set `FLUXOMNI_MEDIA_NODE_ID`, `FLUXOMNI_MEDIA_NODE_NAME`, `FLUXOMNI_MEDIA_NODE_LABELS`, and `FLUXOMNI_MEDIA_NODE_ZONE` when the default hostname-derived identity is not what you want.
 
+## Access the Operator UI
+
+After the containers are up, open `http://<your-server-ip>` in your browser.
+Current releases use these primary operator surfaces:
+
+- `/routes` for the route list
+- `/routes/:id` for an individual route workspace
+- `/fleet` for attached media-node inventory and health
+
 ## Manual Install
 
 ```bash
@@ -83,6 +93,8 @@ mkdir -p data/videos data/dvr data/srs-http
 touch data/state.json
 docker compose up -d
 ```
+
+Then open `http://<your-server-ip>/routes`.
 
 ## Next Steps
 

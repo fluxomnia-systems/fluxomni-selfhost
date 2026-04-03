@@ -23,6 +23,32 @@ Common causes:
 - For standalone media-node installs, the control-plane RPC endpoint in `.env` is unreachable from the media server.
 - For standalone media-node installs, the advertised `FLUXOMNI_MEDIA_NODE_ENDPOINT` does not point back to the media server.
 
+## Media Node Does Not Appear in Fleet
+
+If the control surface loads but a standalone node never shows up under `/fleet`, check the media-node logs:
+
+```bash
+cd ~/fluxomni-media-node
+docker compose logs -f media-node
+```
+
+Look for a successful `Registered media node with control plane` message.
+If it never appears, verify:
+
+- `FLUXOMNI_CONTROL_PLANE_RPC_ENDPOINT` is reachable from the media-node host.
+- `FLUXOMNI_CONTROL_PLANE_INTERNAL_AUTH_TOKEN` matches the control-plane value exactly.
+- `FLUXOMNI_MEDIA_NODE_PUBLIC_HOST` and `FLUXOMNI_MEDIA_NODE_ENDPOINT` point back to the actual media-node host and published gRPC port.
+- Any firewall between hosts allows TCP `50052` to the control-plane and the published media-node gRPC port back to the node when remote operators or services need it.
+
+## Generated URLs Use the Wrong Hostname or IP
+
+If the UI shows RTMP, HLS, SRT, or WebRTC URLs with a private IP, Docker hostname, or old domain, update these values in `.env` and restart the stack:
+
+- `FLUXOMNI_PUBLIC_HOST` for control-plane links
+- `FLUXOMNI_MEDIA_NODE_PUBLIC_HOST` for media ingest and playback links
+
+On current releases, `/routes` is the main operator surface and `/fleet` shows attached media nodes. Those pages use the configured public hosts when they render copyable endpoints.
+
 ## Check Running State
 
 ```bash

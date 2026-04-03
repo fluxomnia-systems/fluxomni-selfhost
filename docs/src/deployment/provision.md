@@ -16,6 +16,9 @@ Provision the full single-host stack:
 curl -fsSL https://raw.githubusercontent.com/fluxomnia-systems/fluxomni-selfhost/main/provision.sh | bash
 ```
 
+That path provisions one host running both `control-plane` and `media-node`.
+The published `control-plane` image currently embeds the operator UI, so the default self-host path does not require a separate frontend image.
+
 Provision only a standalone media-node:
 
 ```bash
@@ -54,3 +57,5 @@ Release channels:
 - `latest`: newest stable release
 - `vX.Y.Z`: immutable stable release image
 - `edge`: latest successful publish from `main`
+
+After provisioning finishes, open `http://<server-ip>/routes` for route management and `http://<server-ip>/fleet` for attached media-node monitoring.

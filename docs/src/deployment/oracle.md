@@ -96,6 +96,9 @@ Open your web browser and navigate to the IP address.
 
 ![Address bar](../images/browser.jpg)
 
+Current releases serve the operator UI from the `control-plane` container directly.
+Use `/routes` for route management and `/fleet` to inspect attached media nodes.
+
 > __NOTE__: By default, FluxOmni is served over `http://`. For production use, it is highly recommended to set up a domain name and configure a reverse proxy (e.g., Nginx or Caddy) to enable `https://` for secure access.
 
 [Free Tier]: https://www.oracle.com/cloud/free

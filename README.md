@@ -1,6 +1,7 @@
 # FluxOmni Self-Hosted
 
 Public installer and user documentation for running FluxOmni with prebuilt Docker images.
+FluxOmni lets you stream to multiple platforms simultaneously with a split `control-plane` + `media-node` runtime, even on a single host.
 
 This repository intentionally does **not** include application source code.
 
@@ -12,6 +13,7 @@ curl -fsSL https://raw.githubusercontent.com/fluxomnia-systems/fluxomni-selfhost
 
 On Debian/Ubuntu hosts, this installer will bootstrap Docker automatically if it is missing. That path requires `root` or `sudo` access.
 The installed stack now runs separate `control-plane` and `media-node` containers behind one single-host compose project.
+Published self-host releases use the split runtime directly, and the published `control-plane` image currently embeds the operator UI so no separate frontend image is required on the default release path.
 
 Useful overrides:
 
@@ -46,6 +48,12 @@ The installer still accepts legacy `FLUXOMNI_IMAGE=<base-repository>` overrides 
 
 When `FLUXOMNI_VERSION` is pinned, the installer first tries the same self-host ref. If that config bundle is not published yet, it falls back to `main` with a warning. Use `FLUXOMNI_SELFHOST_REF` to force a specific config bundle ref, or `FLUXOMNI_REPO_RAW` to point at a custom raw asset base.
 
+After installation, open `http://<your-server-ip>` in a browser. Current releases use:
+
+- `/routes` for the route list
+- `/routes/:id` for an individual route workspace
+- `/fleet` for attached media-node inventory and health
+
 ## What Gets Installed
 
 - `docker-compose.yml`
@@ -60,6 +68,8 @@ For `media-node` installs, the default path is `~/fluxomni-media-node`, and `doc
 - `latest` tracks the newest stable release and is the default for this repository.
 - `vX.Y.Z` tags are immutable release images for a specific stable cut.
 - `edge` tracks the latest successful publish from `main`.
+
+Published releases promote the split `fluxomni-control-plane` and `fluxomni-media-node` images directly.
 
 Stable release notes are published on the [GitHub Releases](https://github.com/fluxomnia-systems/fluxomni/releases) page.
 
@@ -98,4 +108,29 @@ Useful standalone media-node overrides:
 - [Configuration](./docs/src/getting-started/configuration.md)
 - [Troubleshooting](./docs/src/getting-started/troubleshooting.md)
 - [Deployment Guides](./docs/src/deployment/)
+- [Published docs website](https://fluxomnia-systems.github.io/fluxomni-selfhost/)
 - [GitHub Releases](https://github.com/fluxomnia-systems/fluxomni/releases)
+
+## Docs Development
+
+The published docs website is built from the `docs/` mdBook in this repository.
+Before opening a PR that changes the docs website, run:
+
+```bash
+make lint
+```
+
+For the same strict check used in CI, run:
+
+```bash
+make lint.ci
+```
+
+Useful local docs commands:
+
+- `make build` — build the published docs site into `docs/book`
+- `make serve` — serve the site locally
+- `make lint` — build docs, check local Markdown links, and run markdownlint when installed
+- `make lint.ci` — strict CI docs lint; requires `markdownlint-cli2`
+
+The older `make docs.build`, `make docs.serve`, `make docs.lint`, and `make docs.lint.ci` targets remain available as compatibility aliases.
