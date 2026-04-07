@@ -132,5 +132,23 @@ Useful local docs commands:
 - `make serve` — serve the site locally
 - `make lint` — build docs, check local Markdown links, and run markdownlint when installed
 - `make lint.ci` — strict CI docs lint; requires `markdownlint-cli2`
+- `make screenshots` — capture user-guide screenshots from a running FluxOmni instance
 
 The older `make docs.build`, `make docs.serve`, `make docs.lint`, and `make docs.lint.ci` targets remain available as compatibility aliases.
+
+### User-Guide Screenshots
+
+Screenshots in `docs/src/images/user-guide/` are captured automatically by a Playwright project in `screenshots/`. To refresh them against a running instance:
+
+```bash
+# Against a local Docker stack (default http://localhost)
+make screenshots
+
+# Against a specific host
+FLUXOMNI_URL=http://192.168.1.100 make screenshots
+
+# With auth enabled
+FLUXOMNI_URL=http://192.168.1.100 FLUXOMNI_ADMIN_PASSWORD=secret make screenshots
+```
+
+The capture seeds test routes via GraphQL, takes screenshots at 1440×900, and writes JPEG files directly into the docs image directory. Step-by-step guided-flow images land in `docs/src/images/user-guide/flows/`. See `screenshots/README.md` for details.

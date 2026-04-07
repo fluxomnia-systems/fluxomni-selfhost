@@ -11,3 +11,9 @@ data/
 
 # Generated mdBook output
 docs/book/
+
+# Screenshot capture tooling
+screenshots/node_modules/
+screenshots/test-results/
+screenshots/playwright-report/
+screenshots/auth-state.json

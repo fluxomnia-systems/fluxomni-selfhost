@@ -1,0 +1,14 @@
+{
+  "name": "fluxomni-selfhost-screenshots",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "capture": "playwright test",
+    "capture:headed": "playwright test --headed",
+    "install:browsers": "playwright install chromium"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.52.0",
+    "typescript": "^5.8.0"
+  }
+}

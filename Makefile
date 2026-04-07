@@ -6,7 +6,7 @@ DOCS_BUILD := $(DOCS_DIR)/book
 
 .DEFAULT_GOAL := help
 
-.PHONY: help check.tools.docs build serve clean lint lint.ci docs.build docs.serve docs.clean docs.lint.links docs.lint docs.lint.ci
+.PHONY: help check.tools.docs build serve clean lint lint.ci screenshots docs.build docs.serve docs.clean docs.lint.links docs.lint docs.lint.ci
 
 help:
 	@echo "FluxOmni Self-Hosted: common targets"
@@ -16,6 +16,7 @@ help:
 	@echo "  make clean          Remove generated docs/book output"
 	@echo "  make lint           Build + local link lint (+ markdownlint if installed)"
 	@echo "  make lint.ci        Strict lint for CI (requires markdownlint-cli2)"
+	@echo "  make screenshots    Capture user-guide screenshots (requires running instance)"
 	@echo ""
 	@echo "  Compatibility aliases: docs.build docs.serve docs.clean docs.lint docs.lint.ci"
 
@@ -35,6 +36,10 @@ check.tools.docs:
 		echo "Install: cargo install mdbook"; \
 		exit 1; \
 	}
+
+screenshots:
+	@cd screenshots && npm install --silent && npx playwright install chromium --with-deps 2>/dev/null; \
+	 npx playwright test
 
 docs.build: check.tools.docs
 	@mdbook build $(DOCS_DIR)
