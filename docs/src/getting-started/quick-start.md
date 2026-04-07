@@ -12,7 +12,7 @@ If Docker is already available, the installer uses it directly. Manual installs 
 ## One-line Install
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/fluxomnia-systems/fluxomni-selfhost/main/install.sh | bash
+curl -fsSL https://install.fluxomni.io | bash
 ```
 
 By default, FluxOmni installs to `~/fluxomni` and follows the newest stable release channel (`latest`).
@@ -26,7 +26,7 @@ This example opts into the `edge` channel and a custom install path:
 ```bash
 FLUXOMNI_DIR=/opt/fluxomni \
 FLUXOMNI_VERSION=edge \
-  curl -fsSL https://raw.githubusercontent.com/fluxomnia-systems/fluxomni-selfhost/main/install.sh | bash
+  curl -fsSL https://install.fluxomni.io | bash
 ```
 
 To pin a specific stable release instead, set `FLUXOMNI_VERSION=vX.Y.Z`.
@@ -44,7 +44,7 @@ FLUXOMNI_VERSION=edge \
 FLUXOMNI_CONTROL_PLANE_RPC_ENDPOINT=http://control.example.com:50052 \
 FLUXOMNI_CONTROL_PLANE_INTERNAL_AUTH_TOKEN=replace-with-shared-token \
 FLUXOMNI_MEDIA_NODE_PUBLIC_HOST=media2.example.com \
-  curl -fsSL https://raw.githubusercontent.com/fluxomnia-systems/fluxomni-selfhost/main/install.sh | bash -s -- media-node
+  curl -fsSL https://install.fluxomni.io | bash -s -- media-node
 ```
 
 The media-node installer now defaults to `~/fluxomni-media-node`, writes a media-node-only compose bundle, verifies it can reach the control-plane RPC endpoint before startup, and only reports success after the local media-node confirms registration in its logs.

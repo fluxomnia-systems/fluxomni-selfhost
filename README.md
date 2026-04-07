@@ -8,7 +8,7 @@ This repository intentionally does **not** include application source code.
 ## Quick Install
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/fluxomnia-systems/fluxomni-selfhost/main/install.sh | bash
+curl -fsSL https://install.fluxomni.io | bash
 ```
 
 On Debian/Ubuntu hosts, this installer will bootstrap Docker automatically if it is missing. That path requires `root` or `sudo` access.
@@ -20,15 +20,15 @@ Useful overrides:
 ```bash
 # Install into a custom directory
 FLUXOMNI_DIR=/opt/fluxomni \
-  curl -fsSL https://raw.githubusercontent.com/fluxomnia-systems/fluxomni-selfhost/main/install.sh | bash
+  curl -fsSL https://install.fluxomni.io | bash
 
 # Pin a specific release tag
 FLUXOMNI_VERSION=vX.Y.Z \
-  curl -fsSL https://raw.githubusercontent.com/fluxomnia-systems/fluxomni-selfhost/main/install.sh | bash
+  curl -fsSL https://install.fluxomni.io | bash
 
 # Follow the latest mainline build instead of stable releases
 FLUXOMNI_VERSION=edge \
-  curl -fsSL https://raw.githubusercontent.com/fluxomnia-systems/fluxomni-selfhost/main/install.sh | bash
+  curl -fsSL https://install.fluxomni.io | bash
 
 # Install only a standalone media-node for an existing control-plane.
 # The positional `media-node` target is safer than relying on env-only mode.
@@ -36,12 +36,12 @@ FLUXOMNI_VERSION=edge \
 FLUXOMNI_CONTROL_PLANE_RPC_ENDPOINT=http://control.example.com:50052 \
 FLUXOMNI_CONTROL_PLANE_INTERNAL_AUTH_TOKEN=replace-with-shared-token \
 FLUXOMNI_MEDIA_NODE_PUBLIC_HOST=media2.example.com \
-  curl -fsSL https://raw.githubusercontent.com/fluxomnia-systems/fluxomni-selfhost/main/install.sh | bash -s -- media-node
+  curl -fsSL https://install.fluxomni.io | bash -s -- media-node
 
 # Override the published image repositories explicitly
 FLUXOMNI_CONTROL_PLANE_IMAGE=registry.example.com/fluxomni-control-plane \
 FLUXOMNI_MEDIA_NODE_IMAGE=registry.example.com/fluxomni-media-node \
-  curl -fsSL https://raw.githubusercontent.com/fluxomnia-systems/fluxomni-selfhost/main/install.sh | bash
+  curl -fsSL https://install.fluxomni.io | bash
 ```
 
 The installer still accepts legacy `FLUXOMNI_IMAGE=<base-repository>` overrides and derives `-control-plane` / `-media-node` image names from that base when the explicit split-image variables are unset.
@@ -108,7 +108,7 @@ Useful standalone media-node overrides:
 - [Configuration](./docs/src/getting-started/configuration.md)
 - [Troubleshooting](./docs/src/getting-started/troubleshooting.md)
 - [Deployment Guides](./docs/src/deployment/)
-- [Published docs website](https://fluxomnia-systems.github.io/fluxomni-selfhost/)
+- [Published docs website](https://docs.fluxomni.io/)
 - [GitHub Releases](https://github.com/fluxomnia-systems/fluxomni/releases)
 
 ## Docs Development

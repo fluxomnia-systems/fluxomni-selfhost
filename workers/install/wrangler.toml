@@ -1,0 +1,13 @@
+name = "fluxomni-install"
+main = "src/index.js"
+compatibility_date = "2024-12-01"
+
+# After deploying, add a Custom Domain in the Cloudflare dashboard:
+# Workers & Pages → fluxomni-install → Settings → Triggers → Custom Domains
+# → Add: install.fluxomni.io
+#
+# This automatically creates the DNS record and routes traffic — no
+# manual CNAME or Worker Route needed.
+
+[observability]
+enabled = true

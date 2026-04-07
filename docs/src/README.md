@@ -14,7 +14,7 @@ This repository contains self-host installation and deployment documentation onl
 Install FluxOmni in one command:
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/fluxomnia-systems/fluxomni-selfhost/main/install.sh | bash
+curl -fsSL https://install.fluxomni.io | bash
 ```
 
 The installer defaults to the newest stable image (`latest`). Use `FLUXOMNI_VERSION=edge` only if you want the latest main-branch build.

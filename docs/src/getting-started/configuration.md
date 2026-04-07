@@ -85,7 +85,7 @@ FLUXOMNI_VERSION=edge \
 FLUXOMNI_CONTROL_PLANE_RPC_ENDPOINT=http://control.example.com:50052 \
 FLUXOMNI_CONTROL_PLANE_INTERNAL_AUTH_TOKEN=replace-with-shared-token \
 FLUXOMNI_MEDIA_NODE_PUBLIC_HOST=media2.example.com \
-  curl -fsSL https://raw.githubusercontent.com/fluxomnia-systems/fluxomni-selfhost/main/install.sh | bash -s -- media-node
+  curl -fsSL https://install.fluxomni.io | bash -s -- media-node
 ```
 
 That mode installs into `~/fluxomni-media-node` by default, writes a media-node-only compose bundle, derives a host-specific node ID when one is not provided, and waits for a successful `Registered media node with control plane` log before printing success.

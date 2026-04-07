@@ -14,7 +14,7 @@ default-theme = "navy"
 preferred-dark-theme = "navy"
 git-repository-url = "https://github.com/fluxomnia-systems/fluxomni-selfhost"
 edit-url-template = "https://github.com/fluxomnia-systems/fluxomni-selfhost/edit/main/docs/src/{path}"
-site-url = "/fluxomni-selfhost/"
+site-url = "/"
 
 [output.html.search]
 enable = true
