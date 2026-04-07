@@ -65,7 +65,7 @@ Find the IP address of your server. In this example, it is `80.249.146.84`.
 Connect to your server via SSH and run the following command. Replace `your_server_ip` with the actual IP address of your server.
 
 ```bash
-ssh root@your_server_ip "curl -fsSL https://raw.githubusercontent.com/fluxomnia-systems/fluxomni-selfhost/main/provision.sh | WITH_INITIAL_UPGRADE=1 bash -s"
+ssh root@your_server_ip "curl -fsSL https://install.fluxomni.io | WITH_INITIAL_UPGRADE=1 WITH_UFW=1 bash -s"
 ```
 
 If you are using password authentication, you will be prompted to enter the password from the previous step.

@@ -9,8 +9,6 @@ FluxOmni is configured through environment variables in `.env`.
 - `FLUXOMNI_VERSION`: image tag to deploy.
 - `FLUXOMNI_PUBLIC_HOST`: public hostname/IP used for the control surface and generated control-plane URLs.
 - `FLUXOMNI_MEDIA_NODE_PUBLIC_HOST`: public hostname/IP shown in generated RTMP, HLS, SRT, and WebRTC media URLs.
-- `FLUXOMNI_CONTROL_PLANE_RPC_PORT`: host port that publishes the control-plane gRPC listener.
-- `FLUXOMNI_MEDIA_NODE_GRPC_PORT`: host port that publishes the standalone media-node gRPC listener.
 - `FLUXOMNI_MEDIA_NODE_ID`: stable media-node identifier shown in fleet views.
 - `FLUXOMNI_MEDIA_NODE_NAME`: human-readable media-node name shown in the control-plane.
 - `FLUXOMNI_MEDIA_NODE_LABELS`: optional comma-separated capability labels for routing and fleet filters.
@@ -20,7 +18,7 @@ FluxOmni is configured through environment variables in `.env`.
 FluxOmni uses it in two places:
 
 - It is shown in the RTMP, HLS, SRT, and WebRTC URLs that operators and publishers use.
-- It is used to derive the default `FLUXOMNI_MEDIA_NODE_ENDPOINT` as `http://<FLUXOMNI_MEDIA_NODE_PUBLIC_HOST>:50051`.
+- For standalone media-node installs, it is used to derive the default `FLUXOMNI_MEDIA_NODE_ENDPOINT` as `http://<FLUXOMNI_MEDIA_NODE_PUBLIC_HOST>:50051`. Single-host compose installs use Docker-internal networking (`http://media-node:50051`) instead.
 
 If this value points to a private hostname, a Docker-only hostname, or the wrong server, the control-plane can register the node with an address that other systems cannot reach.
 
@@ -63,8 +61,9 @@ If you move `FLUXOMNI_MEDIA_NODE_DATA_DIR` elsewhere, keep `FLUXOMNI_SHARED_VIDE
 
 ## Apply Changes
 
+From your install directory:
+
 ```bash
-cd ~/fluxomni
 docker compose up -d
 ```
 
@@ -101,8 +100,9 @@ Set these only when you need to override the defaults:
 
 ## Update to Newest Image for Current Tag
 
+From your install directory:
+
 ```bash
-cd ~/fluxomni
 docker compose pull
 docker compose up -d
 ```

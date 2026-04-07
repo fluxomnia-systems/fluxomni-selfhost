@@ -32,7 +32,7 @@ If you intend to record live streams, you may need more disk space than the defa
 ![Add volume](../images/do_1.3.1.jpg)
 ![Setup volume](../images/do_1.3.2.jpg)
 
-The provision script will automatically detect and use the attached volume for FluxOmni.
+The installer will automatically detect and use the attached volume for FluxOmni.
 
 ### 1.4. Choose a Datacenter Region
 
@@ -42,11 +42,11 @@ Select a region that is geographically close to both your stream source and your
 
 ### 1.5. Add User Data
 
-To automatically install FluxOmni on the new droplet, paste the following script into the `User data` field. This script will run once when the droplet is first created.
+To automatically install FluxOmni on the new droplet, paste the following script into the `User data` field. This runs once when the droplet is first created and also configures a firewall with the required ports.
 
 ```bash
 #!/bin/bash
-curl -fsSL https://raw.githubusercontent.com/fluxomnia-systems/fluxomni-selfhost/main/provision.sh | bash -s
+curl -fsSL https://install.fluxomni.io | WITH_UFW=1 bash -s
 ```
 
 ![Provision](../images/do_1.5.jpg)

@@ -40,15 +40,15 @@ If you intend to record live streams, you may need more disk space than the defa
 ![Add volume](../images/hcloud_1.4.1.jpg)
 ![Setup volume](../images/hcloud_1.4.2.jpg)
 
-The provision script will automatically detect and use the attached volume for FluxOmni.
+The installer will automatically detect and use the attached volume for FluxOmni.
 
 ### 1.5. Add User Data
 
-To automatically install FluxOmni on the new server, paste the following script into the `User data` field. This script will run once when the server is first created.
+To automatically install FluxOmni on the new server, paste the following script into the `User data` field. This runs once when the server is first created and also configures a firewall with the required ports.
 
 ```bash
 #!/bin/bash
-curl -fsSL https://raw.githubusercontent.com/fluxomnia-systems/fluxomni-selfhost/main/provision.sh | bash -s
+curl -fsSL https://install.fluxomni.io | WITH_UFW=1 bash -s
 ```
 
 ![Provision](../images/hcloud_1.5.jpg)

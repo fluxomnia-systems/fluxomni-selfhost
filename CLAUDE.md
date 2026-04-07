@@ -8,7 +8,6 @@ FluxOmni Self-Hosted — public installer, Docker Compose configs, and mdBook do
 
 ```
 install.sh          # Main installer script (curl-pipe-bash)
-provision.sh        # Server provisioning script
 docker-compose.yml  # Single-host compose: control-plane + media-node + watchtower
 docker-compose.media-node.yml  # Standalone media-node compose
 .env.example        # Reference env vars for the compose stack

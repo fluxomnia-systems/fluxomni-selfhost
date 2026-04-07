@@ -45,11 +45,11 @@ You can add an [SSH] key to access the instance for server administration. This 
 
 ### 1.5. Use Cloud-Init Script
 
-Expand the **Show advanced options** section. Go to the **Management** tab and paste the following script into the `Cloud-init script` field. This will automatically install FluxOmni when the instance is first created.
+Expand the **Show advanced options** section. Go to the **Management** tab and paste the following script into the `Cloud-init script` field. This runs once when the instance is first created, configures the OS-level firewall (firewalld), and installs FluxOmni.
 
 ```bash
 #!/bin/bash
-curl -fsSL https://raw.githubusercontent.com/fluxomnia-systems/fluxomni-selfhost/main/provision.sh | WITH_FIREWALLD=1 bash -s
+curl -fsSL https://install.fluxomni.io | WITH_FIREWALLD=1 bash -s
 ```
 
 ![Cloud-init script](../images/oci_1.5.2.png)

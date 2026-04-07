@@ -28,14 +28,15 @@ After installation:
 - Control surface: `http://<your-server-ip>`
 - Routes: `http://<your-server-ip>/routes`
 - Fleet: `http://<your-server-ip>/fleet`
-- RTMP ingest: `rtmp://<your-server-ip>:1935/app`
+- RTMP ingest: `rtmp://<your-server-ip>:1935/<route-key>` (the path depends on your [route configuration](user-guide/routes.md))
 
 ## Documentation Sections
 
 - [Quick Start](getting-started/quick-start.md)
 - [Configuration](getting-started/configuration.md)
-- [Cloud Deployment Guides](deployment/)
-- [Server Provisioning Script](deployment/provision.md)
+- [Troubleshooting](getting-started/troubleshooting.md)
+- [User Guide](user-guide/overview.md) — operating the Control Surface
+- [Deployment](deployment/overview.md) — cloud provider guides and server provisioning
 
 ## Release Channels
 

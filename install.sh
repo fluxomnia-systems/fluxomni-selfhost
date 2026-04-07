@@ -88,6 +88,10 @@ REQUESTED_SHARED_VIDEO_DIR="${FLUXOMNI_SHARED_VIDEO_DIR:-}"
 REQUESTED_CONTROL_PLANE_CONTAINER_NAME="${FLUXOMNI_CONTROL_PLANE_CONTAINER_NAME:-}"
 REQUESTED_MEDIA_NODE_CONTAINER_NAME="${FLUXOMNI_MEDIA_NODE_CONTAINER_NAME:-}"
 REQUESTED_WATCHTOWER_CONTAINER_NAME="${FLUXOMNI_WATCHTOWER_CONTAINER_NAME:-}"
+WITH_INITIAL_UPGRADE="${WITH_INITIAL_UPGRADE:-0}"
+WITH_FIREWALLD="${WITH_FIREWALLD:-0}"
+WITH_UFW="${WITH_UFW:-0}"
+ALLOWED_IPS="${ALLOWED_IPS:-*}"
 SELFHOST_REPO="${FLUXOMNI_SELFHOST_REPO:-fluxomnia-systems/fluxomni-selfhost}"
 SELFHOST_REF_OVERRIDE="${FLUXOMNI_SELFHOST_REF:-}"
 REPO_RAW="${FLUXOMNI_REPO_RAW:-}"
@@ -200,6 +204,89 @@ install_docker_if_missing() {
   run_privileged apt-get -qy update
   curl -fsSL https://get.docker.com | run_privileged bash -s
   run_privileged systemctl enable --now docker || true
+}
+
+split_allowed_ips() {
+  local input="$1"
+  if [ "$input" = "*" ]; then
+    printf '*\n'
+    return
+  fi
+  echo "$input" | tr ',' ' ' | xargs -n1 echo
+}
+
+configure_firewall() {
+  local tcp_ports
+  local udp_ports
+  local ips
+
+  case "$FLUXOMNI_INSTALL_TARGET" in
+    media-node)
+      tcp_ports=(1935 8000 50051)
+      udp_ports=(8000 10080)
+      ;;
+    *)
+      tcp_ports=(80 443 1935 8000 50052)
+      udp_ports=(8000 10080)
+      ;;
+  esac
+
+  ips="$(split_allowed_ips "$ALLOWED_IPS")"
+
+  if [ "$WITH_FIREWALLD" = "1" ]; then
+    run_privileged apt-get -qy update
+    run_privileged apt-get -qy install firewalld
+    run_privileged systemctl enable --now firewalld
+
+    run_privileged firewall-cmd --zone=public --permanent --add-service=ssh
+
+    if [ "$ips" = "*" ]; then
+      for port in "${tcp_ports[@]}"; do
+        run_privileged firewall-cmd --zone=public --permanent --add-port="${port}/tcp"
+      done
+      for port in "${udp_ports[@]}"; do
+        run_privileged firewall-cmd --zone=public --permanent --add-port="${port}/udp"
+      done
+    else
+      while IFS= read -r ip; do
+        [ -z "$ip" ] && continue
+        for port in "${tcp_ports[@]}"; do
+          run_privileged firewall-cmd --permanent --zone=public --add-rich-rule="rule family='ipv4' source address='${ip}' port port='${port}' protocol='tcp' accept"
+        done
+        for port in "${udp_ports[@]}"; do
+          run_privileged firewall-cmd --permanent --zone=public --add-rich-rule="rule family='ipv4' source address='${ip}' port port='${port}' protocol='udp' accept"
+        done
+      done <<< "$ips"
+    fi
+
+    run_privileged firewall-cmd --reload
+    return
+  fi
+
+  run_privileged apt-get -qy update
+  run_privileged apt-get -qy install ufw
+
+  run_privileged ufw allow 22/tcp
+  if [ "$ips" = "*" ]; then
+    for port in "${tcp_ports[@]}"; do
+      run_privileged ufw allow "${port}/tcp"
+    done
+    for port in "${udp_ports[@]}"; do
+      run_privileged ufw allow "${port}/udp"
+    done
+  else
+    while IFS= read -r ip; do
+      [ -z "$ip" ] && continue
+      for port in "${tcp_ports[@]}"; do
+        run_privileged ufw allow from "$ip" to any port "$port" proto tcp
+      done
+      for port in "${udp_ports[@]}"; do
+        run_privileged ufw allow from "$ip" to any port "$port" proto udp
+      done
+    done <<< "$ips"
+  fi
+
+  run_privileged ufw --force enable
 }
 
 configure_docker_access() {
@@ -652,7 +739,20 @@ echo "Installing FluxOmni (${FLUXOMNI_INSTALL_TARGET}) to ${FLUXOMNI_DIR}"
 
 validate_install_target
 require_cmd curl
+
+if [ "$WITH_INITIAL_UPGRADE" = "1" ]; then
+  echo "Running initial system upgrade..."
+  run_privileged apt-get -qy update
+  run_privileged apt-get -qy upgrade
+fi
+
 install_docker_if_missing
+
+if [ "$WITH_FIREWALLD" = "1" ] || [ "$WITH_UFW" = "1" ]; then
+  echo "Configuring firewall..."
+  configure_firewall
+fi
+
 configure_docker_access
 
 CANDIDATE_ENV_FILE="${FLUXOMNI_DIR}/.env"
