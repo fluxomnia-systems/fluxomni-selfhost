@@ -2,7 +2,7 @@
 *.local
 .idea
 .zed
-
+.DS_Store
 # Pi local task state
 .pi/tasks/
 

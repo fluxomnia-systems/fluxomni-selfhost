@@ -10,7 +10,7 @@ build-dir = "book"
 create-missing = true
 
 [output.html]
-default-theme = "navy"
+default-theme = "light"
 preferred-dark-theme = "navy"
 git-repository-url = "https://github.com/fluxomnia-systems/fluxomni-selfhost"
 edit-url-template = "https://github.com/fluxomnia-systems/fluxomni-selfhost/edit/main/docs/src/{path}"
