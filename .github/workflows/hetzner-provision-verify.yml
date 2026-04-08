@@ -1,0 +1,74 @@
+# Requires repository secret HCLOUD_TOKEN with Hetzner Cloud API write access.
+name: Hetzner Provision Verify
+
+on:
+  workflow_dispatch:
+    inputs:
+      fluxomni_version:
+        description: FluxOmni image tag to install (latest, edge, or vX.Y.Z)
+        required: false
+        default: latest
+        type: string
+      server_type:
+        description: Hetzner Cloud server type
+        required: false
+        default: cx23
+        type: string
+      location:
+        description: Hetzner Cloud location
+        required: false
+        default: fsn1
+        type: string
+      image:
+        description: Hetzner Cloud image
+        required: false
+        default: ubuntu-24.04
+        type: string
+      with_ufw:
+        description: Enable UFW during provisioning
+        required: false
+        default: true
+        type: boolean
+
+permissions:
+  contents: read
+
+concurrency:
+  group: hetzner-provision-verify
+  cancel-in-progress: false
+
+jobs:
+  verify:
+    name: Verify fresh Hetzner provisioning
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    env:
+      HCLOUD_API: https://api.hetzner.cloud/v1
+      HCLOUD_SERVER_TYPE: ${{ inputs.server_type }}
+      HCLOUD_LOCATION: ${{ inputs.location }}
+      HCLOUD_IMAGE: ${{ inputs.image }}
+      FLUXOMNI_VERSION: ${{ inputs.fluxomni_version }}
+      WITH_UFW: ${{ inputs.with_ufw && '1' || '0' }}
+      # Fetch the installer through the public install.fluxomni.io endpoint,
+      # but keep deployment assets pinned to the exact workflow revision.
+      INSTALL_SCRIPT_URL: https://install.fluxomni.io?ref=${{ github.sha }}
+      REPO_RAW: https://raw.githubusercontent.com/${{ github.repository }}/${{ github.sha }}
+      SERVER_NAME: fluxomni-ci-${{ github.run_id }}-${{ github.run_attempt }}
+      SSH_KEY_NAME: fluxomni-ci-${{ github.run_id }}-${{ github.run_attempt }}-ssh
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+
+      - name: Validate Hetzner secret
+        env:
+          HCLOUD_TOKEN: ${{ secrets.HCLOUD_TOKEN }}
+        run: |
+          if [ -z "${HCLOUD_TOKEN:-}" ]; then
+            echo "::error::Missing required repository secret HCLOUD_TOKEN"
+            exit 1
+          fi
+
+      - name: Create, verify, and delete temporary server
+        env:
+          HCLOUD_TOKEN: ${{ secrets.HCLOUD_TOKEN }}
+        run: bash scripts/verify-hetzner-install.sh
