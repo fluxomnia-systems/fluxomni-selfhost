@@ -70,6 +70,65 @@ docker compose down
 docker compose up -d
 ```
 
+## Playlist File Errors
+
+Files in a route playlist show a signal integrity badge:
+
+- **REF** — the file matches the reference stream parameters. No issues.
+- **DIFF** — the file has different codec, resolution, or frame rate than the reference. This may cause brief glitches or quality changes during playback transitions.
+- **ERROR** — the file could not be probed. It may be corrupt, still downloading, or in an unsupported format.
+
+To fix DIFF warnings, re-encode files to match the reference parameters shown in the playlist status bar (codec, resolution, frame rate, audio channels).
+
+## Disk Space
+
+If the control-plane or media-node containers exit unexpectedly, check available disk space:
+
+```bash
+df -h ~/fluxomni/data
+```
+
+Playlist file downloads and DVR recordings can fill the disk. Free space by:
+
+- Clearing unused playlist files from route playlists.
+- Removing old DVR segments from `data/dvr/`.
+- Moving the data directory to a larger volume and updating `FLUXOMNI_CONTROL_PLANE_DATA_DIR` and `FLUXOMNI_MEDIA_NODE_DATA_DIR` in `.env`.
+
+## Firewall and Port Issues
+
+FluxOmni uses both TCP and UDP ports. A common mistake is only opening TCP:
+
+| Port | Protocol | Service |
+| ---- | -------- | ------- |
+| 80 | TCP | Control Surface (HTTP) |
+| 1935 | TCP | RTMP ingest |
+| 8000 | TCP + UDP | HLS and WebRTC |
+| 8081 | TCP (localhost) | SRS callback (internal) |
+| 10080 | UDP | SRT ingest |
+| 50051 | TCP | Media-node gRPC |
+| 50052 | TCP | Control-plane gRPC |
+
+SRT (port 10080) is **UDP only**. If SRT publishers cannot connect, verify that UDP traffic is allowed through your firewall or cloud security group.
+
+HLS and WebRTC (port 8000) require **both TCP and UDP**. WebRTC uses UDP for media transport.
+
+## Stream Quality Issues
+
+If the output stream has artifacts, stuttering, or audio sync problems:
+
+- Check the **Signal Integrity** panel on the routes list for mismatch or fetch warnings.
+- Open the route workspace and verify the input codec info matches what your encoder is sending.
+- Ensure your encoder bitrate does not exceed the server's upload bandwidth.
+- For playlist playback, verify all files use the same codec, resolution, and frame rate as the primary source.
+
+## Cannot Sign In
+
+If you are locked out of the Control Surface:
+
+- Verify the username and password. Passwords are case-sensitive.
+- If you forgot the admin password, stop the stack and edit `data/state.json` to reset the auth configuration. Then restart and set a new password from the Settings page.
+- If the sign-in mode is set to "Named user sign-in" but no user accounts exist, the Control Surface shows the authentication screen. You may need to reset state to recover access.
+
 ## Rollback to a Previous Version
 
 If an update causes issues, pin the previous version in `.env`:

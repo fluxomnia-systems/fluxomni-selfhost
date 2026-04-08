@@ -1,10 +1,16 @@
+import { dirname, resolve } from 'node:path';
+import { fileURLToPath } from 'node:url';
+
 import { chromium, type FullConfig } from '@playwright/test';
+
+const __dirname = dirname(fileURLToPath(import.meta.url));
+const IMAGES_DIR = resolve(__dirname, '../../docs/src/images/user-guide');
 
 /**
  * Global setup: logs in via the browser and persists storage state so that
  * all test specs share an authenticated browser context.
  */
-export default async function globalSetup(config: FullConfig) {
+export default async function globalSetup(_config: FullConfig) {
   const baseURL = process.env.FLUXOMNI_URL ?? 'http://localhost';
   const username = process.env.FLUXOMNI_ADMIN_USER ?? 'admin';
   const password = process.env.FLUXOMNI_ADMIN_PASSWORD ?? '';
@@ -37,6 +43,13 @@ export default async function globalSetup(config: FullConfig) {
   // Wait for login form
   await page.waitForSelector('input[type="password"], input[name="password"]', {
     timeout: 15_000,
+  });
+
+  // Capture the login page screenshot before filling credentials
+  await page.screenshot({
+    path: resolve(IMAGES_DIR, 'login.jpg'),
+    type: 'jpeg',
+    quality: 90,
   });
 
   // Fill credentials
