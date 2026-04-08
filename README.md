@@ -1,9 +1,14 @@
 # FluxOmni Self-Hosted
 
-Public installer and user documentation for running FluxOmni with prebuilt Docker images.
-FluxOmni lets you stream to multiple platforms simultaneously with a split `control-plane` + `media-node` runtime, even on a single host.
+<p align="center">
+  <img src="docs/src/images/logo.webp" alt="FluxOmni Logo" width="10%">
+</p>
 
-This repository intentionally does **not** include application source code.
+Install FluxOmni on your own server with a single command.
+
+This repository contains the public installer, Docker Compose files, and self-hosting documentation for FluxOmni. It does **not** contain the application source code. FluxOmni itself is currently closed-source.
+
+FluxOmni uses a split runtime made of a `control-plane` and a `media-node`. The default installer runs both on the same host, so most users can get started quickly without learning the multi-host layout first.
 
 ## Quick Install
 
@@ -11,32 +16,54 @@ This repository intentionally does **not** include application source code.
 curl -fsSL https://install.fluxomni.io | bash
 ```
 
-On Debian/Ubuntu hosts, this installer will bootstrap Docker automatically if it is missing. That path requires `root` or `sudo` access.
-The installed stack now runs separate `control-plane` and `media-node` containers behind one single-host compose project.
-Published self-host releases use the split runtime directly, and the published `control-plane` image currently embeds the operator UI so no separate frontend image is required on the default release path.
+After installation:
 
-Useful overrides:
+- open `http://<your-server-ip>` in your browser
+- manage streams at `/routes`
+- inspect node health at `/fleet`
+- publish to `rtmp://<your-server-ip>:1935/app`
+
+> [!NOTE]
+> On Debian and Ubuntu, the installer can install Docker automatically if it is missing. That path requires `root` or `sudo` access.
+
+## Choose Your Setup
+
+### Single Host Stack
+
+Best for most users. Runs the `control-plane` and `media-node` on one server.
+
+```bash
+curl -fsSL https://install.fluxomni.io | bash
+```
+
+### Standalone Media Node
+
+Use this when you already have a control-plane and want to add another remote media node.
+
+```bash
+FLUXOMNI_VERSION=edge \
+FLUXOMNI_CONTROL_PLANE_RPC_ENDPOINT=http://control.example.com:50052 \
+FLUXOMNI_CONTROL_PLANE_INTERNAL_AUTH_TOKEN=replace-with-shared-token \
+FLUXOMNI_MEDIA_NODE_PUBLIC_HOST=media2.example.com \
+  curl -fsSL https://install.fluxomni.io | bash -s -- media-node
+```
+
+Standalone media-node installs require `FLUXOMNI_MEDIA_NODE_PUBLIC_HOST` because FluxOmni uses that host when it advertises ingest and playback URLs and when it derives the default media-node gRPC endpoint.
+
+## Common Install Examples
 
 ```bash
 # Install into a custom directory
 FLUXOMNI_DIR=/opt/fluxomni \
   curl -fsSL https://install.fluxomni.io | bash
 
-# Pin a specific release tag
+# Pin a specific stable release
 FLUXOMNI_VERSION=vX.Y.Z \
   curl -fsSL https://install.fluxomni.io | bash
 
-# Follow the latest mainline build instead of stable releases
+# Follow the latest mainline publish instead of stable releases
 FLUXOMNI_VERSION=edge \
   curl -fsSL https://install.fluxomni.io | bash
-
-# Install only a standalone media-node for an existing control-plane.
-# The positional `media-node` target is safer than relying on env-only mode.
-FLUXOMNI_VERSION=edge \
-FLUXOMNI_CONTROL_PLANE_RPC_ENDPOINT=http://control.example.com:50052 \
-FLUXOMNI_CONTROL_PLANE_INTERNAL_AUTH_TOKEN=replace-with-shared-token \
-FLUXOMNI_MEDIA_NODE_PUBLIC_HOST=media2.example.com \
-  curl -fsSL https://install.fluxomni.io | bash -s -- media-node
 
 # Override the published image repositories explicitly
 FLUXOMNI_CONTROL_PLANE_IMAGE=registry.example.com/fluxomni-control-plane \
@@ -44,101 +71,124 @@ FLUXOMNI_MEDIA_NODE_IMAGE=registry.example.com/fluxomni-media-node \
   curl -fsSL https://install.fluxomni.io | bash
 ```
 
-The installer still accepts legacy `FLUXOMNI_IMAGE=<base-repository>` overrides and derives `-control-plane` / `-media-node` image names from that base when the explicit split-image variables are unset.
+## What the Installer Does
 
-When `FLUXOMNI_VERSION` is pinned, the installer first tries the same self-host ref. If that config bundle is not published yet, it falls back to `main` with a warning. Use `FLUXOMNI_SELFHOST_REF` to force a specific config bundle ref, or `FLUXOMNI_REPO_RAW` to point at a custom raw asset base.
+For the default single-host setup, the installer:
 
-After installation, open `http://<your-server-ip>` in a browser. Current releases use:
+- installs Docker automatically on supported Debian and Ubuntu hosts if needed
+- downloads the correct `docker-compose.yml` and `.env.example`
+- creates or updates `.env` in place
+- pulls and starts the published FluxOmni containers
+- preserves your existing `data/` directory on reruns
+- verifies that the local services actually start before printing success
 
-- `/routes` for the route list
-- `/routes/:id` for an individual route workspace
-- `/fleet` for attached media-node inventory and health
+Current self-host releases use the split runtime directly, and the published `control-plane` image currently embeds the operator UI, so no separate frontend image is required in the default release path.
 
-## What Gets Installed
+## Installed Files and Default Paths
+
+| Install type | Default directory | Main services |
+| --- | --- | --- |
+| Single host | `~/fluxomni` | `control-plane`, `media-node` |
+| Standalone media node | `~/fluxomni-media-node` | `media-node` |
+
+The installer manages:
 
 - `docker-compose.yml`
-- `.env` (created if missing and updated in place on reruns)
-- `data/` with shared single-host runtime state, downloaded videos, and recordings
-
-Default install path: `~/fluxomni`
-For `media-node` installs, the default path is `~/fluxomni-media-node`, and `docker-compose.yml` contains only the standalone `media-node` service plus watchtower.
+- `.env`
+- `data/` for state, recordings, downloaded videos, and runtime files
 
 ## Release Channels
 
-- `latest` tracks the newest stable release and is the default for this repository.
-- `vX.Y.Z` tags are immutable release images for a specific stable cut.
-- `edge` tracks the latest successful publish from `main`.
+- `latest` - newest stable release, and the default
+- `vX.Y.Z` - immutable stable release tag
+- `edge` - latest successful publish from `main`
 
-Published releases promote the split `fluxomni-control-plane` and `fluxomni-media-node` images directly.
+Published self-host releases use:
 
-Stable release notes are published on the [GitHub Releases](https://github.com/fluxomnia-systems/fluxomni/releases) page.
+- `ghcr.io/fluxomnia-systems/fluxomni-control-plane`
+- `ghcr.io/fluxomnia-systems/fluxomni-media-node`
+
+Use the `latest`, `edge`, and `vX.Y.Z` channels above to control which published build gets installed.
 
 ## Manage Your Instance
+
+If you used the default single-host install:
 
 ```bash
 cd ~/fluxomni
 
-# Update
+# Update to the currently configured image tags
 docker compose pull
 docker compose up -d
 
-# Logs
+# Follow logs
 docker compose logs -f control-plane media-node
 
-# Stop
+# Stop the stack
 docker compose down
 ```
 
-Re-running `install.sh` on an older installation keeps the existing `./data` directory and updates the managed `.env` keys in place so incorrect ports, targets, and node settings can be repaired without a manual rewrite.
-Media-node installs now verify control-plane reachability before startup and only print success after the local node logs confirm registration with the control-plane.
-`FLUXOMNI_MEDIA_NODE_PUBLIC_HOST` is required for standalone media-node installs because FluxOmni uses that host when it advertises ingest/playback URLs and when it derives the default media-node gRPC endpoint.
+If you installed into a custom directory, or deployed a standalone media node, use that directory instead.
+
+Re-running `install.sh` on an existing install keeps the managed data directory and updates known `.env` keys in place. That makes it safe to repair ports, image tags, install target, or node settings without rewriting the whole file by hand.
+
+## Advanced Installer Notes
+
+- Legacy `FLUXOMNI_IMAGE=<base-repository>` is still supported. When the explicit split-image variables are unset, the installer derives `-control-plane` and `-media-node` image names from that base repository.
+- When `FLUXOMNI_VERSION` is pinned, the installer first tries the matching self-host asset ref. If that config bundle is not published yet, it falls back to `main` with a warning.
+- Use `FLUXOMNI_SELFHOST_REF` to force a specific self-host asset ref.
+- Use `FLUXOMNI_REPO_RAW` to point the installer at a custom raw asset base.
 
 Useful standalone media-node overrides:
 
-- `FLUXOMNI_MEDIA_NODE_ENDPOINT` when the advertised gRPC address should differ from `http://<FLUXOMNI_MEDIA_NODE_PUBLIC_HOST>:50051`
-- `FLUXOMNI_MEDIA_NODE_ID` when the hostname-derived node ID is not what you want
-- `FLUXOMNI_MEDIA_NODE_NAME` when you want a custom display name in the control-plane
-- `FLUXOMNI_MEDIA_NODE_LABELS` for capability or grouping labels
-- `FLUXOMNI_MEDIA_NODE_ZONE` for placement/location metadata
+- `FLUXOMNI_MEDIA_NODE_ENDPOINT`
+- `FLUXOMNI_MEDIA_NODE_ID`
+- `FLUXOMNI_MEDIA_NODE_NAME`
+- `FLUXOMNI_MEDIA_NODE_LABELS`
+- `FLUXOMNI_MEDIA_NODE_ZONE`
 
 ## Documentation
 
-- [Book Introduction](./docs/src/README.md)
-- [Quick Start](./docs/src/getting-started/quick-start.md)
+Start here if you want step-by-step guidance:
+
+- [Published documentation](https://docs.fluxomni.io/)
+- [Book introduction](./docs/src/README.md)
+- [Quick start](./docs/src/getting-started/quick-start.md)
 - [Configuration](./docs/src/getting-started/configuration.md)
 - [Troubleshooting](./docs/src/getting-started/troubleshooting.md)
-- [Deployment Guides](./docs/src/deployment/)
-- [Published docs website](https://docs.fluxomni.io/)
-- [GitHub Releases](https://github.com/fluxomnia-systems/fluxomni/releases)
+- [Deployment overview](./docs/src/deployment/overview.md)
+- [Hetzner guide](./docs/src/deployment/hetzner.md)
+- [DigitalOcean guide](./docs/src/deployment/digitalocean.md)
+- [Oracle guide](./docs/src/deployment/oracle.md)
+- [Vscale guide](./docs/src/deployment/vscale.md)
 
-## Docs Development
+## Working on This Repository
 
-The published docs website is built from the `docs/` mdBook in this repository.
-Before opening a PR that changes the docs website, run:
+This repository builds the published docs website from the `docs/` mdBook.
+
+Before opening a PR that changes docs or the installer, run:
 
 ```bash
 make lint
 ```
 
-For the same strict check used in CI, run:
+For the same strict check used in CI:
 
 ```bash
 make lint.ci
 ```
 
-Useful local docs commands:
+Useful local commands:
 
-- `make build` — build the published docs site into `docs/book`
-- `make serve` — serve the site locally
-- `make lint` — build docs, check local Markdown links, and run markdownlint when installed
-- `make lint.ci` — strict CI docs lint; requires `markdownlint-cli2`
-- `make screenshots` — capture user-guide screenshots from a running FluxOmni instance
+- `make build` - build the docs into `docs/book`
+- `make serve` - serve the docs locally
+- `make lint` - build docs, check local Markdown links, and run markdownlint when available
+- `make lint.ci` - strict CI docs lint; requires `markdownlint-cli2`
+- `make screenshots` - refresh user-guide screenshots from a running FluxOmni instance
 
-The older `make docs.build`, `make docs.serve`, `make docs.lint`, and `make docs.lint.ci` targets remain available as compatibility aliases.
+Compatibility aliases still exist for the older `make docs.build`, `make docs.serve`, `make docs.lint`, and `make docs.lint.ci` targets.
 
 ### User-Guide Screenshots
-
-Screenshots in `docs/src/images/user-guide/` are captured automatically by a Playwright project in `screenshots/`. To refresh them against a running instance:
 
 ```bash
 # Against a local Docker stack (default http://localhost)
@@ -151,4 +201,4 @@ FLUXOMNI_URL=http://192.168.1.100 make screenshots
 FLUXOMNI_URL=http://192.168.1.100 FLUXOMNI_ADMIN_PASSWORD=secret make screenshots
 ```
 
-The capture seeds test routes via GraphQL, takes screenshots at 1440×900, and writes JPEG files directly into the docs image directory. Step-by-step guided-flow images land in `docs/src/images/user-guide/flows/`. See `screenshots/README.md` for details.
+See `screenshots/README.md` for details.
