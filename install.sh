@@ -55,6 +55,32 @@ while [ "$#" -gt 0 ]; do
   esac
 done
 
+resolve_home_dir() {
+  if [ -n "${HOME:-}" ]; then
+    printf '%s\n' "$HOME"
+    return
+  fi
+
+  if command -v getent >/dev/null 2>&1; then
+    local passwd_home
+    passwd_home="$(getent passwd "$(id -u)" | cut -d: -f6 || true)"
+    if [ -n "$passwd_home" ]; then
+      printf '%s\n' "$passwd_home"
+      return
+    fi
+  fi
+
+  if [ "$(id -u)" -eq 0 ]; then
+    printf '/root\n'
+    return
+  fi
+
+  printf '/tmp\n'
+}
+
+HOME="${HOME:-$(resolve_home_dir)}"
+export HOME
+
 FLUXOMNI_INSTALL_TARGET="${INSTALL_TARGET_ARG:-${FLUXOMNI_INSTALL_TARGET:-full}}"
 
 if [ -n "${FLUXOMNI_DIR:-}" ]; then
