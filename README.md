@@ -184,7 +184,7 @@ Useful local commands:
 - `make serve` - serve the docs locally
 - `make lint` - build docs, check local Markdown links, and run markdownlint when available
 - `make lint.ci` - strict CI docs lint; requires `markdownlint-cli2`
-- `make screenshots` - refresh user-guide screenshots from a running FluxOmni instance
+- `make screenshots` - refresh user-guide page and guided-flow screenshots from a running FluxOmni instance
 
 Compatibility aliases still exist for the older `make docs.build`, `make docs.serve`, `make docs.lint`, and `make docs.lint.ci` targets.
 
@@ -201,4 +201,4 @@ FLUXOMNI_URL=http://192.168.1.100 make screenshots
 FLUXOMNI_URL=http://192.168.1.100 FLUXOMNI_ADMIN_PASSWORD=secret make screenshots
 ```
 
-See `screenshots/README.md` for details.
+See `screenshots/README.md` for the full image list and capture details.

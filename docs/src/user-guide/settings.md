@@ -1,78 +1,124 @@
 # Settings
 
-The Settings page (`/settings`) lets administrators configure the Control Surface behavior, security posture, and user accounts. Access it from **Settings** in the sidebar.
+The Settings workspace (`/settings`) is where FluxOmni exposes server defaults, self-service account information, and local user administration. Access it from **Settings** in the sidebar.
 
-![The Settings page with General, Security, and Users sections](../images/user-guide/settings.jpg)
+![The General settings section with the section rail, hero card, and admin controls](../images/user-guide/settings.jpg)
 
-The page header shows your current **Role** (e.g. Admin) and **Access** level (e.g. Admin settings). Settings are organized into sections scoped to your effective role.
+The page uses a split layout:
+
+- a persistent **section rail** on the left
+- a **hero card** at the top showing your current **Role** and **Access** level
+- a large **content panel** for the selected section on the right
+
+Admins can reach **General**, **Security**, and **Users**. Operators stay limited to the self-service **General** and **Security** sections.
 
 ## General
 
-**Control surface defaults** configure how the operator interface behaves across all users:
+The **General** section contains control-surface defaults plus a read-only shell summary. Admins can edit the shared defaults here; Operators see the same section as a self-service reference surface.
 
-- **Title** — the server name displayed in the browser tab and shared shell chrome. Set this to something meaningful like your organization name or stream label.
-- **Confirm deletion actions** — when enabled, destructive operations (deleting routes, outputs, files) require an explicit confirmation dialog.
-- **Confirm enable and disable actions** — when enabled, toggling inputs or outputs on/off requires confirmation. Useful for production environments where accidental toggles could disrupt a live broadcast.
+### Control surface defaults
 
-**Google Drive** settings control file ingest from Google Drive:
+These settings affect the shared operator experience:
 
-- **Google API Key** — required before operators can load files from Google Drive into route playlists. Obtain an API key from the Google Cloud Console with the Drive API enabled.
-- **Files Limit** — maximum number of concurrent downloads when Google Drive ingest is active.
+- **Title** — the server name shown in the browser tab and shared shell chrome.
+- **Confirm deletion actions** — requires confirmation before destructive actions such as deleting routes, outputs, or files.
+- **Confirm enable and disable actions** — adds confirmation before toggling inputs or outputs on or off.
 
-**Live shell summary** shows read-only values propagated through the shared authenticated shell:
+### Google Drive
 
-- **Public Host** — the domain or IP the instance is accessible at.
-- **Delete Confirmation** — whether the deletion confirmation toggle is active.
-- **Enable Confirmation** — whether the enable/disable confirmation toggle is active.
-- **Sign-in Mode** — current authentication posture (e.g. "Named users required").
+Google Drive settings control file ingest for route playlists:
+
+- **Google API Key** — required before operators can load files from Google Drive.
+- **Files Limit** — maximum concurrent downloads when Drive ingest is in use.
+
+### Live shell summary
+
+The lower summary cards mirror the current shell-level values visible to the operator:
+
+- **Public host**
+- **Delete confirmation**
+- **Enable confirmation**
+- **Sign-in mode**
 
 ## Security
 
-The Security section shows your current **Access posture** — the signed-in user, effective role, and authentication requirement — and lets you manage credentials.
+The **Security** section is focused on the current browser session and its authentication posture.
+
+![The Security settings section showing access posture and password rotation](../images/user-guide/settings-security.jpg)
 
 ### Access posture
 
-- **Current User** — the username you are signed in as (e.g. `@admin`).
-- **Effective Role** — your active role for this session (Admin, Operator, or Viewer).
-- **Auth Requirement** — the server's sign-in mode. See *Sign-in modes* below.
+The top card shows the current auth boundary for this session:
 
-### Change password
+- **Current user** — the signed-in username, or the open admin shell when auth is disabled.
+- **Effective role** — the resolved role for the current session.
+- **Auth requirement** — whether the server is running in **Named user sign-in** mode or **Open shell** mode.
 
-Update the password for the currently signed-in user. Password changes invalidate the current session and sign you back in with the new secret.
+### Change my password
 
-### Sign-in modes
+When you are signed in as a named local user, use the password form to rotate that account's password. FluxOmni invalidates the current session and signs the browser back in with the new password once the change succeeds.
 
-FluxOmni supports two sign-in modes, configured by an Admin in this section:
+### Sign-in screen
 
-- **Named user sign-in** — every operator must authenticate with a local username and password. This is the recommended mode for production.
-- **Open access** — no authentication is required. Anyone who can reach the Control Surface has full access. Suitable for local development or firewalled networks only.
+When named-user auth is required, unauthenticated browsers land on the sign-in screen shown below.
+
+![The sign-in page for named local users](../images/user-guide/login.jpg)
+
+Creating the first persisted admin user is what flips a fresh open-shell install into named-user sign-in mode.
 
 ## Users
 
-The Users section lets administrators create local accounts and manage the user directory.
+The **Users** section is admin-only and manages local accounts plus route ownership.
 
-### Create a user
+![The Users settings section with local account creation and the admin section rail](../images/user-guide/settings-users.jpg)
 
-Fill in the **Username**, optional **Display Name**, **Password**, and select a **Role** from the dropdown. Click **Create user** to add the account.
+### Create user
 
-### User roles
+Use the creation card to add a local account:
 
-FluxOmni has three roles that map directly to the backend authorization contract:
+- **Username** — login name for the operator
+- **Display Name** — optional friendly label
+- **Password** — initial password
+- **Role** — Admin, Operator, or Viewer
 
-| Role | Access |
-| ---- | ------ |
-| **Admin** | Full access to all operations: routes, fleet, settings (including security and user management), and export/import. |
-| **Operator** | Stream management access: create and manage routes, playlists, and outputs. Can view fleet status but cannot modify fleet settings, admin settings, or user accounts. |
-| **Viewer** | Read-only access to all pages. Can observe routes, fleet, and settings but cannot modify anything. |
+On a brand-new open-shell install, the very first persisted user is always promoted to **Admin** and immediately becomes the account that enables named-user auth.
 
 ### Directory
 
-Below the creation form, the **Directory** lists all local accounts with their role, last login timestamp, and controls to **Update role** or **Delete** the account. You cannot delete the account you are currently signed in with.
+The Directory card lists all local accounts with their:
+
+- display name or username
+- role badge
+- last login timestamp
+- controls to **Update role** or **Delete** the user
+
+Changing your own role or deleting your own account forces the shell to reload under the new auth boundary.
+
+### Route ownership
+
+FluxOmni routes can be either **Shared** or owned by a single named user.
+
+- **Shared routes** remain visible to every signed-in user.
+- **Owned routes** stay scoped to their assignee plus admins.
+- Admins can assign or clear ownership from the route modal and from the route-ownership panels in **Users**.
+- If a user is deleted, any routes they owned fall back to shared scope.
+
+The Users page organizes this with per-user **Route ownership** panels plus a **Shared routes** section for reassigning unowned routes.
+
+### User roles
+
+FluxOmni has three built-in roles:
+
+| Role | Access |
+| ---- | ------ |
+| **Admin** | Full access to routes, fleet, settings, user management, export/import, and ownership assignment. |
+| **Operator** | Can create and manage routes, playlists, and outputs for routes they can see. Operators only get self-service Settings sections. |
+| **Viewer** | Read-only access to visible routes and system surfaces. |
 
 ## Export / Import
 
-Accessible from **Export / Import** in the sidebar, this page lets you bulk export or import route configurations. Use this to:
+Accessible from **Export / Import** in the sidebar, this page lets you bulk export or import route configurations. Use it to:
 
-- Back up your routing configuration before major changes.
-- Migrate routes between FluxOmni instances.
-- Share route templates with other operators.
+- back up your routing configuration before major changes
+- migrate routes between FluxOmni instances
+- share route templates with other operators

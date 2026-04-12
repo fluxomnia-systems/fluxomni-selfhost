@@ -4,152 +4,191 @@ Routes are the core of FluxOmni. Each route is an independent streaming pipeline
 
 ## Routes List
 
-Navigate to **Routes** in the sidebar (or visit `/routes`) to see all configured routes. The list page provides:
+Navigate to **Routes** in the sidebar (or visit `/routes`) to see all configured routes.
 
-- **Summary bar** — total live inputs, live outputs, and active alerts at a glance.
-- **Search** — filter routes by name, input label, or output label.
-- **Scope toggle** — switch between viewing **Inputs** or **Outputs** to focus on ingest health or distribution state.
-- **View mode** — choose **Compact** (dense list) or **Expanded** (full route cards with inline controls).
+- The page header summarizes route count, live-input health, output health, and quick operator actions.
+- The **Controls** view combines search, scope selection, view mode, and health chips for inputs, signal integrity, and outputs.
+- The **Routes** view strips the collection controls back and focuses on the route cards themselves.
 
-### Controls Tab
+![The Routes page showing search, scope, health chips, and route cards](../images/user-guide/routes-list.jpg)
 
-The Controls tab on the routes list shows three health panels:
+### Collection controls
 
-- **Inputs / Route health** — per-route input status broken down by Offline, Starting, LIVE, and Degraded.
-- **Signal Integrity** — highlights mismatch and fetch issues across all routes without needing to open each one individually.
-- **Outputs / Distribution state** — per-route output status with the same Offline / Starting / LIVE / Degraded breakdown.
+The Controls view gives you the fastest way to triage the whole system:
 
-### Routes Tab
+- **Search** — find routes by route label, input label, or output label.
+- **Scope** — switch the search focus between **Inputs** and **Outputs**.
+- **View mode** — choose **Compact** or **Expanded** cards.
+- **Health strip** — shows whether the current slice is live, idle, clean, or needs attention.
+- **Inputs / Signal / Outputs groups** — summarize route health, mismatch or fetch issues, and distribution state without opening each route.
 
-Switches to a flat list view of all routes with their current state.
+### Route cards
+
+Each card shows the route label, ownership scope, current source, input and output state, and quick actions:
+
+- **Open workspace →** jumps into the full route workspace.
+- **+ Add output** opens the output modal directly from the card.
+- **Copy** duplicates the route configuration.
+- **Edit** opens the route modal.
 
 ## Creating a Route
 
-Click **+ New Route** on the routes list page (or the **Create Route** prompt on an empty instance) to open the route setup dialog.
+Click **+ New Route** on the routes list page (or the empty-state create prompt) to open the route setup dialog.
 
-![The Create Route dialog with identity, source, and routing options](../images/user-guide/create-route.jpg)
+![The Create Route dialog with identity, owner, source, and advanced routing options](../images/user-guide/create-route.jpg)
 
-The dialog walks you through three sections:
+The dialog is organized into three steps.
 
 ### 1. Route Identity
 
-- **Route Label** — a human-readable name for the route (e.g. "Main broadcast").
-- **Route Key** — a URL-safe stream key used in the ingest URL. This key becomes part of the ingest endpoint (e.g. `rtmp://<your-host>/main/primary`).
+- **Route Label** — a human-readable name for the route, such as `Main broadcast`.
+- **Route Key** — the URL-safe stream key that becomes part of the ingest address.
+- **Owner** — for admins, choose whether the route stays **Shared** or is assigned to a named user. Shared routes are visible to every signed-in user; owned routes stay scoped to their assignee plus admins.
 
 ### 2. Primary Live Source
 
-Choose the ingest protocol for this route:
+Choose the ingest protocol for the route:
 
-- **RTMP** — the most common protocol, compatible with OBS, FFmpeg, and most hardware encoders.
-- **SRT** — Secure Reliable Transport, a low-latency protocol designed for unreliable networks.
-- **WebRTC** — browser-based ingest for ultra-low-latency workflows.
+- **RTMP** — the best default for OBS, FFmpeg, and most hardware encoders.
+- **SRT** — useful for contribution over less stable networks.
+- **WebRTC** — low-latency browser publishing.
 
-Then select the **Primary Source Mode**:
+Then choose the source mode:
 
-- **Accept publish** — the route listens for incoming streams (push mode). FluxOmni generates a publish address on the assigned media node.
-- **Pull from remote** — the route pulls a stream from a remote URL (pull mode). Provide the source URL and FluxOmni will fetch it.
+- **Accept publish** — FluxOmni generates an ingest address and waits for a publisher to push into it.
+- **Pull from remote** — FluxOmni fetches a remote source URL itself.
+
+The **Generated publish address** area becomes actionable after the route is saved and assigned to a media node.
 
 ### 3. Advanced Routing
 
-Expand this section to configure placement, failover, live backups, and file fallback. Defaults are auto-placement with system failover, which works well for most setups.
+Leave **Advanced routing** collapsed for the normal setup path, or expand it when the route needs custom runtime behavior:
 
-#### Execution placement
+- **Execution placement** — keep auto-placement or pin the route to a specific media node.
+- **Failover policy** — stay on system defaults or customize stickiness and cooldown behavior.
+- **Live backups** — add additional ingest paths in the same live protocol family.
+- **File backup** — configure a Google Drive file as a last-resort fallback when no live source is available.
 
-Choose which media node runs this route:
+### Step-by-step: create a route
 
-- **Auto** (default) — the control-plane assigns the route to the best available node based on capacity and health.
-- **Specific node** — pin the route to a named media node. Useful when a route requires a node in a particular location or with specific capabilities.
+1. Start from the Routes page.
 
-#### Failover policy
+   ![The Routes page before opening the Create Route dialog](../images/user-guide/flows/create-route-1-open.jpg)
 
-Controls how FluxOmni handles ingress source failures:
+2. Open **+ New Route**.
 
-- **System failover** (default) — uses system-wide defaults for stickiness, cooldown, and health checks.
-- **Custom** — expand to set per-route values:
-  - **Stickiness** — minimum seconds to stay on a source before switching back to a higher-priority one.
-  - **Cooldown** — minimum seconds to wait before retrying a source after it failed.
+   ![The empty Create Route dialog](../images/user-guide/flows/create-route-2-dialog.jpg)
 
-#### Live backups
+3. Fill the route identity fields.
 
-Add one or more backup ingress sources. When the primary source fails, FluxOmni automatically switches to the next available backup based on priority order. Each backup is an independent ingest endpoint (RTMP, SRT, or WebRTC) that publishers can send to simultaneously.
+   ![The Create Route dialog with route identity filled in](../images/user-guide/flows/create-route-3-identity.jpg)
 
-Click **Add backup** to configure additional ingress sources.
+4. Submit the form to create the route.
 
-#### File backup
-
-Specify a Google File ID to use as fallback content when no live source is available. The media node downloads and caches the file, then plays it through the pipeline whenever the route has no active ingest.
-
-Click **Create route** to save. The route appears in the list and is immediately assigned to a media node.
+   ![The newly created route after the Create Route flow completes](../images/user-guide/flows/create-route-4-created.jpg)
 
 ## Route Workspace
 
 Click **Open workspace →** on any route card to enter the route workspace.
 
-![The route workspace showing execution status, signal path, and workspace tabs](../images/user-guide/route-workspace.jpg)
+![The route workspace showing execution status, node assignment, and workspace tabs](../images/user-guide/route-workspace.jpg)
 
-The workspace header shows the route name, status badge (Starting / Live / Offline), stream key, input and output counts, and issue count. Quick actions include **Edit route** and **Export route**.
+The workspace header shows the route name, status badge, quick actions, route key, input count, output count, and current issue count.
 
 The workspace has four tabs:
 
 ### Execution
 
-Shows the current execution status of the route, including the state badge and active issue count.
+The **Execution** tab answers where the route is running and what the control plane currently knows about it.
+
+- **Assigned node** — the selected media node, its advertised endpoints, and a shortcut to node diagnostics.
+- **Manifest delivery** — whether the desired runtime plan has been applied.
+- **Observed runtime** — the latest runtime-side execution signal, including pending or degraded states.
 
 ### Routing
 
-The signal path view, showing the full pipeline:
+The **Routing** tab is the operational signal-path view.
 
-- **Input** — the ingest endpoint with its current status (Awaiting source, Receiving, etc.). Each input has a toggle to enable/disable it, a copy button for the ingest URL, and protocol badge (RTMP, SRT, WebRTC).
-- **Outputs** — all configured output destinations. Each output shows its destination URL, protocol badge, individual enable/disable toggle, and status indicator.
-- **+ Add output** — button to add a new output destination to the route.
-- **Outputs master toggle** — enables or disables all outputs at once.
-- **Filter outputs** — search within the outputs list when you have many destinations.
+![The Routing tab showing signal path, outputs, playlist, and live playback panels](../images/user-guide/route-routing.jpg)
+
+- **Active source chip** — shows whether the route is awaiting source, live, playing from playlist, or running from fallback.
+- **Inputs lane** — displays the primary ingress and any live backups, with enable/disable controls and copyable ingest addresses.
+- **Outputs lane** — lists every destination with per-output state, filtering, bulk enable/disable, and the **+ Add output** action.
+- **Queue / Playlist** — the file-playout controls remain visible below the routing surface.
+- **Live playback** — the browser preview stays docked on the right when a playback URL exists.
+
+### Step-by-step: add an output
+
+1. Open the route workspace and switch to **Routing**.
+
+   ![The Routing tab with no outputs connected yet](../images/user-guide/flows/add-output-1-workspace.jpg)
+
+2. Click **+ Add output** to open the destination modal.
+
+   ![The Add output dialog with destination, label, preview URL, mix-ins, and import tools](../images/user-guide/flows/add-output-2-dialog.jpg)
+
+3. Enter the destination URL and an optional label, then save.
+
+   ![The Routing tab after a new output destination has been added](../images/user-guide/flows/add-output-3-added.jpg)
+
+The output dialog also supports:
+
+- **Preview URL** — an optional URL associated with that destination.
+- **Audio mix-ins** — extra MP3 or TeamSpeak audio sources mixed into the output.
+- **Import multiple destinations** — a bulk path for pasting a list or JSON payload of outputs.
+
+### Editing advanced routing
+
+Click **Edit route** in the workspace header to reopen the route modal with the current route values.
+
+![The Edit Route dialog with advanced routing expanded](../images/user-guide/route-edit-advanced.jpg)
+
+This is where admins and operators revisit placement, failover, live backups, and file fallback after the route is already running.
 
 ### Playlist
 
-A file-based playback queue for pre-recorded content:
+The **Playlist** tab manages file-based playout for the route:
 
-- **Now playing** — the currently active file with codec info (e.g. h264, 1280x720, 25fps, aac, 1ch), a progress bar, and transport controls (previous, play/pause, next, loop toggle).
-- **Status bar** — shows playlist readiness, local file count, mismatched files, and stream errors.
-- **Google Drive integration** — paste a Google Drive folder or file ID/URL, then click **Load files** to import content. Use **Start all downloads** to pull files to the media node.
-- **File list** — each file shows codec and resolution details, duration, and a signal integrity badge: **REF** (reference match), **DIFF** (parameter mismatch), or **ERROR** (probe failure). Click **Preview** to inspect any file.
-- **Clear playlist** — removes all files from the queue.
+- **Now playing** — current file, codec summary, progress, and transport controls.
+- **Queue status** — readiness, local-file count, mismatch warnings, and stream errors.
+- **Google Drive import** — load files from a Drive folder or file URL/ID, then start downloads to the assigned media node.
+- **File list** — codec metadata plus signal-integrity badges such as **REF**, **DIFF**, or **ERROR**.
 
 ### Live Playback
 
-An in-browser HLS monitor for the route's live output. When the media node has a playback URL configured and the route is live, you can watch the output stream directly in the Control Surface. Shows a message when the playback URL is not yet ready or not configured.
+The **Live playback** tab embeds the HLS monitor for the route's output. When a playback URL is available and the route is live, you can inspect the outgoing stream directly in the Control Surface.
 
 ## Output Protocols
 
-When adding an output destination, FluxOmni supports several protocols in the destination URL:
+When adding an output destination, FluxOmni supports several destination URL families:
 
-- **RTMP / RTMPS** — `rtmp://` or `rtmps://` URLs for streaming platforms (YouTube, Twitch, Facebook Live, custom RTMP servers). The most common output type.
-- **SRT** — `srt://` URLs for Secure Reliable Transport destinations. Useful for contribution links over unreliable networks.
-- **Icecast** — Icecast-compatible URLs for audio streaming.
-- **File** — `file:///` URLs for writing FLV, WAV, or MP3 output directly to the filesystem. Useful for local recording.
+- **RTMP / RTMPS** — the common choice for YouTube, Twitch, Facebook Live, and custom RTMP servers.
+- **SRT** — useful for contribution or delivery over less predictable networks.
+- **Icecast** — for Icecast-compatible audio publishing.
+- **File** — `file:///` destinations for writing FLV, WAV, or MP3 output to disk.
 
-## Mixins (Audio Mixing)
+## Mix-ins (Audio Mixing)
 
-Outputs support **mixins** — additional audio sources that are mixed into the output stream before it reaches the destination. Mixins are useful for adding background music, commentary, or TeamSpeak/VoIP audio to a broadcast.
+Outputs support **mix-ins** — extra audio sources mixed into the output before it reaches the destination. Use them for background music, commentary, or TeamSpeak/VoIP audio.
 
-Each mixin has:
+Each mix-in can define:
 
-- **Source URL** — an HTTP(S) MP3 URL or a TeamSpeak URL.
-- **Volume** — controls the audio level of the mixin (0-1000, where 100 is the original level).
-- **Delay** — an optional delay before the mixin starts.
-- **Sidechain** — optional sidechain compression that ducks the mixin audio when the main output audio is active, keeping commentary audible over background music.
-
-When no mixins are configured, the output streams the ingest signal as-is with no transcoding overhead.
+- **Source URL** — an HTTP(S) MP3 URL or TeamSpeak source.
+- **Volume** — gain control for the added source.
+- **Delay** — an optional offset before the mix-in starts.
+- **Sidechain** — ducking that lowers the mix-in when the main route audio is active.
 
 ## Alerts
 
-Route-level alerts appear in the **Alerts** badge on the routes list and in the **Attention** page.
+Route-level and fleet-level issues surface on the **Attention** page.
 
-![The Attention page showing route and fleet alerts](../images/user-guide/attention.jpg)
+![The Attention page showing the all-clear state when no active alerts exist](../images/user-guide/attention.jpg)
 
-Alert severity levels:
+When active issues exist, FluxOmni groups them into **Route alerts** and **Fleet alerts**. Operators can mark items as **Known** to move them into the muted known-issues area without keeping the sidebar urgency badge lit forever. When nothing is active, the page collapses to the all-clear state shown above.
 
-- **CRITICAL (HIGH)** — stream probe errors in playlist files that will prevent playback.
-- **ATTENTION (MEDIUM)** — mismatched stream parameters in playlist files that may cause quality or compatibility issues.
+Alert severity levels include:
 
-Click **Open route** on any alert to jump directly to the affected route workspace.
+- **Critical** — route or fleet conditions that need immediate action.
+- **Attention** — warnings, mismatches, or degraded conditions that still need review.
+
+Use **Open route** on route alerts to jump directly into the affected workspace.

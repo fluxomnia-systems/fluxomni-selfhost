@@ -6,15 +6,15 @@ import { expect, test, type Page } from '@playwright/test';
 const __dirname = dirname(fileURLToPath(import.meta.url));
 
 import { createAuthenticatedApi } from '../helpers/auth';
-import { cleanupSeededRoutes } from '../helpers/seed';
+import { cleanupSeededRoutes, createRoute } from '../helpers/seed';
 
 /**
  * Captures step-by-step guided-flow screenshots for the selfhost user-guide.
  *
  * Each flow produces numbered images:
  *   create-route-1-open.jpg
- *   create-route-2-identity.jpg
- *   create-route-3-source.jpg
+ *   create-route-2-dialog.jpg
+ *   create-route-3-identity.jpg
  *   create-route-4-created.jpg
  *   add-output-1-workspace.jpg
  *   add-output-2-dialog.jpg
@@ -146,24 +146,36 @@ test.describe('Create Route flow', () => {
 
 test.describe('Add Output flow', () => {
   test('step-by-step output addition', async ({ page }) => {
-    // Navigate to the route workspace — find an existing route first
-    await page.goto('/routes');
-    await waitForAppReady(page);
+    const baseURL = process.env.FLUXOMNI_URL ?? 'http://localhost';
+    const api = await createAuthenticatedApi(baseURL);
 
-    // Click the first workspace link
-    const workspaceLink = page
-      .getByRole('link', { name: /open workspace/i })
-      .first();
-    if (await workspaceLink.isVisible({ timeout: 5_000 }).catch(() => false)) {
-      await workspaceLink.click();
-    } else {
-      // If no routes visible, skip this flow gracefully
-      test.skip(true, 'No routes available for add-output flow');
-      return;
+    let routeId: string;
+    try {
+      const route = await createRoute(api, {
+        key: `${SEED_PREFIX}-output-demo`,
+        label: 'Output Demo',
+      });
+      routeId = route.id;
+    } finally {
+      await api.dispose();
     }
+
+    await page.goto(`/routes/${routeId}`);
     await waitForAppReady(page);
 
-    // Step 1: Route workspace before adding output
+    const routingLink = page.getByRole('link', { name: /^Routing$/ }).first();
+    if (await routingLink.isVisible().catch(() => false)) {
+      await routingLink.click();
+      await page.waitForTimeout(800);
+    } else {
+      const routingTab = page.getByRole('tab', { name: /^Routing$/ }).first();
+      if (await routingTab.isVisible().catch(() => false)) {
+        await routingTab.click();
+        await page.waitForTimeout(800);
+      }
+    }
+
+    // Step 1: Route workspace with the Routing tab ready for output management
     await capture(page, 'add-output-1-workspace');
 
     // Step 2: Click "+ Add output"
@@ -171,45 +183,25 @@ test.describe('Add Output flow', () => {
       .getByRole('button', { name: /add output/i })
       .first();
 
-    if (
-      await addOutputButton.isVisible({ timeout: 5_000 }).catch(() => false)
-    ) {
-      await addOutputButton.click();
-      await page.waitForTimeout(800);
-      await capture(page, 'add-output-2-dialog');
+    await expect(addOutputButton).toBeVisible({ timeout: 10_000 });
+    await addOutputButton.click();
+    await page.waitForTimeout(800);
+    await capture(page, 'add-output-2-dialog');
 
-      // Step 3: Fill in output details
-      const dstInput = page
-        .getByLabel(/destination|url|address/i)
-        .or(page.getByPlaceholder(/rtmp:\/\//i).first());
-      if (await dstInput.isVisible()) {
-        await dstInput.fill('rtmp://a.rtmp.youtube.com/live2/my-stream-key');
-      }
+    // Step 3: Fill in output details
+    const dstInput = page.getByTestId('add-output-modal:rtmp-input');
+    await expect(dstInput).toBeVisible();
+    await dstInput.fill('rtmp://a.rtmp.youtube.com/live2/my-stream-key');
 
-      const outputLabel = page
-        .getByLabel(/output.*label|label/i)
-        .or(page.getByPlaceholder(/label|name/i).first());
-      if (await outputLabel.isVisible()) {
-        await outputLabel.fill('YouTube Live');
-      }
+    const outputLabel = page.getByTestId('add-output-modal:label-input');
+    await expect(outputLabel).toBeVisible();
+    await outputLabel.fill('YouTube Live');
 
-      // Submit
-      const submitOutput = page
-        .getByRole('button', { name: /add|create|save/i })
-        .last();
-      if (await submitOutput.isVisible()) {
-        await submitOutput.click();
-        await page.waitForTimeout(2000);
-      }
-      await capture(page, 'add-output-3-added');
-    } else {
-      // Navigate to Routing tab if outputs are in a separate tab
-      const routingTab = page.getByRole('tab', { name: /routing/i });
-      if (await routingTab.isVisible()) {
-        await routingTab.click();
-        await page.waitForTimeout(1000);
-        await capture(page, 'add-output-1-routing-tab');
-      }
-    }
+    // Submit
+    const submitOutput = page.getByTestId('add-output-modal:confirm');
+    await expect(submitOutput).toBeVisible();
+    await submitOutput.click();
+    await page.waitForTimeout(2_000);
+    await capture(page, 'add-output-3-added');
   });
 });

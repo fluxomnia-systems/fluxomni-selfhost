@@ -1,6 +1,6 @@
 # User Guide
 
-FluxOmni is a web-based RTMP streaming platform that lets you broadcast a single source to multiple destinations simultaneously. The operator interface — called the **Control Surface** — runs in your browser and gives you real-time control over every aspect of your streaming pipeline.
+FluxOmni is a web-based RTMP streaming platform that lets you broadcast a single source to multiple destinations simultaneously. The operator interface — called the **Control Surface** — runs in your browser and gives you real-time control over route health, outputs, playlists, media-node inventory, and local-user administration.
 
 This guide covers the day-to-day operation of the Control Surface after your FluxOmni instance is installed and running. For installation and deployment, see the [Quick Start](../getting-started/quick-start.md) section.
 
@@ -22,12 +22,12 @@ This guide covers the day-to-day operation of the Control Surface after your Flu
 
 ![Routes list with the navigation menu visible](../images/user-guide/routes-list.jpg)
 
-When you open the Control Surface, you see a persistent sidebar on the left with the FluxOmni logo, version number, and navigation menu. The main content area fills the right side of the screen.
+When you open the Control Surface, you see a persistent sidebar on the left with the FluxOmni logo, version badge, theme toggle, navigation menu, sign-out action, and live system metrics. The main content area on the right changes based on the current page.
 
 ### Operate
 
-- **Attention** — a unified alert feed showing issues across all routes and fleet nodes, sorted by severity (Critical, Attention). Each alert links directly to the affected route.
-- **Routes** — the main operational view. Lists all routes with their live status, input/output health, and signal integrity. This is where you spend most of your time.
+- **Attention** — a unified alert feed for route alerts, fleet alerts, and acknowledged known issues. Each route alert links directly to the affected workspace.
+- **Routes** — the main operational view. Combines search, scope toggles, health strips, route cards, and quick output actions.
 
 ### Fleet
 
@@ -35,7 +35,7 @@ When you open the Control Surface, you see a persistent sidebar on the left with
 
 ### Control
 
-- **Settings** — server-wide configuration including control surface defaults, Google Drive integration, security (password and sign-in posture), and user management.
+- **Settings** — a role-scoped settings workspace for general defaults, session security, and user administration.
 - **Export / Import** — bulk export or import of route configurations.
 
 ### System Metrics
