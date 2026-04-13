@@ -12,7 +12,7 @@ The control-plane is the brain of the system. It:
 - Serves the operator UI (Control Surface) and the GraphQL API.
 - Manages route definitions, playlist state, user accounts, and settings.
 - Assigns routes to media nodes and monitors their health.
-- Persists all state to a local JSON file (`data/state.json`).
+- Persists all state to an embedded SQLite database (`data/state.db`).
 
 A single control-plane instance manages the entire fleet. It runs as the
 `control-plane` container in the Docker Compose stack.
@@ -86,12 +86,13 @@ All persistent state lives in the `data/` directory:
 
 | Path | Contents |
 | ---- | -------- |
-| `data/state.json` | Route definitions, settings, user accounts |
+| `data/state.db` | Route definitions, settings, user accounts |
 | `data/videos/` | Cached playlist files |
 | `data/dvr/` | DVR / recording segments (when enabled) |
 | `data/srs-http/` | SRS HTTP content directory |
 
 Back up the `data/` directory to preserve your entire configuration.
+During runtime, SQLite may also create `state.db-wal` and `state.db-shm` beside `state.db`, so keep the full directory together.
 See [Backup & Restore](backup.md) for details.
 
 ## Scaling

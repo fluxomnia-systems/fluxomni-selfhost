@@ -984,7 +984,7 @@ ENVVARS
   fi
 fi
 
-touch "${FLUXOMNI_DIR}/data/state.json"
+touch "${FLUXOMNI_DIR}/data/state.db"
 
 cd "${FLUXOMNI_DIR}"
 

@@ -126,8 +126,8 @@ If the output stream has artifacts, stuttering, or audio sync problems:
 If you are locked out of the Control Surface:
 
 - Verify the username and password. Passwords are case-sensitive.
-- If you forgot the admin password, stop the stack and edit `data/state.json` to reset the auth configuration. Then restart and set a new password from the Settings page.
-- If the sign-in mode is set to "Named user sign-in" but no user accounts exist, the Control Surface shows the authentication screen. You may need to reset state to recover access.
+- If you forgot the admin password, current installs store user accounts in `data/state.db`, not `data/state.json`. Stop the stack first, back up `data/`, and use `sqlite3 data/state.db` as a last-resort recovery path if you need to inspect or repair the `users` table before restarting.
+- If no user accounts exist, FluxOmni falls back to the open admin shell. After emergency recovery, use Settings to create a new admin account before re-enabling named-user sign-in.
 
 ## Rollback to a Previous Version
 

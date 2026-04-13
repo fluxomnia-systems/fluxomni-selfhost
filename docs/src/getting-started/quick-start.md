@@ -90,7 +90,7 @@ FLUXOMNI_MEDIA_NODE_DATA_DIR=./data
 FLUXOMNI_SHARED_VIDEO_DIR=./data/videos
 ENVVARS
 mkdir -p data/videos data/dvr data/srs-http
-touch data/state.json
+touch data/state.db
 docker compose up -d
 ```
 

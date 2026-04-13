@@ -9,9 +9,13 @@ and cached playlist files.
 
 | Path | Contents | Priority |
 | ---- | -------- | -------- |
-| `data/state.json` | All route definitions, settings, and user accounts | Critical |
+| `data/state.db` | Embedded SQLite state for routes, settings, and user accounts | Critical |
 | `data/videos/` | Cached playlist files | Recommended |
 | `.env` | Environment variables and auth token | Critical |
+
+While the stack is running, SQLite may also create `data/state.db-wal`
+and `data/state.db-shm`. Keep those files beside `state.db` whenever
+you take live filesystem snapshots.
 
 The `data/dvr/` and `data/srs-http/` directories contain transient
 media data and can be regenerated. Back them up only if you need to
@@ -28,15 +32,18 @@ tar czf ~/fluxomni-backup-$(date +%Y%m%d).tar.gz data/ .env
 docker compose up -d
 ```
 
-For a live backup (without downtime), copy the files while the stack
-is running. The state file is written atomically, so this is safe for
-most use cases:
+If you need a live SQLite backup and have `sqlite3` available on the
+host, use SQLite's backup command instead of copying only `state.db`
+with `cp`:
 
 ```bash
 cd ~/fluxomni
-cp data/state.json ~/fluxomni-state-backup.json
+sqlite3 data/state.db ".backup '$HOME/fluxomni-state-backup.db'"
 cp .env ~/fluxomni-env-backup
 ```
+
+If `sqlite3` is not available, prefer the stopped-stack backup above or
+a storage-level snapshot of the full `data/` directory.
 
 ## Restore from backup
 
