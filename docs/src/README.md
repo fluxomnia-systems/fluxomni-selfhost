@@ -32,6 +32,7 @@ After installation:
 
 ## Documentation Sections
 
+- [Changelog](changelog.md) — what's new in each release
 - [Quick Start](getting-started/quick-start.md)
 - [Configuration](getting-started/configuration.md)
 - [Troubleshooting](getting-started/troubleshooting.md)
@@ -47,4 +48,3 @@ After installation:
 ## Support
 
 - Found an issue? Open it in the [self-host repository issue tracker](https://github.com/fluxomnia-systems/fluxomni-selfhost/issues)
-- Stable release notes are published on the [FluxOmni GitHub Releases](https://github.com/fluxomnia-systems/fluxomni/releases) page.
