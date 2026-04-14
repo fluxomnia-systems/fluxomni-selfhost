@@ -94,6 +94,45 @@ Playlist file downloads and DVR recordings can fill the disk. Free space by:
 - Removing old DVR segments from `data/dvr/`.
 - Moving the data directory to a larger volume and updating `FLUXOMNI_CONTROL_PLANE_DATA_DIR` and `FLUXOMNI_MEDIA_NODE_DATA_DIR` in `.env`.
 
+## Port Already in Use
+
+If Docker fails with an error like:
+
+```text
+failed to bind port 0.0.0.0:80/tcp: Error starting userland proxy: listen tcp4 0.0.0.0:80: bind: address already in use
+```
+
+Another service on the host is already listening on that port. This is common on NAS devices (Synology, QNAP, Unraid) where the built-in web UI occupies port 80. Port 8000 (HLS/WebRTC) is another frequent conflict — Synology DSM uses it as an alternative HTTP port, and media apps like Plex or Jellyfin may also bind to it.
+
+**Fix:** override the conflicting host ports in `.env` without editing `docker-compose.yml`:
+
+```bash
+# Change the Control Surface port from 80 to 8080
+echo 'FLUXOMNI_CONTROL_PLANE_HTTP_PORT=8080' >> .env
+
+# Change HLS/WebRTC port from 8000 to 8800 (if 8000 is also taken)
+echo 'FLUXOMNI_MEDIA_NODE_HLS_PORT=8800' >> .env
+```
+
+Then restart the stack:
+
+```bash
+docker compose down
+docker compose up -d
+```
+
+Access the Control Surface at `http://<HOST-IP>:8080`. If you also set `FLUXOMNI_PUBLIC_URL`, make sure it includes the new port (e.g. `http://nas.local:8080`).
+
+All port mappings in `docker-compose.yml` support the same pattern — override via the corresponding `FLUXOMNI_*` variable in `.env`:
+
+| Variable | Default | Service |
+| -------- | ------- | ------- |
+| `FLUXOMNI_CONTROL_PLANE_HTTP_PORT` | 80 | Control Surface (HTTP) |
+| `FLUXOMNI_CONTROL_PLANE_RPC_PORT` | 50052 | Control-plane gRPC |
+| `FLUXOMNI_MEDIA_NODE_RTMP_PORT` | 1935 | RTMP ingest |
+| `FLUXOMNI_MEDIA_NODE_HLS_PORT` | 8000 | HLS and WebRTC |
+| `FLUXOMNI_MEDIA_NODE_SRT_PORT` | 10080 | SRT ingest |
+
 ## Firewall and Port Issues
 
 FluxOmni uses both TCP and UDP ports. A common mistake is only opening TCP:
