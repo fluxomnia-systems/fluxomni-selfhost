@@ -1,7 +1,7 @@
 How to Deploy FluxOmni to Hetzner Cloud
 =========================================
 
-This guide provides a common and recommended way to deploy the FluxOmni streamer application as a standalone server on [Hetzner Cloud].
+This guide provides a common and recommended way to deploy FluxOmni as a standalone server on [Hetzner Cloud].
 
 ## 0. Prerequisites
 

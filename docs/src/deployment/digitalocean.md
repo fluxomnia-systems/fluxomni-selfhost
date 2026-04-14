@@ -1,7 +1,7 @@
 How to Deploy FluxOmni to DigitalOcean
 =======================================
 
-This guide provides a common and recommended way to deploy the FluxOmni streamer application as a standalone droplet on [DigitalOcean].
+This guide provides a common and recommended way to deploy FluxOmni as a standalone droplet on [DigitalOcean].
 
 ## 0. Prerequisites
 

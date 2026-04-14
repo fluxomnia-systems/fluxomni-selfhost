@@ -1,6 +1,6 @@
 # How to Deploy FluxOmni to VScale/Selectel Cloud
 
-This guide provides the recommended method for deploying the FluxOmni streamer application to [VScale/Selectel Cloud].
+This guide provides the recommended method for deploying FluxOmni to [VScale/Selectel Cloud].
 
 This provider is a good option for users who need servers in Moscow or St. Petersburg.
 

@@ -19,9 +19,9 @@ curl -fsSL https://install.fluxomni.io | bash
 After installation:
 
 - open `http://<your-server-ip>` in your browser
-- manage streams at `/routes`
+- manage routes at `/routes`
 - inspect node health at `/fleet`
-- publish to `rtmp://<your-server-ip>:1935/app`
+- publish to the RTMP address shown in the route workspace
 
 > [!NOTE]
 > On Debian and Ubuntu, the installer can install Docker automatically if it is missing. That path requires `root` or `sudo` access.

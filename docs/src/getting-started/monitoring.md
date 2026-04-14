@@ -34,7 +34,7 @@ The [Fleet](../user-guide/fleet.md) page shows per-node telemetry:
 The **Attention** page (`/attention`) aggregates alerts across all routes
 and fleet nodes. Alert severity levels:
 
-- **CRITICAL (HIGH)** — stream probe errors, offline nodes, or failures
+- **CRITICAL (HIGH)** — route probe errors, offline nodes, or failures
   that prevent playback.
 - **ATTENTION (MEDIUM)** — parameter mismatches or degraded conditions
   that may affect quality.

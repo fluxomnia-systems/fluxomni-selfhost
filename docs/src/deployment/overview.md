@@ -19,7 +19,7 @@ The default install path is `~/fluxomni`.
 - **Ports**: see the [Configuration](../getting-started/configuration.md) page for the full port list
 
 For the smallest restreaming workloads, a 1-vCPU / 1 GB instance is usually enough.
-If you plan to run many concurrent streams or use transcoding, size up accordingly.
+If you plan to run many concurrent routes or use transcoding, size up accordingly.
 
 ## Cloud Provider Guides
 

@@ -28,7 +28,7 @@ After installation:
 - Control surface: `http://<your-server-ip>`
 - Routes: `http://<your-server-ip>/routes`
 - Fleet: `http://<your-server-ip>/fleet`
-- RTMP ingest: `rtmp://<your-server-ip>:1935/<route-key>` (the path depends on your [route configuration](user-guide/routes.md))
+- RTMP ingest: copy the generated publish address from the [route workspace](user-guide/routes.md#route-workspace) (e.g. `rtmp://<your-server-ip>:1935/live/<publish-key>`)
 
 ## Documentation Sections
 

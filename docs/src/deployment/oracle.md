@@ -1,7 +1,7 @@
 How to Deploy FluxOmni to Oracle Cloud Infrastructure
 ====================================================
 
-This guide provides a common and recommended way to deploy the FluxOmni streamer application as a standalone instance on [Oracle Cloud Infrastructure] (OCI).
+This guide provides a common and recommended way to deploy FluxOmni as a standalone instance on [Oracle Cloud Infrastructure] (OCI).
 
 OCI can be a cost-effective option due to its [Free Tier] instances. However, be aware that their resources and bandwidth are limited and may not be suitable for a large number of high-bitrate streams.
 

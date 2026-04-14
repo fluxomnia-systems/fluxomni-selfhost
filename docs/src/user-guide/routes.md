@@ -42,8 +42,9 @@ The dialog is organized into three steps.
 ### 1. Route Identity
 
 - **Route Label** — a human-readable name for the route, such as `Main broadcast`.
-- **Route Key** — the URL-safe stream key that becomes part of the ingest address.
 - **Owner** — for admins, choose whether the route stays **Shared** or is assigned to a named user. Shared routes are visible to every signed-in user; owned routes stay scoped to their assignee plus admins.
+
+The route key and publish key are generated automatically when the route is saved.
 
 ### 2. Primary Live Source
 
