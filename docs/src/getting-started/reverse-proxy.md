@@ -43,7 +43,12 @@ match:
 ```bash
 FLUXOMNI_PUBLIC_HOST=stream.example.com
 FLUXOMNI_MEDIA_NODE_PUBLIC_HOST=stream.example.com
+FLUXOMNI_PUBLIC_URL=https://stream.example.com
 ```
+
+`FLUXOMNI_PUBLIC_URL` tells the control plane the full public URL including
+scheme. Without it, artifact fetch URLs default to `http://` which causes TLS
+handshake failures when media nodes download files through the HTTPS proxy.
 
 Then restart the stack:
 

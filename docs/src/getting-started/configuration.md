@@ -8,6 +8,7 @@ FluxOmni is configured through environment variables in `.env`.
 - `FLUXOMNI_MEDIA_NODE_IMAGE`: media-node image repository.
 - `FLUXOMNI_VERSION`: image tag to deploy.
 - `FLUXOMNI_PUBLIC_HOST`: public hostname/IP used for the control surface and generated control-plane URLs.
+- `FLUXOMNI_PUBLIC_URL`: full public base URL including scheme (e.g. `https://stream.example.com`). Required for HTTPS deployments behind a TLS-terminating reverse proxy. Takes precedence over `FLUXOMNI_PUBLIC_HOST` + `FLUXOMNI_CONTROL_PLANE_HTTP_PORT`.
 - `FLUXOMNI_MEDIA_NODE_PUBLIC_HOST`: public hostname/IP shown in generated RTMP, HLS, SRT, and WebRTC media URLs.
 - `FLUXOMNI_MEDIA_NODE_ID`: stable media-node identifier shown in fleet views.
 - `FLUXOMNI_MEDIA_NODE_NAME`: human-readable media-node name shown in the control-plane.
@@ -34,7 +35,7 @@ FLUXOMNI_MEDIA_NODE_PUBLIC_HOST=control.example.com
 
 `install.sh` also writes `FLUXOMNI_CONTROL_PLANE_INTERNAL_AUTH_TOKEN` automatically. Keep the same token on both services; rotate it only if you are restarting the whole stack together.
 Published self-host releases currently serve the operator UI from the `control-plane` container, so `FLUXOMNI_PUBLIC_HOST` and `FLUXOMNI_CONTROL_PLANE_HTTP_PORT` determine the browser URL you share with operators.
-If you deploy behind a domain or reverse proxy, set both `FLUXOMNI_PUBLIC_HOST` and `FLUXOMNI_MEDIA_NODE_PUBLIC_HOST` to the public hostnames you want operators and publishers to copy from the UI.
+If you deploy behind a domain or reverse proxy, set `FLUXOMNI_PUBLIC_HOST`, `FLUXOMNI_MEDIA_NODE_PUBLIC_HOST`, and `FLUXOMNI_PUBLIC_URL` (with the `https://` scheme) so generated URLs use the correct hostnames and scheme. See [Reverse Proxy & TLS](reverse-proxy.md) for examples.
 
 ## Release Channels
 
