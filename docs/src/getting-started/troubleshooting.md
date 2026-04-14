@@ -136,7 +136,7 @@ If an update causes issues, pin the previous version in `.env`:
 ```bash
 # From your install directory
 # Edit .env and change FLUXOMNI_VERSION to the previous release tag
-sed -i 's/FLUXOMNI_VERSION=.*/FLUXOMNI_VERSION=v0.9.1/' .env
+sed -i 's/FLUXOMNI_VERSION=.*/FLUXOMNI_VERSION=v0.10.0/' .env
 docker compose pull
 docker compose up -d
 ```
