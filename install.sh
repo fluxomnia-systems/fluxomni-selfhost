@@ -800,6 +800,8 @@ mkdir -p "${FLUXOMNI_DIR}" "${FLUXOMNI_DIR}/data/videos" "${FLUXOMNI_DIR}/data/d
 echo "Downloading deployment files..."
 download_asset "$COMPOSE_ASSET" "${FLUXOMNI_DIR}/docker-compose.yml"
 download_asset ".env.example" "${FLUXOMNI_DIR}/.env.example"
+download_asset "doctor.sh" "${FLUXOMNI_DIR}/doctor.sh"
+chmod +x "${FLUXOMNI_DIR}/doctor.sh"
 assert_install_assets_match_target "${FLUXOMNI_DIR}/docker-compose.yml" "${FLUXOMNI_DIR}/.env.example"
 
 ENV_FILE="${CANDIDATE_ENV_FILE}"

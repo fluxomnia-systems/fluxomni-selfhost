@@ -134,6 +134,9 @@ If you used the default single-host install:
 ```bash
 cd ~/fluxomni
 
+# Troubleshooting (Connection & Health Doctor)
+./doctor.sh
+
 # Update to the currently configured image tags
 docker compose pull
 docker compose up -d

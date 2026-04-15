@@ -1,5 +1,21 @@
 # Troubleshooting
 
+## Installation Health Check (Doctor)
+
+If you encounter issues during or after installation, run the diagnostic script from your install directory:
+
+```bash
+# From your install directory (default ~/fluxomni)
+./doctor.sh
+```
+
+The script verifies:
+- Docker and Docker Compose installation
+- Environment configuration (`.env`)
+- Port availability (checks for conflicts with other services)
+- Container running status
+- Disk space and data directory integrity
+
 ## Container Does Not Start
 
 Navigate to your FluxOmni install directory and check the logs:
@@ -122,6 +138,27 @@ docker compose up -d
 ```
 
 Access the Control Surface at `http://<HOST-IP>:8080`. If you also set `FLUXOMNI_PUBLIC_URL`, make sure it includes the new port (e.g. `http://nas.local:8080`).
+
+## Multi-Subnet and NAT Environments
+
+In environments with multiple networks (e.g. cloud VPCs, complex office LANs, or behind NAT), the Web UI might be unreachable if the public-facing address is misconfigured.
+
+The **Self-Host Doctor** (`./doctor.sh`) will automatically detect your local IP addresses and warn you if `FLUXOMNI_PUBLIC_HOST` is set to a restricted loopback address.
+
+**Symptoms:**
+- Browser shows "Connection Timed Out" or "Connection Refused".
+- The doctor script warns that `FLUXOMNI_PUBLIC_HOST` does not match any local IP.
+
+**Resolution:**
+1. **Run the Doctor:** `./doctor.sh` to see the recommended IPs for your host.
+2. **Set the correct Public Host:** ensure `FLUXOMNI_PUBLIC_HOST` in `.env` is set to the IP or hostname that your **browser** uses to reach the server.
+3. **Bind to all interfaces:** if you want the Control Plane to be reachable from any network connected to the server, ensure `FLUXOMNI_CONTROL_PLANE_HTTP_BIND` is set to `0.0.0.0:<port>` (default in most setups).
+4. **Check NAT Reflection:** if you are accessing the server via a public IP from inside the same LAN, ensure your router supports NAT reflection (Hairpin NAT).
+
+If you are using a reverse proxy (Nginx, Traefik, Caddy), set `FLUXOMNI_PUBLIC_URL` to the full proxy URL:
+```bash
+FLUXOMNI_PUBLIC_URL=https://fluxomni.example.com
+```
 
 All port mappings in `docker-compose.yml` support the same pattern — override via the corresponding `FLUXOMNI_*` variable in `.env`:
 
