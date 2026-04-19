@@ -18,11 +18,11 @@
 ## Getting Started
 
 - [Quick Start](getting-started/quick-start.md)
-- [Configuration](getting-started/configuration.md)
 - [Architecture](getting-started/architecture.md)
-- [Reverse Proxy & TLS](getting-started/reverse-proxy.md)
-- [Monitoring](getting-started/monitoring.md)
-- [Backup & Restore](getting-started/backup.md)
+- [Configuration](getting-started/configuration.md)
+  - [Reverse Proxy & TLS](getting-started/reverse-proxy.md)
+  - [Monitoring](getting-started/monitoring.md)
+  - [Backup & Restore](getting-started/backup.md)
 - [Troubleshooting](getting-started/troubleshooting.md)
 
 ## User Guide
