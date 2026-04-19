@@ -5,6 +5,7 @@
 ---
 
 - [Changelog](changelog.md)
+- [Roadmap](roadmap.md)
 
 ## Scenarios
 
