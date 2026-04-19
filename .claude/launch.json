@@ -1,0 +1,23 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "docs",
+      "runtimeExecutable": "mdbook",
+      "runtimeArgs": ["serve", "docs", "--hostname", "127.0.0.1", "--port", "3000"],
+      "port": 3000
+    },
+    {
+      "name": "install-worker",
+      "runtimeExecutable": "npx",
+      "runtimeArgs": ["wrangler", "dev"],
+      "port": 8787
+    },
+    {
+      "name": "webapp",
+      "runtimeExecutable": "make",
+      "runtimeArgs": ["-C", "../fluxomni", "frontend.dev"],
+      "port": 8080
+    }
+  ]
+}

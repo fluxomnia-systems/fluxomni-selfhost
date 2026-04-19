@@ -2,7 +2,27 @@
 
 Operator-facing highlights from recent FluxOmni releases.
 
-## 0.10 — April 2026
+## 0.10.1 — April 2026
+
+### Stable Push Token Rotation
+
+Publish credentials now live inside the route spec. Each RTMP, SRT, and WebRTC push ingress gets stable `publish_token` and `internal_namespace` values at creation, and older routes are backfilled automatically. Operators can rotate a token without recreating the route, and import/export preserves the new fields.
+
+### Simplified Fleet Onboarding
+
+The Add Node flow now focuses on the three required environment variables and hides optional settings behind advanced controls. `FLUXOMNI_PUBLIC_URL` can carry the full external scheme, host, and port for proxy deployments. Media nodes unregister cleanly on shutdown so stale nodes disappear immediately. Operators can permanently remove an offline node from Fleet with the new `removeMediaNode` action.
+
+### Immutable Main Build Tags
+
+Successful `main` builds now publish immutable `main-<shortsha>` image tags alongside `edge`. Pin a known main build without rebuilding.
+
+### Smarter Cold-Start Probes
+
+File-ingress ffprobe now uses a 3000 ms per-attempt timeout over 3 attempts with exponential backoff. Cold-start timeouts no longer paint false errors on a healthy publisher in the operator UI.
+
+---
+
+## 0.10.0 — April 2026
 
 ### Multi-User Authentication
 

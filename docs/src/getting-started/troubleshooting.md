@@ -10,6 +10,7 @@ If you encounter issues during or after installation, run the diagnostic script 
 ```
 
 The script verifies:
+
 - Docker and Docker Compose installation
 - Environment configuration (`.env`)
 - Port availability (checks for conflicts with other services)
@@ -146,16 +147,19 @@ In environments with multiple networks (e.g. cloud VPCs, complex office LANs, or
 The **Self-Host Doctor** (`./doctor.sh`) will automatically detect your local IP addresses and warn you if `FLUXOMNI_PUBLIC_HOST` is set to a restricted loopback address.
 
 **Symptoms:**
+
 - Browser shows "Connection Timed Out" or "Connection Refused".
 - The doctor script warns that `FLUXOMNI_PUBLIC_HOST` does not match any local IP.
 
 **Resolution:**
+
 1. **Run the Doctor:** `./doctor.sh` to see the recommended IPs for your host.
 2. **Set the correct Public Host:** ensure `FLUXOMNI_PUBLIC_HOST` in `.env` is set to the IP or hostname that your **browser** uses to reach the server.
 3. **Bind to all interfaces:** if you want the Control Plane to be reachable from any network connected to the server, ensure `FLUXOMNI_CONTROL_PLANE_HTTP_BIND` is set to `0.0.0.0:<port>` (default in most setups).
 4. **Check NAT Reflection:** if you are accessing the server via a public IP from inside the same LAN, ensure your router supports NAT reflection (Hairpin NAT).
 
 If you are using a reverse proxy (Nginx, Traefik, Caddy), set `FLUXOMNI_PUBLIC_URL` to the full proxy URL:
+
 ```bash
 FLUXOMNI_PUBLIC_URL=https://fluxomni.example.com
 ```
@@ -212,7 +216,7 @@ If an update causes issues, pin the previous version in `.env`:
 ```bash
 # From your install directory
 # Edit .env and change FLUXOMNI_VERSION to the previous release tag
-sed -i 's/FLUXOMNI_VERSION=.*/FLUXOMNI_VERSION=v0.10.0/' .env
+sed -i 's/FLUXOMNI_VERSION=.*/FLUXOMNI_VERSION=v0.10.1/' .env
 docker compose pull
 docker compose up -d
 ```

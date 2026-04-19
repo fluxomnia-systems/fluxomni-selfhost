@@ -10,16 +10,12 @@ This repository contains the public installer, Docker Compose files, and self-ho
 
 FluxOmni uses a split runtime made of a `control-plane` and a `media-node`. The default installer runs both on the same host, so most users can get started quickly without learning the multi-host layout first.
 
-## What's New in 0.10
+## What's New in 0.10.1
 
-- **Multi-user authentication** — named accounts with passwords, role-based access, and self-service password management
-- **Secure publish credentials** — rotatable `pk_` tokens per route replace raw stream keys
-- **Route ownership** — routes belong to their creator; admins can reassign or share
-- **Attention feed** — unified alert view for route and fleet issues with dismissal and drill-in
-- **Redesigned operator UI** — compact cards, density controls, dark/light theme, and dedicated Settings pages
-- **Low-latency HLS preview** — near-real-time in-browser preview with Chrome 146+ support
-- **Node pinning** — lock a route to a specific media node
-- **Graceful shutdown** — clean restarts without dropping active streams
+- **Stable push token rotation** — rotate publish credentials without recreating the route
+- **Simplified Fleet onboarding** — streamlined Add Node flow, clean node removal, and full proxy URL support
+- **Immutable main build tags** — pin a known `main-<shortsha>` image without rebuilding
+- **Smarter cold-start probes** — ffprobe timeouts no longer leak false errors to the operator UI
 
 For older versions, see the [Release Channels](#release-channels) section below.
 
@@ -125,7 +121,7 @@ Published self-host releases use:
 
 Use the `latest`, `edge`, and `vX.Y.Z` channels above to control which published build gets installed.
 
-See the [What's New](#whats-new-in-010) section for the latest highlights.
+See the [What's New](#whats-new-in-0101) section for the latest highlights.
 
 ## Manage Your Instance
 
