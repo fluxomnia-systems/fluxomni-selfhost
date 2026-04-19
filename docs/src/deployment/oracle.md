@@ -29,7 +29,7 @@ Click **Change image** and select **Canonical Ubuntu 24.04**.
 
 ![Change image](../images/oci_1.2.1.png)
 
-> __WARNING__: Using other images or versions is not recommended and may not be supported.
+> **WARNING**: Windows is not supported. Ubuntu 24.04 is the recommended and tested OS. Other *nix systems with Docker may work but are not officially supported.
 
 ### 1.3. Choose a Shape
 

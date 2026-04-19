@@ -4,11 +4,9 @@
   <img src="docs/src/images/logo.webp" alt="FluxOmni Logo" width="10%">
 </p>
 
-Install FluxOmni on your own server with a single command.
+Install FluxOmni — a multi-protocol live streaming platform — on your own *nix server (x64 or ARM64) with a single command. Windows is not supported.
 
-This repository contains the public installer, Docker Compose files, and self-hosting documentation for FluxOmni. It does **not** contain the application source code. FluxOmni itself is currently closed-source.
-
-FluxOmni uses a split runtime made of a `control-plane` and a `media-node`. The default installer runs both on the same host, so most users can get started quickly without learning the multi-host layout first.
+FluxOmni lets you broadcast from a single source (RTMP, SRT, or WebRTC) to multiple destinations (RTMP, SRT, Icecast) simultaneously. It uses a split runtime made of a `control-plane` and a `media-node`. The default installer runs both on the same host, so most users can get started quickly without learning the multi-host layout first.
 
 ## What's New in 0.10.1
 

@@ -15,7 +15,7 @@ Open the [droplet creation page][2].
 
 Select **Ubuntu 24.04 LTS**.
 
-> __WARNING__: Using other images or versions is not recommended and may not be supported.
+> **WARNING**: Windows is not supported. Ubuntu 24.04 LTS is the recommended and tested OS. Other *nix systems with Docker may work but are not officially supported.
 
 ### 1.2. Choose a Plan
 

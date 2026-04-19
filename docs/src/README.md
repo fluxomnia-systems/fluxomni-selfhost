@@ -4,7 +4,7 @@
   <img src="images/logo.webp" alt="FluxOmni Logo" width="10%">
 </p>
 
-FluxOmni is a web-based RTMP streaming platform for broadcasting one source to multiple destinations.
+FluxOmni is a multi-protocol live streaming platform for broadcasting one source to multiple destinations (RTMP, SRT, Icecast) simultaneously.
 Current self-host releases run a split `control-plane` + `media-node` topology, even on a single host.
 
 This repository contains self-host installation and deployment documentation only.

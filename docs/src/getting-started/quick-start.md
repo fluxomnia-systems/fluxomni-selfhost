@@ -1,9 +1,11 @@
 # Quick Start
 
-Get FluxOmni running in minutes.
+Get FluxOmni running in minutes. FluxOmni is a multi-protocol live streaming platform for broadcasting one source to multiple destinations (RTMP, SRT, Icecast). Current self-host releases run a split control-plane + media-node topology, even on a single host.
 
 ## Prerequisites
 
+- **OS:** *nix (Linux, macOS, BSD). **Windows is not supported.**
+- **Architecture:** x86_64 (x64) or ARM64 (AArch64).
 - `curl`
 - `root` or `sudo` access on Debian/Ubuntu if Docker is not already installed
 
