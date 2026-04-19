@@ -9,9 +9,9 @@ Current self-host releases run a split `control-plane` + `media-node` topology, 
 
 This repository contains self-host installation and deployment documentation only.
 
-## Quick Start
+## Install in one command
 
-Install FluxOmni in one command:
+Install FluxOmni:
 
 ```bash
 curl -fsSL https://install.fluxomni.io | bash
