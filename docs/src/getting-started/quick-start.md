@@ -4,7 +4,7 @@ Get FluxOmni running in minutes. FluxOmni is a multi-protocol live streaming pla
 
 ## Prerequisites
 
-- **OS:** *nix (Linux, macOS, BSD). **Windows is not supported.**
+- **OS:** *nix (Linux, macOS, BSD). **Windows is not supported natively.** Running inside WSL2 (Ubuntu on Windows) may work since it's effectively Linux, but we don't test that path and can't offer support for it.
 - **Architecture:** x86_64 (x64) or ARM64 (AArch64).
 - `curl`
 - `root` or `sudo` access on Debian/Ubuntu if Docker is not already installed

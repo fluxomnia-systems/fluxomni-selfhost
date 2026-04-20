@@ -1,6 +1,6 @@
 # Deployment
 
-FluxOmni can be deployed on any *nix server (x64 or ARM64) that runs Docker. Windows is not supported.
+FluxOmni can be deployed on any *nix server (x64 or ARM64) that runs Docker. Windows is not supported natively; running inside WSL2 may work but is untested and unsupported.
 The installer handles everything — Docker installation, firewall setup, and starting the stack — from a single command.
 
 ## Quick Install
@@ -14,7 +14,7 @@ The default install path is `~/fluxomni`.
 
 ## General Requirements
 
-- **OS**: *nix (Ubuntu 24.04 LTS recommended and tested; other Debian-based systems, macOS, or BSD may work). **Windows is not supported.**
+- **OS**: *nix (Ubuntu 24.04 LTS recommended and tested; other Debian-based systems, macOS, or BSD may work). **Windows is not supported natively.** Running inside WSL2 (Ubuntu on Windows) may work since it is effectively Linux, but we do not test that path and cannot offer support for it.
 - **Architecture**: x86_64 (x64) or ARM64 (AArch64).
 - **Docker**: Engine with Compose v2 — the installer bootstraps Docker automatically on Debian/Ubuntu
 - **Ports**: see the [Configuration](../getting-started/configuration.md) page for the full port list

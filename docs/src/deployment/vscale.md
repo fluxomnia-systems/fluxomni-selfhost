@@ -16,7 +16,7 @@ After logging in, open the "[Servers]" page, select "[Create another instance]",
 
 ![Create Virtual Server](../images/vscale_1.0.png)
 
-> **WARNING**: Windows is not supported. Ubuntu 24.04 is the recommended and tested OS. Other *nix systems with Docker may work but are not officially supported.
+> **WARNING**: Windows is not supported natively — WSL2 may work but is untested and unsupported. Ubuntu 24.04 is the recommended and tested OS. Other *nix systems with Docker may work but are not officially supported.
 
 ### 1.1. Choose a Configuration
 
