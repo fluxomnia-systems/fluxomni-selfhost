@@ -25,8 +25,8 @@ In active development. Design Partners shape priorities and get early access.
 
 Further out. Priorities and scope are still being shaped.
 
-- **AI-powered clip assembly.** OpusClip-style automated highlight generation from long-form source material, integrated with the asset catalog.
 - **Deeper integrations.** Slack notifications, webhook pipelines, object-storage backends for assets and recordings.
+- **Automated highlight generation.** Produce shareable short clips from long-form source material, integrated with the asset catalog.
 
 ## Become a Design Partner
 
