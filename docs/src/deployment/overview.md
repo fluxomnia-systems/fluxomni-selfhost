@@ -1,7 +1,7 @@
 # Deployment
 
-FluxOmni can be deployed on any *nix server (x64 or ARM64) that runs Docker. Windows is not supported natively; running inside WSL2 may work but is untested and unsupported.
-The installer handles everything — Docker installation, firewall setup, and starting the stack — from a single command.
+FluxOmni deploys to Docker hosts on Linux, macOS, or Windows (WSL2 Ubuntu).
+The installer handles Docker installation, firewall setup, and starting the stack from a single command.
 
 ## Quick Install
 
@@ -14,8 +14,9 @@ The default install path is `~/fluxomni`.
 
 ## General Requirements
 
-- **OS**: *nix (Ubuntu 24.04 LTS recommended and tested; other Debian-based systems, macOS, or BSD may work). **Windows is not supported natively.** Running inside WSL2 (Ubuntu on Windows) may work since it is effectively Linux, but we do not test that path and cannot offer support for it.
-- **Architecture**: x86_64 (x64) or ARM64 (AArch64).
+- **Supported platforms**: Linux x64/ARM64, macOS x64/Apple Silicon, Windows (WSL2 Ubuntu)
+- **Recommended server OS**: Ubuntu 24.04 LTS
+- **Architecture**: x86_64 (x64) or ARM64 (AArch64)
 - **Docker**: Engine with Compose v2 — the installer bootstraps Docker automatically on Debian/Ubuntu
 - **Ports**: see the [Configuration](../getting-started/configuration.md) page for the full port list
 
@@ -52,7 +53,7 @@ curl -fsSL https://install.fluxomni.io | WITH_UFW=1 FLUXOMNI_VERSION=edge bash -
 ### Install target
 
 - `FLUXOMNI_DIR` — install path (default: `~/fluxomni`, or `~/fluxomni-media-node` for media-node installs)
-- `FLUXOMNI_VERSION` — image tag: `latest` (default), `edge`, or `vX.Y.Z`
+- `FLUXOMNI_VERSION` — image tag: `latest` (default), `edge`, `vYYYY.MM.N`, or legacy `vX.Y.Z`
 - `FLUXOMNI_CONTROL_PLANE_IMAGE` — override control-plane image repository
 - `FLUXOMNI_MEDIA_NODE_IMAGE` — override media-node image repository
 - `FLUXOMNI_IMAGE` — legacy base repository override (derives split image names when explicit variables are unset)
@@ -77,10 +78,11 @@ Optional media-node overrides: `FLUXOMNI_MEDIA_NODE_ENDPOINT`, `FLUXOMNI_MEDIA_N
 ## Release Channels
 
 - `latest`: newest stable release
-- `vX.Y.Z`: immutable stable release image
+- `vYYYY.MM.N`: date-style stable release image, e.g. `v2026.04.2`
+- `vX.Y.Z`: legacy semantic stable release image, e.g. `v0.10.2`, supported during the transition
 - `edge`: latest successful publish from `main`
 
-When `FLUXOMNI_VERSION` is pinned, the installer first tries the same self-host ref and falls back to `main` if versioned self-host assets are not published yet.
+When `FLUXOMNI_VERSION` is pinned, the installer first tries the same self-host ref, then its transition alias when applicable, and falls back to `main` if no versioned self-host assets are published yet.
 
 ## After Deployment
 

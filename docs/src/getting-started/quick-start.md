@@ -4,8 +4,8 @@ Get FluxOmni running in minutes. FluxOmni is a multi-protocol live streaming pla
 
 ## Prerequisites
 
-- **OS:** *nix (Linux, macOS, BSD). **Windows is not supported natively.** Running inside WSL2 (Ubuntu on Windows) may work since it's effectively Linux, but we don't test that path and can't offer support for it.
-- **Architecture:** x86_64 (x64) or ARM64 (AArch64).
+- **OS:** Linux or macOS with Docker. **Windows is not supported natively.** Running inside WSL2 (Ubuntu on Windows) is a tested and supported installation path.
+- **Architecture:** x86_64 (x64) or ARM64 (AArch64); Linux ARM64 and Apple Silicon Macs are tested through the published ARM images.
 - `curl`
 - `root` or `sudo` access on Debian/Ubuntu if Docker is not already installed
 
@@ -31,10 +31,10 @@ FLUXOMNI_VERSION=edge \
   curl -fsSL https://install.fluxomni.io | bash
 ```
 
-To pin a specific stable release instead, set `FLUXOMNI_VERSION=vX.Y.Z`.
+To pin a specific stable release instead, set `FLUXOMNI_VERSION=vYYYY.MM.N` (for example `v2026.04.2`) or use the legacy semantic tag `vX.Y.Z` during the transition. Known date-style releases are normalized to their current image tag aliases when needed (for example `v2026.04.2` → `v0.10.2`).
 To override the split image repositories directly, set `FLUXOMNI_CONTROL_PLANE_IMAGE` and `FLUXOMNI_MEDIA_NODE_IMAGE` before running the installer.
 
-For pinned installs, the installer first tries the same self-host ref and falls back to `main` if versioned self-host assets are not published yet. Use `FLUXOMNI_SELFHOST_REF` only if the config bundle needs to come from a different ref.
+For pinned installs, the installer first tries the same self-host ref, then its transition alias when applicable, and falls back to `main` if versioned self-host assets are not published yet. Use `FLUXOMNI_SELFHOST_REF` only if the config bundle needs to come from a different ref.
 Legacy automation that still exports `FLUXOMNI_IMAGE=<base-repository>` continues to work because the installer derives the split image names from that base when the explicit variables are unset.
 
 ## Attach Another Media Node
@@ -66,7 +66,7 @@ Current releases use these primary operator surfaces:
 ## Manual Install
 
 ```bash
-ASSET_REF=main # or a published versioned self-host ref, for example vX.Y.Z
+ASSET_REF=main # or a published versioned self-host ref, for example v2026.04.2
 mkdir -p ~/fluxomni
 cd ~/fluxomni
 curl -fsSL "https://raw.githubusercontent.com/fluxomnia-systems/fluxomni-selfhost/${ASSET_REF}/docker-compose.yml" -o docker-compose.yml

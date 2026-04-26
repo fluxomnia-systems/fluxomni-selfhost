@@ -14,7 +14,7 @@ Single-host FluxOmni on a modest cloud VM serving dozens of copy-through routes 
 
 ## Setup
 
-1. Provision a *nix server. See [Deployment guides](../deployment/overview.md).
+1. Provision a Linux or macOS host. See [Deployment guides](../deployment/overview.md).
 2. Install with `curl -fsSL https://install.fluxomni.io | bash`.
 3. Open the control surface and create a route per client. Use the `label` field for the client name.
 4. Configure outputs per platform. Use [per-route controls](../user-guide/routes.md) to start/stop by client.

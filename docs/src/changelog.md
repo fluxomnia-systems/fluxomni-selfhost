@@ -2,7 +2,37 @@
 
 Operator-facing highlights from recent FluxOmni releases.
 
-## 0.10.1 — April 2026
+## 2026.04.2 — April 2026
+
+### Clearer Live Route Status
+
+Routes now use the media-node lifecycle as the source of truth. The Control Surface shows Pending, Converging, LIVE, Paused, and Error states so operators can distinguish startup, healthy playback, intentional pauses, and failures without relying on lossy aggregate booleans.
+
+### Cleaner Route Identity Model
+
+FluxOmni now completes the migration away from legacy `RestreamKey`, `IngressKey`, `restream_key`, and `ingress_key` fields. Current exports use route IDs, labels, `publish_token`, and `internal_namespace`; older imported specs are still upgraded automatically before state is materialized.
+
+> **Upgrade note:** external clients or automations that still read or submit the removed key fields must move to the current route ID and publish-token fields before upgrading.
+
+### Playlist and Output Stability
+
+Playlist lifecycle callbacks now flow through the same runtime-event path as push ingresses, reducing false stopped-state flicker between files. Same-owner placement updates preserve route presentation continuity, and enabling outputs no longer flaps a healthy route through transient Pending states.
+
+### Quieter, Safer Media-Node Logs
+
+Routine manifest reconciliation, file-download churn, and expected FFmpeg/SRS lifecycle messages stay below operator warning level. Playlist probes no longer create RTMP probe storms, and media-node artifact download logs redact userinfo, query strings, and fragments from fetch URLs.
+
+### No Telemetry Unless Enabled
+
+Self-hosted webapp builds no longer initialize PostHog by default. Analytics only run when both `VITE_POSTHOG_ENABLED=true` and a non-empty `VITE_POSTHOG_KEY` are provided at build time, preserving the no-telemetry promise for standard self-host installs.
+
+### Date-Style Version Pins
+
+Public release examples now use date-style pins such as `v2026.04.2`. During the migration, the installer accepts both date-style pins and legacy semantic pins such as `v0.10.2`, mapping known date releases to the matching legacy image tag when needed.
+
+---
+
+## 2026.04.1 — April 2026
 
 ### Stable Push Token Rotation
 

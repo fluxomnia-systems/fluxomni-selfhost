@@ -23,7 +23,11 @@ Select a location that is geographically close to both your stream source and yo
 
 Select **Ubuntu 24.04**.
 
-> **WARNING**: Windows is not supported natively — WSL2 may work but is untested and unsupported. Ubuntu 24.04 is the recommended and tested OS. Other *nix systems with Docker may work but are not officially supported.
+Supported platforms:
+
+- Linux x64 / ARM64
+- macOS x64 / Apple Silicon
+- Windows (WSL2 Ubuntu)
 
 ### 1.3. Choose a Type
 

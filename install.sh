@@ -509,24 +509,95 @@ require_media_node_value() {
   exit 1
 }
 
+canonical_version_ref() {
+  local requested="$1"
+  local requested_core="${requested#v}"
+
+  case "$requested" in
+    latest|edge|main)
+      printf '%s\n' "$requested"
+      return
+      ;;
+  esac
+
+  if [[ "$requested_core" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]] ||
+    [[ "$requested_core" =~ ^[0-9]{4}\.[0-9]{2}\.[0-9]+$ ]]; then
+    printf 'v%s\n' "$requested_core"
+    return
+  fi
+
+  printf '%s\n' "$requested"
+}
+
+transition_version_alias() {
+  local requested="$1"
+  local requested_ref
+  local requested_core
+
+  requested_ref="$(canonical_version_ref "$requested")"
+  requested_core="${requested_ref#v}"
+
+  case "$requested_core" in
+    2026.04.1)
+      printf 'v0.10.1\n'
+      ;;
+    2026.04.2)
+      printf 'v0.10.2\n'
+      ;;
+    0.10.1)
+      printf 'v2026.04.1\n'
+      ;;
+    0.10.2)
+      printf 'v2026.04.2\n'
+      ;;
+    *)
+      return 1
+      ;;
+  esac
+}
+
+normalize_fluxomni_version() {
+  local requested="$1"
+  local requested_ref
+  local requested_core
+
+  requested_ref="$(canonical_version_ref "$requested")"
+  requested_core="${requested_ref#v}"
+
+  # Temporary migration support: public date releases map to legacy image tags until native date tags exist.
+  case "$requested_core" in
+    2026.04.1|2026.04.2)
+      transition_version_alias "$requested_ref"
+      return
+      ;;
+  esac
+
+  printf '%s\n' "$requested_ref"
+}
+
 resolve_selfhost_ref() {
+  local requested_ref
+
   if [ -n "$SELFHOST_REF_OVERRIDE" ]; then
     printf '%s\n' "$SELFHOST_REF_OVERRIDE"
     return
   fi
 
-  case "$FLUXOMNI_VERSION" in
-    latest|edge)
+  requested_ref="$(canonical_version_ref "${FLUXOMNI_VERSION_REQUESTED:-$FLUXOMNI_VERSION}")"
+
+  case "$requested_ref" in
+    latest|edge|main)
       printf '%s\n' "main"
       ;;
     *)
-      printf '%s\n' "$FLUXOMNI_VERSION"
+      printf '%s\n' "$requested_ref"
       ;;
   esac
 }
 
 resolve_repo_raw() {
   local selfhost_ref
+  local alias_ref
   local candidate_repo_raw
   local fallback_repo_raw
 
@@ -549,10 +620,24 @@ resolve_repo_raw() {
     return
   fi
 
+  alias_ref="$(transition_version_alias "$selfhost_ref" || true)"
+  if [ -n "$alias_ref" ] && [ "$alias_ref" != "$selfhost_ref" ]; then
+    candidate_repo_raw="$(repo_raw_for_ref "$alias_ref")"
+    if remote_asset_exists "$candidate_repo_raw" "docker-compose.yml" &&
+      remote_asset_exists "$candidate_repo_raw" ".env.example"; then
+      printf '%s\n' "$candidate_repo_raw"
+      return
+    fi
+  fi
+
   fallback_repo_raw="$(repo_raw_for_ref "main")"
   if remote_asset_exists "$fallback_repo_raw" "docker-compose.yml" &&
     remote_asset_exists "$fallback_repo_raw" ".env.example"; then
-    echo "Warning: self-host assets for '${FLUXOMNI_VERSION}' were not found." >&2
+    if [ -n "$alias_ref" ] && [ "$alias_ref" != "$selfhost_ref" ]; then
+      echo "Warning: self-host assets for '${selfhost_ref}' or '${alias_ref}' were not found." >&2
+    else
+      echo "Warning: self-host assets for '${selfhost_ref}' were not found." >&2
+    fi
     echo "Falling back to self-host ref 'main'. Set FLUXOMNI_SELFHOST_REF to force a different ref." >&2
     printf '%s\n' "$fallback_repo_raw"
     return
@@ -784,7 +869,12 @@ configure_docker_access
 
 CANDIDATE_ENV_FILE="${FLUXOMNI_DIR}/.env"
 EXISTING_FLUXOMNI_VERSION="$(read_env_file_value "FLUXOMNI_VERSION" "$CANDIDATE_ENV_FILE")"
-FLUXOMNI_VERSION="${REQUESTED_FLUXOMNI_VERSION:-${EXISTING_FLUXOMNI_VERSION:-latest}}"
+FLUXOMNI_VERSION_REQUESTED="${REQUESTED_FLUXOMNI_VERSION:-${EXISTING_FLUXOMNI_VERSION:-latest}}"
+FLUXOMNI_VERSION="$(normalize_fluxomni_version "$FLUXOMNI_VERSION_REQUESTED")"
+
+if [ "$FLUXOMNI_VERSION_REQUESTED" != "$FLUXOMNI_VERSION" ]; then
+  echo "Note: normalizing version '$FLUXOMNI_VERSION_REQUESTED' to '$FLUXOMNI_VERSION'."
+fi
 
 REPO_RAW="$(resolve_repo_raw)"
 COMPOSE_ASSET="$(compose_asset_name)"

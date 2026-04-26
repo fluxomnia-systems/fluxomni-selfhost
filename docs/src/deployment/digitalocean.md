@@ -15,7 +15,11 @@ Open the [droplet creation page][2].
 
 Select **Ubuntu 24.04 LTS**.
 
-> **WARNING**: Windows is not supported natively — WSL2 may work but is untested and unsupported. Ubuntu 24.04 LTS is the recommended and tested OS. Other *nix systems with Docker may work but are not officially supported.
+Supported platforms:
+
+- Linux x64 / ARM64
+- macOS x64 / Apple Silicon
+- Windows (WSL2 Ubuntu)
 
 ### 1.2. Choose a Plan
 

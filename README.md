@@ -4,16 +4,16 @@
   <img src="docs/src/images/logo.webp" alt="FluxOmni Logo" width="10%">
 </p>
 
-Install FluxOmni — a multi-protocol live streaming platform — on your own *nix server (x64 or ARM64) with a single command. Windows is not supported natively; WSL2 may work but is untested and unsupported.
+Install FluxOmni — a multi-protocol live streaming platform — on your own Linux or macOS host (x64 or ARM64) with a single command. Windows is not supported natively; WSL2 (Ubuntu on Windows) has been tested and works for installation.
 
 FluxOmni lets you broadcast from a single source (RTMP, SRT, or WebRTC) to multiple destinations (RTMP, SRT, Icecast) simultaneously. It uses a split runtime made of a `control-plane` and a `media-node`. The default installer runs both on the same host, so most users can get started quickly without learning the multi-host layout first.
 
-## What's New in 0.10.1
+## What's New in 2026.04.2
 
-- **Stable push token rotation** — rotate publish credentials without recreating the route
-- **Simplified Fleet onboarding** — streamlined Add Node flow, clean node removal, and full proxy URL support
-- **Immutable main build tags** — pin a known `main-<shortsha>` image without rebuilding
-- **Smarter cold-start probes** — ffprobe timeouts no longer leak false errors to the operator UI
+- **Clearer live route status** — routes now present Pending, Converging, LIVE, Paused, and Error states from the media-node lifecycle
+- **Cleaner route identity model** — legacy route-key fields are removed from exports while older imported specs are still upgraded automatically
+- **Quieter media-node operations** — normal reconciliation and file-download churn no longer floods warning logs, and download URLs are redacted
+- **No telemetry by default** — self-host builds make zero PostHog calls unless analytics are explicitly enabled at build time
 
 For older versions, see the [Release Channels](#release-channels) section below.
 
@@ -65,7 +65,7 @@ FLUXOMNI_DIR=/opt/fluxomni \
   curl -fsSL https://install.fluxomni.io | bash
 
 # Pin a specific stable release
-FLUXOMNI_VERSION=vX.Y.Z \
+FLUXOMNI_VERSION=v2026.04.2 \
   curl -fsSL https://install.fluxomni.io | bash
 
 # Follow the latest mainline publish instead of stable releases
@@ -109,7 +109,8 @@ The installer manages:
 | Channel | Description |
 | --- | --- |
 | `latest` | Newest stable release (default) |
-| `vX.Y.Z` | Immutable stable release tag |
+| `vYYYY.MM.N` | Date-style stable release tag |
+| `vX.Y.Z` | Legacy semantic stable release tag, supported during the transition |
 | `edge` | Latest successful publish from `main` |
 
 Published self-host releases use:
@@ -117,9 +118,9 @@ Published self-host releases use:
 - `ghcr.io/fluxomnia-systems/fluxomni-control-plane`
 - `ghcr.io/fluxomnia-systems/fluxomni-media-node`
 
-Use the `latest`, `edge`, and `vX.Y.Z` channels above to control which published build gets installed.
+Use the `latest`, `edge`, `vYYYY.MM.N`, and legacy `vX.Y.Z` channels above to control which published build gets installed. During the transition, the installer accepts both `v2026.04.2` and `v0.10.2` for the latest stable release.
 
-See the [What's New](#whats-new-in-0101) section for the latest highlights.
+See the What's New section above for the latest highlights.
 
 ## Manage Your Instance
 
@@ -149,7 +150,7 @@ Re-running `install.sh` on an existing install keeps the managed data directory 
 ## Advanced Installer Notes
 
 - Legacy `FLUXOMNI_IMAGE=<base-repository>` is still supported. When the explicit split-image variables are unset, the installer derives `-control-plane` and `-media-node` image names from that base repository.
-- When `FLUXOMNI_VERSION` is pinned, the installer first tries the matching self-host asset ref. If that config bundle is not published yet, it falls back to `main` with a warning.
+- When `FLUXOMNI_VERSION` is pinned, the installer first tries the matching self-host asset ref, then its transition alias when applicable, and finally falls back to `main` with a warning if no versioned config bundle is published.
 - Use `FLUXOMNI_SELFHOST_REF` to force a specific self-host asset ref.
 - Use `FLUXOMNI_REPO_RAW` to point the installer at a custom raw asset base.
 

@@ -40,8 +40,11 @@ If you deploy behind a domain or reverse proxy, set `FLUXOMNI_PUBLIC_HOST`, `FLU
 ## Release Channels
 
 - `latest`: newest stable release and the default in this repository
-- `vX.Y.Z`: immutable image tag for a specific stable release
+- `vYYYY.MM.N`: date-style stable release tag, e.g. `v2026.04.2`
+- `vX.Y.Z`: legacy semantic image tag for a specific stable release, supported during the migration, e.g. `v0.10.2`
 - `edge`: latest successful publish from `main`
+
+During the transition, the installer accepts both date-style and legacy semantic pins. Known date-style releases are mapped to the matching legacy image tag when native date image tags are not yet published.
 
 ## Optional Variables
 

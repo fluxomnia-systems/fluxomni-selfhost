@@ -29,7 +29,11 @@ Click **Change image** and select **Canonical Ubuntu 24.04**.
 
 ![Change image](../images/oci_1.2.1.png)
 
-> **WARNING**: Windows is not supported natively — WSL2 may work but is untested and unsupported. Ubuntu 24.04 is the recommended and tested OS. Other *nix systems with Docker may work but are not officially supported.
+Supported platforms:
+
+- Linux x64 / ARM64
+- macOS x64 / Apple Silicon
+- Windows (WSL2 Ubuntu)
 
 ### 1.3. Choose a Shape
 
