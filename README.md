@@ -170,6 +170,7 @@ Start here if you want step-by-step guidance:
 - [Book introduction](./docs/src/README.md)
 - [Quick start](./docs/src/getting-started/quick-start.md)
 - [Configuration](./docs/src/getting-started/configuration.md)
+- [Private Access & Tunnels](./docs/src/getting-started/private-access.md)
 - [Troubleshooting](./docs/src/getting-started/troubleshooting.md)
 - [Deployment overview](./docs/src/deployment/overview.md)
 - [Hetzner guide](./docs/src/deployment/hetzner.md)

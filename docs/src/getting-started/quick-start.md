@@ -115,5 +115,6 @@ docker compose --profile auto-update stop watchtower
 ## Next Steps
 
 - Configure [authentication and settings](configuration.md)
+- Use [private access and tunnels](private-access.md) for Tailscale or Cloudflare Tunnel deployments
 - Review [cloud deployment guides](../deployment/)
 - Use [troubleshooting](troubleshooting.md) if startup fails

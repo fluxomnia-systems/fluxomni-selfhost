@@ -21,6 +21,7 @@
 - [Architecture](getting-started/architecture.md)
 - [Configuration](getting-started/configuration.md)
   - [Reverse Proxy & TLS](getting-started/reverse-proxy.md)
+  - [Private Access & Tunnels](getting-started/private-access.md)
   - [Monitoring](getting-started/monitoring.md)
   - [Backup & Restore](getting-started/backup.md)
 - [Troubleshooting](getting-started/troubleshooting.md)

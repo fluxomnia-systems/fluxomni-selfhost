@@ -35,6 +35,7 @@ After installation:
 - [Changelog](changelog.md) — what's new in each release
 - [Quick Start](getting-started/quick-start.md)
 - [Configuration](getting-started/configuration.md)
+- [Private Access & Tunnels](getting-started/private-access.md) — Tailscale and Cloudflare Tunnel setup examples
 - [Troubleshooting](getting-started/troubleshooting.md)
 - [User Guide](user-guide/overview.md) — operating the Control Surface
 - [Deployment](deployment/overview.md) — cloud provider guides and server provisioning
