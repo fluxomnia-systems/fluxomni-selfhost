@@ -152,7 +152,7 @@ The **Playlist** tab manages file-based playout for the route:
 
 - **Now playing** — current file, codec summary, progress, and transport controls.
 - **Queue status** — readiness, local-file count, mismatch warnings, and stream errors.
-- **Google Drive import** — load files from a Drive folder or file URL/ID, then start downloads to the assigned media node.
+- **Google Drive import** — load files from a Drive folder or file URL/ID, then start downloads to the assigned media node. Configure the required API key first in [Settings → Google Drive](settings.md#google-drive).
 - **File list** — codec metadata plus signal-integrity badges such as **REF**, **DIFF**, or **ERROR**.
 
 ### Live Playback

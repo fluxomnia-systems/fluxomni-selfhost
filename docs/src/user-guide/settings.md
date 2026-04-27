@@ -31,6 +31,21 @@ Google Drive settings control file ingest for route playlists:
 - **Google API Key** — required before operators can load files from Google Drive.
 - **Files Limit** — maximum concurrent downloads when Drive ingest is in use.
 
+#### Get a Google Drive API key
+
+FluxOmni uses a Google Drive **API key**, not an OAuth user token. The key lets the control plane list and download files that are already shared with link access.
+
+To create one:
+
+1. Open the official Google Workspace credential guide: [Create access credentials](https://developers.google.com/workspace/guides/create-credentials#api-key).
+2. In Google Cloud Console, create or select a project.
+3. Open **APIs & Services → Library**, search for **Google Drive API**, and enable it for the project.
+4. Open **APIs & Services → Credentials** and choose **Create credentials → API key**.
+5. Copy the generated key into **Settings → General → Google Drive → Google API Key** in FluxOmni.
+6. Recommended: restrict the key to the **Google Drive API** in Google Cloud Console. If your deployment has a stable public egress IP, also restrict usage to that IP.
+
+Drive files and folders must be shared so the key can read them. Use link sharing such as **Anyone with the link can view** for the folders/files you import. Private files that require a signed-in Google account are not available through this API-key flow.
+
 ### Live shell summary
 
 The lower summary cards mirror the current shell-level values visible to the operator:
