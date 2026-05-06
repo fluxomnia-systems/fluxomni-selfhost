@@ -30,5 +30,5 @@ Per-channel cost is the decoder/playback cost plus egress bandwidth. The playlis
 ## Next steps
 
 - [Fleet management](../user-guide/fleet.md)
-- [Settings — audio mixing and Google Drive](../user-guide/settings.md)
+- [Settings — artifact imports and media profiles](../user-guide/settings.md)
 - [Backup and restore](../getting-started/backup.md)

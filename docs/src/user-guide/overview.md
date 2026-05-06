@@ -38,7 +38,7 @@ When you open the Control Surface, you see a persistent sidebar on the left with
 
 ### Control
 
-- **Settings** — a role-scoped settings workspace for general defaults, session security, and user administration.
+- **Settings** — a role-scoped settings workspace for general defaults, artifact ingest settings, media-profile references, session security, and user administration.
 - **Export / Import** — bulk export or import of route configurations.
 
 ### System Metrics

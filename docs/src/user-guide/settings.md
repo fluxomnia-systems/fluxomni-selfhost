@@ -1,6 +1,6 @@
 # Settings
 
-The Settings workspace (`/settings`) is where FluxOmni exposes server defaults, self-service account information, and local user administration. Access it from **Settings** in the sidebar.
+The Settings workspace (`/settings`) is where FluxOmni exposes server defaults, artifact ingest settings, media-profile references, self-service account information, and local user administration. Access it from **Settings** in the sidebar.
 
 ![The General settings section with the section rail, hero card, and admin controls](../images/user-guide/settings.jpg)
 
@@ -10,7 +10,7 @@ The page uses a split layout:
 - a **hero card** at the top showing your current **Role** and **Access** level
 - a large **content panel** for the selected section on the right
 
-Admins can reach **General**, **Security**, and **Users**. Operators stay limited to the self-service **General** and **Security** sections.
+Admins can reach **General**, **Artifacts**, **Media profiles**, **Security**, and **Users**. Operators stay limited to the self-service **General** and **Security** sections.
 
 ## General
 
@@ -24,14 +24,29 @@ These settings affect the shared operator experience:
 - **Confirm deletion actions** — requires confirmation before destructive actions such as deleting routes, outputs, or files.
 - **Confirm enable and disable actions** — adds confirmation before toggling inputs or outputs on or off.
 
+### Live shell summary
+
+The lower summary cards mirror the current shell-level values visible to the operator:
+
+- **Public host**
+- **Delete confirmation**
+- **Enable confirmation**
+- **Sign-in mode**
+
+## Artifacts
+
+The **Artifacts** settings section is admin-only and controls ingest defaults for the shared media library. Use the separate [Artifacts page](artifacts.md) for day-to-day uploads, imports, tags, storage review, and playlist reuse.
+
+![The Artifacts settings section showing Google Drive ingest settings and artifact workflow defaults](../images/user-guide/settings-artifacts.jpg)
+
 ### Google Drive
 
-Google Drive settings control file ingest for route playlists:
+Google Drive settings control Drive imports into the artifact library and route playlist flows:
 
-- **Google API Key** — required before operators can load files from Google Drive.
-- **Files Limit** — maximum concurrent downloads when Drive ingest is in use.
+- **Google API Key** — required before operators can import shared Drive files or folders.
+- **Files Limit** — maximum concurrent file operations for local uploads and remote imports.
 
-#### Get a Google Drive API key
+#### Get an API key
 
 FluxOmni uses a Google Drive **API key**, not an OAuth user token. The key lets the control plane list and download files that are already shared with link access.
 
@@ -41,19 +56,45 @@ To create one:
 2. In Google Cloud Console, create or select a project.
 3. Open **APIs & Services → Library**, search for **Google Drive API**, and enable it for the project.
 4. Open **APIs & Services → Credentials** and choose **Create credentials → API key**.
-5. Copy the generated key into **Settings → General → Google Drive → Google API Key** in FluxOmni.
+5. Copy the generated key into **Settings → Artifacts → Google Drive → Google API Key** in FluxOmni.
 6. Recommended: restrict the key to the **Google Drive API** in Google Cloud Console. If your deployment has a stable public egress IP, also restrict usage to that IP.
 
 Drive files and folders must be shared so the key can read them. Use link sharing such as **Anyone with the link can view** for the folders/files you import. Private files that require a signed-in Google account are not available through this API-key flow.
 
-### Live shell summary
+### Artifact workflow defaults
 
-The lower summary cards mirror the current shell-level values visible to the operator:
+The remaining cards are read-only reminders for the current artifact workflow:
 
-- **Public host**
-- **Delete confirmation**
-- **Enable confirmation**
-- **Sign-in mode**
+- library uploads and Drive imports land in the shared artifact catalog
+- route playlists and file-backup sources reuse the same library picker
+- storage admission and rejections are visible from the Artifacts page and Attention feed
+- media nodes cache artifacts as runtime state; the control plane remains the durable catalog authority
+
+## Media Profiles
+
+The **Media profiles** settings section is admin-only and lists the baseline presets FluxOmni uses when checking route playlist compatibility.
+
+![The Media profiles settings section showing baseline preset definitions](../images/user-guide/settings-media-profiles.jpg)
+
+Profiles are reference presets, not encoder controls. They describe the video and audio shape a route expects before playlist files are allowed to start or stay healthy. The current presets cover common H.264/AAC stereo 48 kHz broadcast shapes:
+
+- `1080p30`
+- `1080p60`
+- `1080p25`
+- `720p30`
+- `720p60`
+- `720p25`
+
+Each row shows the comparable fields FluxOmni checks:
+
+- video codec
+- width and height
+- frame rate
+- audio codec
+- audio sample rate
+- audio channel count
+
+Use this section when a route, playlist item, or artifact row shows a **Compatible**, **Incompatible**, or **Unknown** baseline status. Route workspaces and artifact pickers surface the quick status; Settings → Media profiles explains the exact profile contract those checks are comparing against.
 
 ## Security
 

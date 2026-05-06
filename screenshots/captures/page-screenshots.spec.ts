@@ -31,6 +31,8 @@ import {
  *   attention.jpg           — Attention page                (user-guide/routes.md)
  *   fleet.jpg               — Fleet page                   (user-guide/fleet.md)
  *   settings.jpg            — Settings page                (user-guide/settings.md)
+ *   settings-artifacts.jpg  — Settings Artifacts section   (user-guide/settings.md)
+ *   settings-media-profiles.jpg — Settings Media profiles section (user-guide/settings.md)
  *   settings-security.jpg   — Settings Security section    (user-guide/settings.md)
  *   settings-users.jpg      — Settings Users section       (user-guide/settings.md)
  *   login.jpg               — Sign-in page                 (user-guide/settings.md)
@@ -220,6 +222,28 @@ test('settings.jpg — Settings page', async ({ page }) => {
 
   await page.screenshot({
     path: resolve(IMAGES_DIR, 'settings.jpg'),
+    type: 'jpeg',
+    quality: 90,
+  });
+});
+
+test('settings-artifacts.jpg — Settings Artifacts section', async ({ page }) => {
+  await page.goto('/settings/artifacts');
+  await waitForAppReady(page);
+
+  await page.screenshot({
+    path: resolve(IMAGES_DIR, 'settings-artifacts.jpg'),
+    type: 'jpeg',
+    quality: 90,
+  });
+});
+
+test('settings-media-profiles.jpg — Settings Media profiles section', async ({ page }) => {
+  await page.goto('/settings/media-profiles');
+  await waitForAppReady(page);
+
+  await page.screenshot({
+    path: resolve(IMAGES_DIR, 'settings-media-profiles.jpg'),
     type: 'jpeg',
     quality: 90,
   });
