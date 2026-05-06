@@ -41,6 +41,9 @@ These replace the top-level images referenced from the user-guide pages in `docs
 - `route-workspace.jpg`
 - `route-routing.jpg`
 - `route-edit-advanced.jpg`
+- `artifacts.jpg`
+- `artifacts-add-files.jpg`
+- `artifacts-storage.jpg`
 - `attention.jpg`
 - `fleet.jpg`
 - `settings.jpg`

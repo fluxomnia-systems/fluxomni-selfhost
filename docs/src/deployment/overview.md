@@ -53,7 +53,7 @@ curl -fsSL https://install.fluxomni.io | WITH_UFW=1 FLUXOMNI_VERSION=edge bash -
 ### Install target
 
 - `FLUXOMNI_DIR` — install path (default: `~/fluxomni`, or `~/fluxomni-media-node` for media-node installs)
-- `FLUXOMNI_VERSION` — image tag: `latest` (default), `edge`, `vYYYY.MM.N`, or legacy `vX.Y.Z`
+- `FLUXOMNI_VERSION` — image tag: `latest` (default), `edge`, public `vYYYY.MM.N`, or core-image `vX.Y.Z`
 - `FLUXOMNI_CONTROL_PLANE_IMAGE` — override control-plane image repository
 - `FLUXOMNI_MEDIA_NODE_IMAGE` — override media-node image repository
 - `FLUXOMNI_IMAGE` — legacy base repository override (derives split image names when explicit variables are unset)
@@ -78,11 +78,11 @@ Optional media-node overrides: `FLUXOMNI_MEDIA_NODE_ENDPOINT`, `FLUXOMNI_MEDIA_N
 ## Release Channels
 
 - `latest`: newest stable release
-- `vYYYY.MM.N`: date-style stable release image, e.g. `v2026.04.2`
-- `vX.Y.Z`: legacy semantic stable release image, e.g. `v0.10.2`, supported during the transition
+- `vYYYY.MM.N`: public stable release tag, e.g. `v2026.05.0`
+- `vX.Y.Z`: core image tag, accepted for direct image pinning, e.g. `v0.11.0`
 - `edge`: latest successful publish from `main`
 
-When `FLUXOMNI_VERSION` is pinned, the installer first tries the same self-host ref, then its transition alias when applicable, and falls back to `main` if no versioned self-host assets are published yet.
+When `FLUXOMNI_VERSION` is pinned, the installer first tries the same self-host ref, then its public/core alias when applicable, and falls back to `main` if no versioned self-host assets are published yet.
 
 ## After Deployment
 

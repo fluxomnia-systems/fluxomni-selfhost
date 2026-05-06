@@ -544,11 +544,17 @@ transition_version_alias() {
     2026.04.2)
       printf 'v0.10.2\n'
       ;;
+    2026.05.0)
+      printf 'v0.11.0\n'
+      ;;
     0.10.1)
       printf 'v2026.04.1\n'
       ;;
     0.10.2)
       printf 'v2026.04.2\n'
+      ;;
+    0.11.0)
+      printf 'v2026.05.0\n'
       ;;
     *)
       return 1
@@ -564,9 +570,9 @@ normalize_fluxomni_version() {
   requested_ref="$(canonical_version_ref "$requested")"
   requested_core="${requested_ref#v}"
 
-  # Temporary migration support: public date releases map to legacy image tags until native date tags exist.
+  # Public date releases map to the image tags published by the core release.
   case "$requested_core" in
-    2026.04.1|2026.04.2)
+    2026.04.1|2026.04.2|2026.05.0)
       transition_version_alias "$requested_ref"
       return
       ;;

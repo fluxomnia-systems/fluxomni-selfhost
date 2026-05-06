@@ -18,7 +18,7 @@ curl -fsSL https://install.fluxomni.io | bash
 ```
 
 The installer defaults to the newest stable image (`latest`). Use `FLUXOMNI_VERSION=edge` only if you want the latest main-branch build.
-For pinned versions, prefer date-style tags such as `v2026.04.2`; legacy semantic tags such as `v0.10.2` remain supported during the transition. The installer first tries the same self-host ref, then its transition alias when applicable, and falls back to `main` if versioned self-host assets are not published yet.
+For pinned versions, use public date-style release tags such as `v2026.05.0`. The installer maps the public tag to the matching core image tag (`v0.11.0` for `v2026.05.0`), tries the same self-host ref, then its alias when applicable, and falls back to `main` if versioned self-host assets are not published yet.
 The default install remains single-host, but it now runs split `control-plane` and `media-node` containers with a shared `./data` root.
 The published `control-plane` image currently embeds the operator UI, so no separate frontend image is required on the default release path.
 To attach a remote media server instead of the full stack, run the same installer as `bash -s -- media-node` on that host.
@@ -33,6 +33,7 @@ After installation:
 ## Documentation Sections
 
 - [Changelog](changelog.md) — what's new in each release
+- [Roadmap](roadmap.md) — current capabilities and product direction
 - [Quick Start](getting-started/quick-start.md)
 - [Configuration](getting-started/configuration.md)
 - [Private Access & Tunnels](getting-started/private-access.md) — Tailscale and Cloudflare Tunnel setup examples
@@ -43,8 +44,8 @@ After installation:
 ## Release Channels
 
 - `latest`: newest stable release
-- `vYYYY.MM.N`: date-style release image for a specific release
-- `vX.Y.Z`: legacy semantic release image, supported during the transition
+- `vYYYY.MM.N`: public stable release tag
+- `vX.Y.Z`: core image tag, accepted for direct image pinning
 - `edge`: latest successful publish from `main`
 
 ## Support

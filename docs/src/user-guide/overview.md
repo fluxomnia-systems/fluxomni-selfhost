@@ -18,6 +18,8 @@ This guide covers the day-to-day operation of the Control Surface after your Flu
 
 **Playlist** — a queue of pre-recorded video files that a route can play out through its outputs, useful for scheduled programming or fallback content.
 
+**Artifact** — a reusable source file or generated media asset tracked in the shared library. Artifacts can be uploaded once, tagged, monitored for storage usage, and reused from playlists or file-backup sources.
+
 ## Control Surface Layout
 
 ![Routes list with the navigation menu visible](../images/user-guide/routes-list.jpg)
@@ -28,6 +30,7 @@ When you open the Control Surface, you see a persistent sidebar on the left with
 
 - **Attention** — a unified alert feed for route alerts, fleet alerts, and acknowledged known issues. Each route alert links directly to the affected workspace.
 - **Routes** — the main operational view. Combines search, scope toggles, health strips, route cards, and quick output actions.
+- **Artifacts** — the shared source-file library for uploads, Drive imports, tags, storage admission, and playlist reuse.
 
 ### Fleet
 
@@ -45,5 +48,6 @@ The bottom of the sidebar shows real-time CPU, memory, and network utilization f
 ## Next Steps
 
 - [Routes](routes.md) — learn how to create and operate routes
+- [Artifacts](artifacts.md) — upload and reuse source files across routes
 - [Fleet](fleet.md) — understand media node management
 - [Settings](settings.md) — configure your FluxOmni instance

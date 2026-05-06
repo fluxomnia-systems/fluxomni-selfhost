@@ -221,7 +221,7 @@ docker compose pull
 docker compose up -d
 ```
 
-Available release tags are listed on the [GitHub Releases](https://github.com/fluxomnia-systems/fluxomni/releases) page. Prefer date-style `vYYYY.MM.N` tags for new pins; legacy `vX.Y.Z` tags remain supported during the transition.
+Available release tags are listed on the [GitHub Releases](https://github.com/fluxomnia-systems/fluxomni/releases) page. Prefer public date-style `vYYYY.MM.N` tags for new pins; core-image `vX.Y.Z` tags remain accepted for direct image pinning.
 
 To return to tracking the latest stable release, from the same directory:
 

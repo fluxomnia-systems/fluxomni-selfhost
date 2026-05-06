@@ -9,6 +9,8 @@ import { createAuthenticatedApi } from '../helpers/auth';
 import {
   cleanupSeededRoutes,
   seedRoutesListScenario,
+  cleanupSeededLibraryFiles,
+  seedArtifactLibraryScenario,
   type SeededRoute,
 } from '../helpers/seed';
 
@@ -23,6 +25,9 @@ import {
  *   route-workspace.jpg     — Route workspace              (user-guide/routes.md)
  *   route-routing.jpg       — Route Routing tab            (user-guide/routes.md)
  *   route-edit-advanced.jpg — Edit Route advanced routing   (user-guide/routes.md)
+ *   artifacts.jpg           — Artifacts library             (user-guide/artifacts.md)
+ *   artifacts-add-files.jpg — Artifacts Add files menu      (user-guide/artifacts.md)
+ *   artifacts-storage.jpg   — Artifacts storage panel       (user-guide/artifacts.md)
  *   attention.jpg           — Attention page                (user-guide/routes.md)
  *   fleet.jpg               — Fleet page                   (user-guide/fleet.md)
  *   settings.jpg            — Settings page                (user-guide/settings.md)
@@ -42,7 +47,9 @@ test.beforeAll(async () => {
 
   try {
     await cleanupSeededRoutes(api, SEED_PREFIX);
+    await cleanupSeededLibraryFiles(api, SEED_PREFIX);
     seededRoutes = await seedRoutesListScenario(api, SEED_PREFIX);
+    await seedArtifactLibraryScenario(api, SEED_PREFIX);
   } finally {
     await api.dispose();
   }
@@ -54,6 +61,7 @@ test.afterAll(async () => {
 
   try {
     await cleanupSeededRoutes(api, SEED_PREFIX);
+    await cleanupSeededLibraryFiles(api, SEED_PREFIX);
   } finally {
     await api.dispose();
   }
@@ -139,6 +147,46 @@ test('route-workspace.jpg — Route workspace', async ({ page }) => {
 
   await page.screenshot({
     path: resolve(IMAGES_DIR, 'route-workspace.jpg'),
+    type: 'jpeg',
+    quality: 90,
+  });
+});
+
+test('artifacts.jpg — Artifacts library', async ({ page }) => {
+  await page.goto('/artifacts');
+  await waitForAppReady(page);
+  await page.getByText(`${SEED_PREFIX}-intro-bumper.mp4`).waitFor({
+    timeout: 15_000,
+  });
+
+  await page.screenshot({
+    path: resolve(IMAGES_DIR, 'artifacts.jpg'),
+    type: 'jpeg',
+    quality: 90,
+  });
+});
+
+test('artifacts-add-files.jpg — Artifacts Add files menu', async ({ page }) => {
+  await page.goto('/artifacts');
+  await waitForAppReady(page);
+  await page.getByTestId('artifact-picker-add-menu').click();
+  await page.waitForTimeout(600);
+
+  await page.screenshot({
+    path: resolve(IMAGES_DIR, 'artifacts-add-files.jpg'),
+    type: 'jpeg',
+    quality: 90,
+  });
+});
+
+test('artifacts-storage.jpg — Artifacts storage panel', async ({ page }) => {
+  await page.goto('/artifacts');
+  await waitForAppReady(page);
+  await page.locator('button.storage-chip').click();
+  await page.waitForTimeout(600);
+
+  await page.screenshot({
+    path: resolve(IMAGES_DIR, 'artifacts-storage.jpg'),
     type: 'jpeg',
     quality: 90,
   });

@@ -7,4 +7,5 @@ Each scenario explains who it's for, what you'll build, the exact setup steps, a
 - [Multistream agency](multistream-agency.md)
 - [Linear channel (24/7 broadcast)](linear-channel-24-7.md)
 - [Distributed fleet with regional failover](distributed-fleet.md)
+- [Artifact library for playout assets](artifact-library.md)
 - [Power creator beyond SaaS caps](power-creator.md)

@@ -96,7 +96,7 @@ test.describe('Create Route flow', () => {
     } else {
       const createButton = page.getByRole('button', {
         name: /create.*route|add.*route/i,
-      });
+      }).first();
       await createButton.click();
     }
 
@@ -110,16 +110,19 @@ test.describe('Create Route flow', () => {
     await capture(page, 'create-route-2-dialog');
 
     // Step 3: Fill in route identity
-    const labelInput = page.getByLabel(/route label/i).or(
-      page.getByPlaceholder(/label|name/i).first(),
-    );
+    const labelInput = page
+      .getByTestId('add-input-modal:label-input')
+      .or(page.getByLabel(/route label/i))
+      .or(page.getByPlaceholder(/label|name/i))
+      .first();
     if (await labelInput.isVisible()) {
-      await labelInput.fill('Main Broadcast');
+      await labelInput.fill(`Main Broadcast ${SEED_PREFIX}`);
     }
 
-    const keyInput = page.getByLabel(/route key/i).or(
-      page.getByPlaceholder(/key/i).first(),
-    );
+    const keyInput = page
+      .getByLabel(/route key/i)
+      .or(page.getByPlaceholder(/key/i))
+      .first();
     if (await keyInput.isVisible()) {
       await keyInput.fill(`${SEED_PREFIX}-main-broadcast`);
     }
@@ -153,7 +156,7 @@ test.describe('Add Output flow', () => {
     try {
       const route = await createRoute(api, {
         key: `${SEED_PREFIX}-output-demo`,
-        label: 'Output Demo',
+        label: `Output Demo ${SEED_PREFIX}`,
       });
       routeId = route.id;
     } finally {

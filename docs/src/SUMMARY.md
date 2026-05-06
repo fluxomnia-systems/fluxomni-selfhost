@@ -13,6 +13,7 @@
   - [Multistream agency](scenarios/multistream-agency.md)
   - [Linear channel (24/7 broadcast)](scenarios/linear-channel-24-7.md)
   - [Distributed fleet with regional failover](scenarios/distributed-fleet.md)
+  - [Artifact library for playout assets](scenarios/artifact-library.md)
   - [Power creator beyond SaaS caps](scenarios/power-creator.md)
 
 ## Getting Started
@@ -30,6 +31,7 @@
 
 - [User Guide](user-guide/overview.md)
   - [Routes](user-guide/routes.md)
+  - [Artifacts](user-guide/artifacts.md)
   - [Fleet](user-guide/fleet.md)
   - [Settings](user-guide/settings.md)
 

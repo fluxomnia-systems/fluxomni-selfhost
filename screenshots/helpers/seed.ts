@@ -8,12 +8,11 @@ import { requestGraphql } from './graphql';
 
 const SET_RESTREAM = `
   mutation SeedRoute(
-    $key: RestreamKey!
     $label: Label
-    $ingressGroup: IngressGroupInput!
+    $routeSources: RouteSourcesInput!
   ) {
     stream {
-      setRestream(key: $key, label: $label, ingressGroup: $ingressGroup)
+      setRestream(label: $label, routeSources: $routeSources)
     }
   }
 `;
@@ -44,14 +43,30 @@ const REMOVE_RESTREAM = `
   }
 `;
 
+const DELETE_LIBRARY_FILES = `
+  mutation DeleteLibraryFiles($ids: [FileId!]!) {
+    files { forceDeleteLibraryFiles(ids: $ids) { deleted failed { id message } } }
+  }
+`;
+
 const LIST_RESTREAMS = `
   query ListRoutes {
     stream {
       allRestreams {
         id
-        key
         label
         outputs { id label }
+      }
+    }
+  }
+`;
+
+const LIST_LIBRARY_FILES = `
+  query ListLibraryFiles {
+    files {
+      libraryFiles {
+        id
+        name
       }
     }
   }
@@ -69,25 +84,34 @@ export type SeededRoute = {
 
 type ListedRestream = {
   id: string;
-  key: string;
   label: string | null;
   outputs: Array<{ id: string; label: string | null }> | null;
+};
+
+type ListedLibraryFile = {
+  id: string;
+  name: string;
 };
 
 // ---------------------------------------------------------------------------
 // Helpers
 // ---------------------------------------------------------------------------
 
-function rtmpPushIngressGroup(keys: string[]) {
+function rtmpPushRouteSources() {
   return {
-    policy: null,
-    manualOverrideId: null,
-    ingresses: keys.map((key) => ({
-      key,
-      label: null,
-      enabled: true,
-      protocol: { rtmpPush: { reserved: false } },
-    })),
+    sources: [
+      {
+        role: 'PRIMARY_LIVE',
+        order: 0,
+        label: null,
+        enabled: true,
+        input: { rtmpPush: { reserved: false } },
+      },
+    ],
+    failoverPolicy: {
+      stickinessSecs: null,
+      cooldownSecs: null,
+    },
   };
 }
 
@@ -106,9 +130,8 @@ export async function createRoute(
     api,
     SET_RESTREAM,
     {
-      key: opts.key,
       label: opts.label,
-      ingressGroup: rtmpPushIngressGroup(['primary']),
+      routeSources: rtmpPushRouteSources(),
     },
   );
   return { id: data.stream.setRestream, key: opts.key, label: opts.label };
@@ -157,7 +180,7 @@ export async function listRoutes(
 }
 
 /**
- * Removes all routes whose key starts with the given prefix.
+ * Removes all docs-created routes whose label includes the given prefix.
  * Returns the count of removed routes.
  */
 export async function cleanupSeededRoutes(
@@ -165,9 +188,55 @@ export async function cleanupSeededRoutes(
   prefix: string,
 ): Promise<number> {
   const routes = await listRoutes(api);
-  const seeded = routes.filter((r) => r.key.startsWith(prefix));
+  const seeded = routes.filter((r) => r.label?.includes(prefix));
   await Promise.all(seeded.map((r) => removeRoute(api, r.id)));
   return seeded.length;
+}
+
+/**
+ * Removes all library files whose name starts with the given prefix.
+ * Returns the count of removed files.
+ */
+export async function cleanupSeededLibraryFiles(
+  api: APIRequestContext,
+  prefix: string,
+): Promise<number> {
+  const data = await requestGraphql<{
+    files: { libraryFiles: ListedLibraryFile[] };
+  }>(api, LIST_LIBRARY_FILES);
+  const ids = data.files.libraryFiles
+    .filter((file) => file.name.startsWith(prefix))
+    .map((file) => file.id);
+  if (ids.length === 0) return 0;
+  await requestGraphql(api, DELETE_LIBRARY_FILES, { ids });
+  return ids.length;
+}
+
+/**
+ * Uploads a tiny docs-only video-like artifact through the same `/files`
+ * surface the Control Surface uses.
+ */
+export async function seedArtifactLibraryScenario(
+  api: APIRequestContext,
+  prefix: string,
+): Promise<void> {
+  const names = [
+    `${prefix}-intro-bumper.mp4`,
+    `${prefix}-sponsor-loop.webm`,
+    `${prefix}-fallback-slate.mov`,
+  ];
+  for (const name of names) {
+    const response = await api.post('/files', {
+      headers: {
+        'content-type': 'video/mp4',
+        'x-file-name': encodeURIComponent(name),
+      },
+      data: Buffer.from(`FluxOmni docs screenshot fixture: ${name}\n`),
+    });
+    if (!response.ok()) {
+      throw new Error(`Artifact seed upload failed (${response.status()})`);
+    }
+  }
 }
 
 // ---------------------------------------------------------------------------
@@ -186,7 +255,7 @@ export async function seedRoutesListScenario(
 
   const main = await createRoute(api, {
     key: `${prefix}-main-broadcast`,
-    label: 'Main Broadcast',
+    label: `Main Broadcast ${prefix}`,
   });
   await addOutput(api, {
     restreamId: main.id,
@@ -202,7 +271,7 @@ export async function seedRoutesListScenario(
 
   const backup = await createRoute(api, {
     key: `${prefix}-backup-feed`,
-    label: 'Backup Feed',
+    label: `Backup Feed ${prefix}`,
   });
   await addOutput(api, {
     restreamId: backup.id,
@@ -213,7 +282,7 @@ export async function seedRoutesListScenario(
 
   const event = await createRoute(api, {
     key: `${prefix}-event-stream`,
-    label: 'Event Stream',
+    label: `Event Stream ${prefix}`,
   });
   await addOutput(api, {
     restreamId: event.id,

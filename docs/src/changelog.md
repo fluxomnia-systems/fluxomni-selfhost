@@ -2,6 +2,26 @@
 
 Operator-facing highlights from recent FluxOmni releases.
 
+## 2026.05.0 — May 2026
+
+### Shared Media Library
+
+The new Artifacts page gives operators one place to upload files, import Drive assets, tag media by client or show, and reuse the same files across playlists, fallback loops, and route workflows.
+
+### Storage-Aware Uploads
+
+Uploads and imports now surface usable capacity, configured headroom, top consumers, and recent storage rejections before operators start large transfers. Full-storage responses become upload toasts and Attention storage alerts so operators can free space before retrying.
+
+### Cleaner Asset Operations
+
+Bulk tagging, filtered selection, protected deletes, route references, and route-baseline compatibility indicators make larger content libraries safer to manage during live channel operations.
+
+### Public Date-Style Release Tag
+
+Public install examples now use `v2026.05.0`. The installer resolves that public tag to the core `v0.11.0` control-plane and media-node image tags.
+
+---
+
 ## 2026.04.2 — April 2026
 
 ### Clearer Live Route Status
