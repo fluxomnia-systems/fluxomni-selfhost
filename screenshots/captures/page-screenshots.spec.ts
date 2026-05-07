@@ -1,11 +1,12 @@
 import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-import { test, type Page } from '@playwright/test';
+import { test } from '@playwright/test';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 
 import { createAuthenticatedApi } from '../helpers/auth';
+import { waitForAppReady } from '../helpers/readiness';
 import {
   cleanupSeededRoutes,
   seedRoutesListScenario,
@@ -68,20 +69,6 @@ test.afterAll(async () => {
     await api.dispose();
   }
 });
-
-// ---------------------------------------------------------------------------
-// Wait helpers
-// ---------------------------------------------------------------------------
-
-/** Waits for the main content area to be present and stable. */
-async function waitForAppReady(page: Page) {
-  // Wait for the sidebar to be visible (app is hydrated)
-  await page.waitForSelector('[data-testid="sidebar"], nav, aside', {
-    timeout: 15_000,
-  });
-  // Brief settle for any animations or subscription connections
-  await page.waitForTimeout(1500);
-}
 
 // ---------------------------------------------------------------------------
 // Captures

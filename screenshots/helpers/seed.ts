@@ -1,3 +1,8 @@
+import { mkdtempSync, readFileSync, rmSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
+import { spawnSync } from 'node:child_process';
+
 import type { APIRequestContext } from '@playwright/test';
 
 import { requestGraphql } from './graphql';
@@ -212,18 +217,69 @@ export async function cleanupSeededLibraryFiles(
   return ids.length;
 }
 
+function createValid720p30Fixture(): Buffer {
+  const dir = mkdtempSync(join(tmpdir(), 'fluxomni-docs-artifact-'));
+  const output = join(dir, 'fixture-720p30.mp4');
+  try {
+    const result = spawnSync(
+      'ffmpeg',
+      [
+        '-y',
+        '-hide_banner',
+        '-loglevel',
+        'error',
+        '-f',
+        'lavfi',
+        '-i',
+        'testsrc2=size=1280x720:rate=30',
+        '-f',
+        'lavfi',
+        '-i',
+        'sine=frequency=660:sample_rate=48000',
+        '-t',
+        '6',
+        '-c:v',
+        'libx264',
+        '-preset',
+        'ultrafast',
+        '-pix_fmt',
+        'yuv420p',
+        '-g',
+        '60',
+        '-c:a',
+        'aac',
+        '-b:a',
+        '128k',
+        '-movflags',
+        '+faststart',
+        output,
+      ],
+      { encoding: 'utf8' },
+    );
+    if (result.status !== 0) {
+      throw new Error(
+        `ffmpeg fixture generation failed: ${result.stderr || result.stdout}`,
+      );
+    }
+    return readFileSync(output);
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
+}
+
 /**
- * Uploads a tiny docs-only video-like artifact through the same `/files`
+ * Uploads small valid 720p30 H.264/AAC MP4 artifacts through the same `/files`
  * surface the Control Surface uses.
  */
 export async function seedArtifactLibraryScenario(
   api: APIRequestContext,
   prefix: string,
 ): Promise<void> {
+  const fixture = createValid720p30Fixture();
   const names = [
     `${prefix}-intro-bumper.mp4`,
-    `${prefix}-sponsor-loop.webm`,
-    `${prefix}-fallback-slate.mov`,
+    `${prefix}-sponsor-loop.mp4`,
+    `${prefix}-fallback-slate.mp4`,
   ];
   for (const name of names) {
     const response = await api.post('/files', {
@@ -231,7 +287,7 @@ export async function seedArtifactLibraryScenario(
         'content-type': 'video/mp4',
         'x-file-name': encodeURIComponent(name),
       },
-      data: Buffer.from(`FluxOmni docs screenshot fixture: ${name}\n`),
+      data: fixture,
     });
     if (!response.ok()) {
       throw new Error(`Artifact seed upload failed (${response.status()})`);

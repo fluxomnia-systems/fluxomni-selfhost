@@ -1,4 +1,3 @@
-import { mkdirSync } from 'node:fs';
 import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -13,7 +12,9 @@ import {
 const __dirname = dirname(fileURLToPath(import.meta.url));
 
 import { createAuthenticatedApi } from '../helpers/auth';
+import { waitForAppReady } from '../helpers/readiness';
 import { cleanupSeededRoutes, createRoute } from '../helpers/seed';
+import { saveRecordedVideo } from '../helpers/video';
 
 /**
  * Captures step-by-step guided-flow screenshots for the selfhost user-guide.
@@ -69,33 +70,6 @@ test.afterAll(async () => {
 // ---------------------------------------------------------------------------
 // Helpers
 // ---------------------------------------------------------------------------
-
-async function waitForAppReady(page: Page) {
-  await page.waitForLoadState('domcontentloaded');
-  await page
-    .locator('[data-testid="sidebar"], nav, aside, main')
-    .first()
-    .waitFor({ state: 'visible', timeout: 30_000 });
-  await page.waitForLoadState('load', { timeout: 5000 }).catch(() => undefined);
-  await page.waitForFunction(
-    () => {
-      const logo = document.querySelector<HTMLImageElement>(
-        'img[alt="FluxOmni Logo"]',
-      );
-      const sidebar = document.querySelector<HTMLElement>('aside');
-      const main = document.querySelector<HTMLElement>('main');
-      if (!main) return false;
-      if (!logo || !sidebar) return true;
-      return (
-        logo.getBoundingClientRect().width < 96 &&
-        sidebar.getBoundingClientRect().width < 360
-      );
-    },
-    undefined,
-    { timeout: 15_000 },
-  );
-  await page.waitForTimeout(1500);
-}
 
 function screenshotPath(name: string): string {
   return resolve(FLOWS_DIR, `${name}.jpg`);
@@ -323,19 +297,6 @@ async function warmAppInBrowser(browser: Browser) {
   await page.goto('/routes');
   await waitForAppReady(page);
   await context.close();
-}
-
-async function saveRecordedVideo(
-  page: Page,
-  context: Awaited<ReturnType<Browser['newContext']>>,
-  name: string,
-) {
-  mkdirSync(VIDEOS_DIR, { recursive: true });
-  const video = page.video();
-  await context.close();
-  const outputPath = resolve(VIDEOS_DIR, `${name}.webm`);
-  if (!video) return;
-  await video.saveAs(outputPath);
 }
 
 async function prepareRoutesMainForVideo(page: Page) {
@@ -582,7 +543,7 @@ test.describe('Guided videos', () => {
     });
     await holdCallout(page, routeLabel, 'Route is ready', 'right', 1400);
     await page.waitForTimeout(1600);
-    await saveRecordedVideo(page, context, 'create-route');
+    await saveRecordedVideo(page, context, resolve(VIDEOS_DIR, 'create-route.webm'));
   });
 
   test('add-output.webm — Output addition interaction', async ({ browser }) => {
@@ -648,6 +609,6 @@ test.describe('Guided videos', () => {
     });
     await holdCallout(page, outputLabel, 'Output connected', 'left', 1400);
     await page.waitForTimeout(1600);
-    await saveRecordedVideo(page, context, 'add-output');
+    await saveRecordedVideo(page, context, resolve(VIDEOS_DIR, 'add-output.webm'));
   });
 });
