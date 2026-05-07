@@ -1,15 +1,15 @@
 # Quick Start
 
-Get FluxOmni running in minutes. FluxOmni is a multi-protocol live streaming platform for broadcasting one source to multiple destinations (RTMP, SRT, Icecast). Current self-host releases run a split control-plane + media-node topology, even on a single host.
+Get FluxOmni running in minutes. FluxOmni runs live streams on your own server. Send one stream in. FluxOmni can send it out to many places at once: RTMP, SRT, or Icecast.
 
 ## Prerequisites
 
-- **OS:** Linux or macOS with Docker. **Windows is not supported natively.** Running inside WSL2 (Ubuntu on Windows) is a tested and supported installation path.
-- **Architecture:** x86_64 (x64) or ARM64 (AArch64); Linux ARM64 and Apple Silicon Macs are tested through the published ARM images.
+- **OS:** Linux or macOS with Docker. Windows works through WSL2 with Ubuntu.
+- **Architecture:** x86_64 (x64) or ARM64 (AArch64).
 - `curl`
 - `root` or `sudo` access on Debian/Ubuntu if Docker is not already installed
 
-If Docker is already available, the installer uses it directly. Manual installs and non-Debian hosts still require Docker Engine with Docker Compose v2.
+If Docker is already installed, the installer uses it. Manual installs and non-Debian hosts need Docker Engine with Docker Compose v2.
 
 ## One-line Install
 
@@ -18,12 +18,12 @@ curl -fsSL https://install.fluxomni.io | bash
 ```
 
 By default, FluxOmni installs to `~/fluxomni` and follows the newest stable release channel (`latest`).
-The installer creates a single-host compose stack with separate `control-plane` and `media-node` services that share `./data`.
-The published `control-plane` image currently serves the operator UI directly, so the default release path does not require a separate frontend container.
+The installer creates one Docker Compose stack and stores data in `./data`.
+The web UI is included in the default install.
 
 ## Install with Custom Values
 
-This example opts into the `edge` channel and a custom install path:
+This example uses the newest main-branch build and installs into `/opt/fluxomni`:
 
 ```bash
 FLUXOMNI_DIR=/opt/fluxomni \
@@ -31,11 +31,9 @@ FLUXOMNI_VERSION=edge \
   curl -fsSL https://install.fluxomni.io | bash
 ```
 
-To pin a specific stable release instead, set `FLUXOMNI_VERSION=v2026.05.0` or another public `vYYYY.MM.N` tag. The installer maps public release tags to the matching core image tag when needed.
-To override the split image repositories directly, set `FLUXOMNI_CONTROL_PLANE_IMAGE` and `FLUXOMNI_MEDIA_NODE_IMAGE` before running the installer.
+To pin a stable release, set `FLUXOMNI_VERSION=v2026.05.0` or another public `vYYYY.MM.N` tag.
 
-For pinned installs, the installer first tries the same self-host ref, then its public/core alias when applicable, and falls back to `main` if versioned self-host assets are not published yet. Use `FLUXOMNI_SELFHOST_REF` only if the config bundle needs to come from a different ref.
-Legacy automation that still exports `FLUXOMNI_IMAGE=<base-repository>` continues to work because the installer derives the split image names from that base when the explicit variables are unset.
+Use `FLUXOMNI_SELFHOST_REF` only when the config files must come from a different ref.
 
 ## Attach Another Media Node
 
@@ -49,19 +47,21 @@ FLUXOMNI_MEDIA_NODE_PUBLIC_HOST=media2.example.com \
   curl -fsSL https://install.fluxomni.io | bash -s -- media-node
 ```
 
-The media-node installer now defaults to `~/fluxomni-media-node`, writes a media-node-only compose bundle, verifies it can reach the control-plane RPC endpoint before startup, and only reports success after the local media-node confirms registration in its logs.
-`FLUXOMNI_MEDIA_NODE_PUBLIC_HOST` must be the real hostname or IP that should be advertised for that media server. In this example, the node joins `control.example.com` but advertises itself as `media2.example.com`.
-If you want to advertise a different gRPC endpoint than `http://<media-node-public-host>:50051`, set `FLUXOMNI_MEDIA_NODE_ENDPOINT` explicitly before running the installer.
-You can also set `FLUXOMNI_MEDIA_NODE_ID`, `FLUXOMNI_MEDIA_NODE_NAME`, `FLUXOMNI_MEDIA_NODE_LABELS`, and `FLUXOMNI_MEDIA_NODE_ZONE` when the default hostname-derived identity is not what you want.
+The installer writes files to `~/fluxomni-media-node`. It checks that it can reach the main FluxOmni server before it starts.
+Set `FLUXOMNI_MEDIA_NODE_PUBLIC_HOST` to the real hostname or IP for this media server.
+
+Set `FLUXOMNI_MEDIA_NODE_ENDPOINT` only when the media server uses a custom gRPC endpoint.
+
+You can also set `FLUXOMNI_MEDIA_NODE_ID`, `FLUXOMNI_MEDIA_NODE_NAME`, `FLUXOMNI_MEDIA_NODE_LABELS`, and `FLUXOMNI_MEDIA_NODE_ZONE`.
 
 ## Access the Operator UI
 
-After the containers are up, open `http://<your-server-ip>` in your browser.
+After FluxOmni starts, open `http://<your-server-ip>`.
 Current releases use these primary operator surfaces:
 
 - `/routes` for the route list
 - `/routes/:id` for an individual route workspace
-- `/fleet` for attached media-node inventory and health
+- `/fleet` for server health
 
 ## Manual Install
 

@@ -4,8 +4,7 @@
   <img src="images/logo.webp" alt="FluxOmni Logo" width="10%">
 </p>
 
-FluxOmni is a multi-protocol live streaming platform for broadcasting one source to multiple destinations (RTMP, SRT, Icecast) simultaneously.
-Current self-host releases run a split `control-plane` + `media-node` topology, even on a single host.
+FluxOmni runs live streams on your own server. Send one stream in. FluxOmni can send it out to many places at once: RTMP, SRT, or Icecast.
 
 This repository contains self-host installation and deployment documentation only.
 
@@ -17,18 +16,18 @@ Install FluxOmni:
 curl -fsSL https://install.fluxomni.io | bash
 ```
 
-The installer defaults to the newest stable image (`latest`). Use `FLUXOMNI_VERSION=edge` only if you want the latest main-branch build.
-For pinned versions, use public date-style release tags such as `v2026.05.0`. The installer maps the public tag to the matching core image tag (`v0.11.0` for `v2026.05.0`), tries the same self-host ref, then its alias when applicable, and falls back to `main` if versioned self-host assets are not published yet.
-The default install remains single-host, but it now runs split `control-plane` and `media-node` containers with a shared `./data` root.
-The published `control-plane` image currently embeds the operator UI, so no separate frontend image is required on the default release path.
-To attach a remote media server instead of the full stack, run the same installer as `bash -s -- media-node` on that host.
+By default, the installer uses the newest stable release and installs FluxOmni on one server.
+
+Use `FLUXOMNI_VERSION=edge` only when you want the newest main-branch build. Use a public tag like `v2026.05.0` when you need a pinned stable release.
+
+To add a remote media server, run the same installer on that server with `bash -s -- media-node`.
 
 After installation:
 
-- Control surface: `http://<your-server-ip>`
-- Routes: `http://<your-server-ip>/routes`
-- Fleet: `http://<your-server-ip>/fleet`
-- RTMP ingest: copy the generated publish address from the [route workspace](user-guide/routes.md#route-workspace) (e.g. `rtmp://<your-server-ip>:1935/live/<publish-key>`)
+- Open FluxOmni: `http://<your-server-ip>`
+- Manage streams: `http://<your-server-ip>/routes`
+- Check server health: `http://<your-server-ip>/fleet`
+- Publish RTMP: copy the publish address from the [route workspace](user-guide/routes.md#route-workspace)
 
 ## Documentation Sections
 

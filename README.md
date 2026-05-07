@@ -4,9 +4,9 @@
   <img src="docs/src/images/logo.webp" alt="FluxOmni Logo" width="10%">
 </p>
 
-Install FluxOmni — a multi-protocol live streaming platform — on your own Linux or macOS host (x64 or ARM64) with a single command. Windows is not supported natively; WSL2 (Ubuntu on Windows) has been tested and works for installation.
+FluxOmni runs live streams on your own server. Send one stream in. FluxOmni can send it out to many places at once: RTMP, SRT, or Icecast.
 
-FluxOmni lets you broadcast from a single source (RTMP, SRT, or WebRTC) to multiple destinations (RTMP, SRT, Icecast) simultaneously. It uses a split runtime made of a `control-plane` and a `media-node`. The default installer runs both on the same host, so most users can get started quickly without learning the multi-host layout first.
+This repo is for self-host installs. Linux and macOS are supported on x64 and ARM64. Windows is supported through WSL2 with Ubuntu.
 
 ## What's New in 2026.05.0
 
@@ -24,19 +24,19 @@ curl -fsSL https://install.fluxomni.io | bash
 
 After installation:
 
-- open `http://<your-server-ip>` in your browser
-- manage routes at `/routes`
-- inspect node health at `/fleet`
-- publish to the RTMP address shown in the route workspace
+- open `http://<your-server-ip>`
+- use `/routes` to manage streams
+- use `/fleet` to check server health
+- copy the RTMP publish address from a route workspace
 
 > [!NOTE]
 > On Debian and Ubuntu, the installer can install Docker automatically if it is missing. That path requires `root` or `sudo` access.
 
 ## Choose Your Setup
 
-### Single Host Stack
+### Self-Hosted Stack
 
-Best for most users. Runs the `control-plane` and `media-node` on one server.
+Best for most users. Installs FluxOmni on one server.
 
 ```bash
 curl -fsSL https://install.fluxomni.io | bash
@@ -44,7 +44,7 @@ curl -fsSL https://install.fluxomni.io | bash
 
 ### Standalone Media Node
 
-Use this when you already have a control-plane and want to add another remote media node.
+Use this when FluxOmni already runs somewhere else and this server should only move video.
 
 ```bash
 FLUXOMNI_VERSION=edge \
@@ -54,7 +54,7 @@ FLUXOMNI_MEDIA_NODE_PUBLIC_HOST=media2.example.com \
   curl -fsSL https://install.fluxomni.io | bash -s -- media-node
 ```
 
-Standalone media-node installs require `FLUXOMNI_MEDIA_NODE_PUBLIC_HOST` because FluxOmni uses that host when it advertises ingest and playback URLs and when it derives the default media-node gRPC endpoint.
+Set `FLUXOMNI_MEDIA_NODE_PUBLIC_HOST` to the real hostname or IP for this media server. FluxOmni uses it for ingest and playback URLs.
 
 ## Common Install Examples
 
@@ -67,34 +67,33 @@ FLUXOMNI_DIR=/opt/fluxomni \
 FLUXOMNI_VERSION=v2026.05.0 \
   curl -fsSL https://install.fluxomni.io | bash
 
-# Follow the latest mainline publish instead of stable releases
+# Use the newest main-branch build
 FLUXOMNI_VERSION=edge \
   curl -fsSL https://install.fluxomni.io | bash
 
-# Override the published image repositories explicitly
-FLUXOMNI_CONTROL_PLANE_IMAGE=registry.example.com/fluxomni-control-plane \
-FLUXOMNI_MEDIA_NODE_IMAGE=registry.example.com/fluxomni-media-node \
+# Use a custom self-host config ref
+FLUXOMNI_SELFHOST_REF=my-ref \
   curl -fsSL https://install.fluxomni.io | bash
 ```
 
 ## What the Installer Does
 
-For the default single-host setup, the installer:
+For the default self-host setup, the installer:
 
 - installs Docker automatically on supported Debian and Ubuntu hosts if needed
 - downloads the correct `docker-compose.yml` and `.env.example`
 - creates or updates `.env` in place
-- pulls and starts the published FluxOmni containers
+- pulls and starts FluxOmni
 - preserves your existing `data/` directory on reruns
 - verifies that the local services actually start before printing success
 
-Current self-host releases use the split runtime directly, and the published `control-plane` image currently embeds the operator UI, so no separate frontend image is required in the default release path.
+The web UI is included in the default install.
 
 ## Installed Files and Default Paths
 
 | Install type | Default directory | Main services |
 | --- | --- | --- |
-| Single host | `~/fluxomni` | `control-plane`, `media-node` |
+| Self-hosted stack | `~/fluxomni` | FluxOmni |
 | Standalone media node | `~/fluxomni-media-node` | `media-node` |
 
 The installer manages:
@@ -112,12 +111,7 @@ The installer manages:
 | `vX.Y.Z` | Core image tag, accepted for direct image pinning |
 | `edge` | Latest successful publish from `main` |
 
-Published self-host releases use:
-
-- `ghcr.io/fluxomnia-systems/fluxomni-control-plane`
-- `ghcr.io/fluxomnia-systems/fluxomni-media-node`
-
-Use the `latest`, `edge`, and public `vYYYY.MM.N` channels above to control which published build gets installed. The current stable public release is `v2026.05.0`; the installer maps it to core image tag `v0.11.0`.
+Use `latest` unless you need a pinned release or a test build. The current stable public release is `v2026.05.0`; it maps to core image tag `v0.11.0`.
 
 See the What's New section above for the latest highlights.
 
@@ -136,22 +130,22 @@ docker compose pull
 docker compose up -d
 
 # Follow logs
-docker compose logs -f control-plane media-node
+docker compose logs -f
 
 # Stop the stack
 docker compose down
 ```
 
-If you installed into a custom directory, or deployed a standalone media node, use that directory instead.
+If you used a custom directory or installed only a media node, run these commands from that directory.
 
-Re-running `install.sh` on an existing install keeps the managed data directory and updates known `.env` keys in place. That makes it safe to repair ports, image tags, install target, or node settings without rewriting the whole file by hand.
+You can run `install.sh` again on the same install. It keeps your data and updates known `.env` keys.
 
 ## Advanced Installer Notes
 
-- Legacy `FLUXOMNI_IMAGE=<base-repository>` is still supported. When the explicit split-image variables are unset, the installer derives `-control-plane` and `-media-node` image names from that base repository.
-- When `FLUXOMNI_VERSION` is pinned, the installer first tries the matching self-host asset ref, then its public/core alias when applicable, and finally falls back to `main` with a warning if no versioned config bundle is published.
-- Use `FLUXOMNI_SELFHOST_REF` to force a specific self-host asset ref.
-- Use `FLUXOMNI_REPO_RAW` to point the installer at a custom raw asset base.
+- If `FLUXOMNI_VERSION` is pinned, the installer tries the matching self-host files first. If they are missing, it warns and uses `main`.
+- Use `FLUXOMNI_SELFHOST_REF` to force a self-host asset ref.
+- Use `FLUXOMNI_REPO_RAW` to use a custom raw asset base.
+- Use `FLUXOMNI_CONTROL_PLANE_IMAGE` and `FLUXOMNI_MEDIA_NODE_IMAGE` only when you publish your own images.
 
 Useful standalone media-node overrides:
 
