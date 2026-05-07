@@ -47,6 +47,8 @@ These replace the top-level images referenced from the user-guide pages in `docs
 - `attention.jpg`
 - `fleet.jpg`
 - `settings.jpg`
+- `settings-artifacts.jpg`
+- `settings-media-profiles.jpg`
 - `settings-security.jpg`
 - `settings-users.jpg`
 - `login.jpg`
@@ -62,6 +64,13 @@ These step-by-step walkthrough images are written to `docs/src/images/user-guide
 - `add-output-1-workspace.jpg`
 - `add-output-2-dialog.jpg`
 - `add-output-3-added.jpg`
+
+The guided-flow suite also records short interaction videos in `docs/src/videos/user-guide/`:
+
+- `create-route.webm`
+- `add-output.webm`
+
+The videos start from the loaded Routes page, then use mouse movement, short pauses, and delayed typing for readable pacing. Each flow asserts the important intermediate UI state is visible, then returns to the Routes page before ending.
 
 ## From the repo root
 

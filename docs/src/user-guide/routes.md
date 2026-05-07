@@ -72,19 +72,23 @@ Leave **Advanced routing** collapsed for the normal setup path, or expand it whe
 
 ### Step-by-step: create a route
 
-1. Start from the Routes page.
+<video controls muted playsinline width="100%">
+  <source src="../videos/user-guide/create-route.webm" type="video/webm">
+</video>
+
+1. Start from the Routes page and use **+ New Route**.
 
    ![The Routes page before opening the Create Route dialog](../images/user-guide/flows/create-route-1-open.jpg)
 
-2. Open **+ New Route**.
+2. Name the route and confirm the source/profile defaults.
 
    ![The empty Create Route dialog](../images/user-guide/flows/create-route-2-dialog.jpg)
 
-3. Fill the route identity fields.
+3. Submit the form with **Create route**.
 
    ![The Create Route dialog with route identity filled in](../images/user-guide/flows/create-route-3-identity.jpg)
 
-4. Submit the form to create the route.
+4. Confirm the created route appears in **Expanded** view.
 
    ![The newly created route after the Create Route flow completes](../images/user-guide/flows/create-route-4-created.jpg)
 
@@ -119,6 +123,10 @@ The **Routing** tab is the operational signal-path view.
 - **Live playback** — the browser preview stays docked on the right when a playback URL exists.
 
 ### Step-by-step: add an output
+
+<video controls muted playsinline width="100%">
+  <source src="../videos/user-guide/add-output.webm" type="video/webm">
+</video>
 
 1. Open the route workspace and switch to **Routing**.
 
