@@ -2,7 +2,7 @@
 
 ## Project Overview
 
-FluxOmni Self-Hosted — public installer, Docker Compose configs, and mdBook documentation for running FluxOmni. This repo does **not** contain application source code. FluxOmni is a multi-platform streaming tool with a split `control-plane` + `media-node` runtime.
+Fluxomni Self-Hosted — public installer, Docker Compose configs, and mdBook documentation for running Fluxomni. This repo does **not** contain application source code. Fluxomni is a multi-platform streaming tool with a split `control-plane` + `media-node` runtime.
 
 ## Repository Structure
 
@@ -39,7 +39,7 @@ make lint.ci
 # Clean generated docs
 make clean
 
-# Capture user-guide screenshots (needs running FluxOmni instance)
+# Capture user-guide screenshots (needs running Fluxomni instance)
 make screenshots
 # With custom target and auth:
 # FLUXOMNI_URL=https://example.com FLUXOMNI_ADMIN_PASSWORD=secret make screenshots

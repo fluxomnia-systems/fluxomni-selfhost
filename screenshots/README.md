@@ -1,6 +1,6 @@
 # Selfhost Docs Screenshots
 
-Playwright-based screenshot automation for the FluxOmni selfhost user guide. The capture suite connects to a running FluxOmni instance, signs in as an admin when required, seeds realistic route data through GraphQL, and writes the resulting screenshots directly into the mdBook image tree.
+Playwright-based screenshot automation for the Fluxomni selfhost user guide. The capture suite connects to a running Fluxomni instance, signs in as an admin when required, seeds realistic route data through GraphQL, and writes the resulting screenshots directly into the mdBook image tree.
 
 ## Quick Start
 
@@ -26,7 +26,7 @@ npm run capture:headed
 
 | Variable | Default | Description |
 | --- | --- | --- |
-| `FLUXOMNI_URL` | `http://localhost` | Base URL of the FluxOmni instance |
+| `FLUXOMNI_URL` | `http://localhost` | Base URL of the Fluxomni instance |
 | `FLUXOMNI_ADMIN_USER` | `admin` | Admin username for login |
 | `FLUXOMNI_ADMIN_PASSWORD` | _(empty)_ | Admin password, required when auth is enabled |
 

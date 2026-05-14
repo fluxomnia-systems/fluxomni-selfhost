@@ -122,7 +122,7 @@ write_summary() {
     printf -- "- Hetzner location: \`%s\`\n" "$HCLOUD_LOCATION"
     printf -- "- Hetzner image: \`%s\`\n" "$HCLOUD_IMAGE"
     printf -- "- Hetzner server type: \`%s\`\n" "$HCLOUD_SERVER_TYPE"
-    printf -- "- FluxOmni version: \`%s\`\n" "$FLUXOMNI_VERSION"
+    printf -- "- Fluxomni version: \`%s\`\n" "$FLUXOMNI_VERSION"
     printf -- "- Install script: \`%s\`\n" "$INSTALL_SCRIPT_URL"
     printf -- "- Asset base: \`%s\`\n" "$REPO_RAW"
   } >> "$GITHUB_STEP_SUMMARY"
@@ -302,7 +302,7 @@ verify_provisioning() {
   timeout --foreground "$PROVISION_TIMEOUT_SECS" \
     ssh "${args[@]}" "root@${SERVER_IP}" 'cloud-init status --wait'
 
-  echo "Verifying FluxOmni installation on the server"
+  echo "Verifying Fluxomni installation on the server"
   ssh_cmd 'test -f /root/fluxomni/.env'
   ssh_cmd 'docker inspect -f "{{.State.Status}}" fluxomni-control-plane | grep -qx running'
   ssh_cmd 'docker inspect -f "{{.State.Status}}" fluxomni-media-node | grep -qx running'
@@ -322,7 +322,7 @@ verify_provisioning() {
   done
 
   if [ "$http_ok" -ne 1 ]; then
-    echo "Error: FluxOmni UI did not become reachable at http://${SERVER_IP}/" >&2
+    echo "Error: Fluxomni UI did not become reachable at http://${SERVER_IP}/" >&2
     exit 1
   fi
 }

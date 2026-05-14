@@ -1,22 +1,22 @@
-# FluxOmni
+# Fluxomni
 
 <p align="center">
-  <img src="images/logo.webp" alt="FluxOmni Logo" width="10%">
+  <img src="images/logo.webp" alt="Fluxomni Logo" width="10%">
 </p>
 
-FluxOmni runs live streams on your own server. Send one stream in. FluxOmni can send it out to many places at once: RTMP, SRT, or Icecast.
+Fluxomni runs live streams on your own server. Send one stream in. Fluxomni can send it out to many places at once: RTMP, SRT, or Icecast.
 
 This repository contains self-host installation and deployment documentation only.
 
 ## Install in one command
 
-Install FluxOmni:
+Install Fluxomni:
 
 ```bash
 curl -fsSL https://install.fluxomni.io | bash
 ```
 
-By default, the installer uses the newest stable release and installs FluxOmni on one server.
+By default, the installer uses the newest stable release and installs Fluxomni on one server.
 
 Use `FLUXOMNI_VERSION=edge` only when you want the newest main-branch build. Use a public tag like `v2026.05.0` when you need a pinned stable release.
 
@@ -24,7 +24,7 @@ To add a remote media server, run the same installer on that server with `bash -
 
 After installation:
 
-- Open FluxOmni: `http://<your-server-ip>`
+- Open Fluxomni: `http://<your-server-ip>`
 - Manage streams: `http://<your-server-ip>/routes`
 - Check server health: `http://<your-server-ip>/fleet`
 - Publish RTMP: copy the publish address from the [route workspace](user-guide/routes.md#route-workspace)

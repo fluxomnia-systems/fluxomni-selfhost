@@ -1,6 +1,6 @@
-# How to Deploy FluxOmni to VScale/Selectel Cloud
+# How to Deploy Fluxomni to VScale/Selectel Cloud
 
-This guide provides the recommended method for deploying FluxOmni to [VScale/Selectel Cloud].
+This guide provides the recommended method for deploying Fluxomni to [VScale/Selectel Cloud].
 
 This provider is a good option for users who need servers in Moscow or St. Petersburg.
 
@@ -58,9 +58,9 @@ If you did not provide an SSH key, you will be given a username and password. Yo
 
 ![Server Login and Password](../images/vscale_1.5.1.png)
 
-### 1.6. Install FluxOmni
+### 1.6. Install Fluxomni
 
-To install FluxOmni, you need to connect to the server using an [SSH] client and run the installation script.
+To install Fluxomni, you need to connect to the server using an [SSH] client and run the installation script.
 
 Find the IP address of your server. In this example, it is `80.249.146.84`.
 
@@ -74,16 +74,16 @@ ssh root@your_server_ip "curl -fsSL https://install.fluxomni.io | WITH_INITIAL_U
 
 If you are using password authentication, you will be prompted to enter the password from the previous step.
 
-## 2. Access FluxOmni
+## 2. Access Fluxomni
 
-After the installation script is finished (it may take 5-15 minutes), you can access FluxOmni by navigating to the server's IP address in your web browser.
+After the installation script is finished (it may take 5-15 minutes), you can access Fluxomni by navigating to the server's IP address in your web browser.
 
 ![Address Bar](../images/browser.jpg)
 
 Current releases serve the operator UI from the `control-plane` container directly.
 Use `/routes` for route management and `/fleet` to inspect attached media nodes.
 
-> **NOTE**: By default, FluxOmni is served over `http://`. For production use, it is highly recommended to set up a domain name and configure a reverse proxy (e.g., Nginx or Caddy) to enable `https://` for secure access.
+> **NOTE**: By default, Fluxomni is served over `http://`. For production use, it is highly recommended to set up a domain name and configure a reverse proxy (e.g., Nginx or Caddy) to enable `https://` for secure access.
 
 [Servers]: https://vscale.io/panel/scalets/
 [Create another instance]: https://vscale.io/panel/scalets/new/

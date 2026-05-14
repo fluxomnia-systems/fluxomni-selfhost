@@ -25,7 +25,7 @@ export async function createAuthenticatedApi(
   const statusResponse = await api.get('/api/auth/status');
   if (!statusResponse.ok()) {
     throw new Error(
-      `Cannot reach FluxOmni at ${baseURL} (status ${statusResponse.status()})`,
+      `Cannot reach Fluxomni at ${baseURL} (status ${statusResponse.status()})`,
     );
   }
 
@@ -38,7 +38,7 @@ export async function createAuthenticatedApi(
   if (!password) {
     await api.dispose();
     throw new Error(
-      'FluxOmni auth is enabled — set FLUXOMNI_ADMIN_PASSWORD before capturing screenshots',
+      'Fluxomni auth is enabled — set FLUXOMNI_ADMIN_PASSWORD before capturing screenshots',
     );
   }
 

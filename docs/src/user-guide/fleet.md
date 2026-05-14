@@ -1,6 +1,6 @@
 # Fleet
 
-The Fleet page (`/fleet`) provides an inventory view of all media nodes attached to your FluxOmni instance. Use it to monitor node health, inspect capacity, and confirm which artifacts are cached where.
+The Fleet page (`/fleet`) provides an inventory view of all media nodes attached to your Fluxomni instance. Use it to monitor node health, inspect capacity, and confirm which artifacts are cached where.
 
 ## Fleet Overview
 

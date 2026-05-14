@@ -1,6 +1,6 @@
 # Architecture
 
-FluxOmni uses a split runtime with two cooperating services: the
+Fluxomni uses a split runtime with two cooperating services: the
 **control-plane** and one or more **media nodes**.
 
 ## Components
@@ -35,7 +35,7 @@ back to the control-plane over its published gRPC port (TCP 50052).
 ### SRS (Simple Realtime Server)
 
 Each media node embeds an [SRS](https://ossrs.io) instance that provides
-the low-level RTMP, HLS, SRT, and WebRTC protocol handling. FluxOmni
+the low-level RTMP, HLS, SRT, and WebRTC protocol handling. Fluxomni
 manages SRS configuration and lifecycle automatically. Operators do not
 interact with SRS directly.
 

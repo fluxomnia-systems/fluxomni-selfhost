@@ -1,8 +1,8 @@
 # Private Access & Tunnels
 
-Run FluxOmni on a private overlay network when the Control Surface and media ports should be reachable only from your own devices or servers.
+Run Fluxomni on a private overlay network when the Control Surface and media ports should be reachable only from your own devices or servers.
 
-This page shows Tailscale first because it is the easiest private-network option for most self-host deployments. The same FluxOmni rule applies to every option: set the advertised hosts to the address that your publishers, viewers, and extra media nodes can actually reach.
+This page shows Tailscale first because it is the easiest private-network option for most self-host deployments. The same Fluxomni rule applies to every option: set the advertised hosts to the address that your publishers, viewers, and extra media nodes can actually reach.
 
 ## When to Use This
 
@@ -19,7 +19,7 @@ They are not a replacement for a public ingest or viewer edge. If guests, custom
 
 ## Tailscale Single-Host Install
 
-Add the server as a new device in Tailscale, join your tailnet, then install FluxOmni with the server's Tailscale IP as the advertised host.
+Add the server as a new device in Tailscale, join your tailnet, then install Fluxomni with the server's Tailscale IP as the advertised host.
 
 1. Open [Tailscale's Add device page](https://login.tailscale.com/admin/machines/new).
 2. Choose the server OS and copy the setup command Tailscale gives you.
@@ -39,13 +39,13 @@ if [ -z "$TS_IP" ]; then
   exit 1
 fi
 
-# Install FluxOmni so generated UI, RTMP, HLS, and SRT URLs use the tailnet IP.
+# Install Fluxomni so generated UI, RTMP, HLS, and SRT URLs use the tailnet IP.
 curl -fsSL https://install.fluxomni.io | \
   FLUXOMNI_PUBLIC_HOST="$TS_IP" \
   FLUXOMNI_MEDIA_NODE_PUBLIC_HOST="$TS_IP" \
   bash
 
-printf '\nFluxOmni Control Surface: http://%s\n' "$TS_IP"
+printf '\nFluxomni Control Surface: http://%s\n' "$TS_IP"
 printf 'RTMP/SRT/HLS media ports are reachable from tailnet devices on the same host.\n'
 ```
 
@@ -92,7 +92,7 @@ set -euo pipefail
 # then make sure it is online in your tailnet.
 sudo tailscale up --ssh
 
-# Bind the FluxOmni HTTP container port to localhost, then let Tailscale Serve
+# Bind the Fluxomni HTTP container port to localhost, then let Tailscale Serve
 # publish it privately on https://$TS_DNS.
 curl -fsSL https://install.fluxomni.io | \
   FLUXOMNI_CONTROL_PLANE_HTTP_PORT=127.0.0.1:8080 \
@@ -103,7 +103,7 @@ curl -fsSL https://install.fluxomni.io | \
 
 sudo tailscale serve --bg --https=443 http://127.0.0.1:8080
 
-printf '\nFluxOmni Control Surface: https://%s\n' "$TS_DNS"
+printf '\nFluxomni Control Surface: https://%s\n' "$TS_DNS"
 ```
 
 Tailscale Serve can also forward the plain HTTP UI and TCP media ports when direct Docker-published ports are not reachable over the tailnet:
@@ -124,7 +124,7 @@ tailscale serve status
 # sudo tailscale serve reset
 ```
 
-This is a Tailscale/Docker forwarding workaround, not a FluxOmni setting. Tailscale Serve does not forward SRT UDP (`10080/udp`), so use RTMP for private tailnet ingest/testing when you rely on Serve forwarding.
+This is a Tailscale/Docker forwarding workaround, not a Fluxomni setting. Tailscale Serve does not forward SRT UDP (`10080/udp`), so use RTMP for private tailnet ingest/testing when you rely on Serve forwarding.
 
 If you use a Tailscale Service, pass its TailVIP to `--service` so the stable service name, not the physical node name, owns the forwarded ports:
 
@@ -139,7 +139,7 @@ sudo tailscale serve --bg --service="$SERVICE_TAILVIP" --tcp=50052 tcp://127.0.0
 
 ## Tailscale ACL Example
 
-Use Tailscale ACLs to restrict who can reach the FluxOmni host. This example allows only members of `group:operators` to reach the UI and media ports.
+Use Tailscale ACLs to restrict who can reach the Fluxomni host. This example allows only members of `group:operators` to reach the UI and media ports.
 
 ```json
 {
@@ -171,7 +171,7 @@ Then authenticate the server with the tag:
 sudo tailscale up --ssh --advertise-tags=tag:fluxomni
 ```
 
-If Tailscale SSH works but `http://<tailscale-host>/routes` times out, check the ACLs first. SSH can be allowed while HTTP, RTMP, HLS, and SRT are still blocked; permit at least ports `80`, `1935`, `8000`, and `10080` to the FluxOmni host or tag. If grants already allow the traffic and the ports still time out, use the Tailscale Serve commands above to forward UI, RTMP, and HLS/WebRTC TCP from localhost.
+If Tailscale SSH works but `http://<tailscale-host>/routes` times out, check the ACLs first. SSH can be allowed while HTTP, RTMP, HLS, and SRT are still blocked; permit at least ports `80`, `1935`, `8000`, and `10080` to the Fluxomni host or tag. If grants already allow the traffic and the ports still time out, use the Tailscale Serve commands above to forward UI, RTMP, and HLS/WebRTC TCP from localhost.
 
 ## Remote Media Node over Tailscale
 
@@ -222,7 +222,7 @@ curl -fsSL https://install.fluxomni.io | \
   bash -s -- media-node
 ```
 
-For distributed FluxOmni over Tailscale, keep these TCP paths reachable:
+For distributed Fluxomni over Tailscale, keep these TCP paths reachable:
 
 | Host | Port | Purpose |
 | --- | --- | --- |

@@ -1,6 +1,6 @@
 # Artifacts
 
-Artifacts are reusable source files and generated media assets that FluxOmni tracks in a shared library. Use this page to import files once, tag them, monitor storage capacity, and reuse them from route playlists or fallback sources.
+Artifacts are reusable source files and generated media assets that Fluxomni tracks in a shared library. Use this page to import files once, tag them, monitor storage capacity, and reuse them from route playlists or fallback sources.
 
 ## Artifact Library
 
@@ -45,7 +45,7 @@ Expand the panel to inspect:
 - Top artifact consumers.
 - Recent storage rejection context.
 
-FluxOmni rejects uploads before they exceed the backend admission limit. The rejected upload also appears in Attention as a storage alert so operators can free space or move content before retrying.
+Fluxomni rejects uploads before they exceed the backend admission limit. The rejected upload also appears in Attention as a storage alert so operators can free space or move content before retrying.
 
 ## Playlist Reuse
 

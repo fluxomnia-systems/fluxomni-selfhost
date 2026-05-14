@@ -1,6 +1,6 @@
 # Roadmap
 
-FluxOmni self-host is built for teams that need dependable live operations under their own control. This roadmap focuses on operator and client outcomes, not internal platform work.
+Fluxomni self-host is built for teams that need dependable live operations under their own control. This roadmap focuses on operator and client outcomes, not internal platform work.
 
 Timelines are intentionally absent because priorities shift with customer deployments, Design Partner feedback, and active production incidents. For the current active backlog, follow the [fluxomni-selfhost issue tracker](https://github.com/fluxomnia-systems/fluxomni-selfhost/issues).
 

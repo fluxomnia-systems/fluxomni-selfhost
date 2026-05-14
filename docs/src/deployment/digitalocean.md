@@ -1,7 +1,7 @@
-How to Deploy FluxOmni to DigitalOcean
+How to Deploy Fluxomni to DigitalOcean
 =======================================
 
-This guide provides a common and recommended way to deploy FluxOmni as a standalone droplet on [DigitalOcean].
+This guide provides a common and recommended way to deploy Fluxomni as a standalone droplet on [DigitalOcean].
 
 ## 0. Prerequisites
 
@@ -36,7 +36,7 @@ If you intend to record live streams, you may need more disk space than the defa
 ![Add volume](../images/do_1.3.1.jpg)
 ![Setup volume](../images/do_1.3.2.jpg)
 
-The installer will automatically detect and use the attached volume for FluxOmni.
+The installer will automatically detect and use the attached volume for Fluxomni.
 
 ### 1.4. Choose a Datacenter Region
 
@@ -46,7 +46,7 @@ Select a region that is geographically close to both your stream source and your
 
 ### 1.5. Add User Data
 
-To automatically install FluxOmni on the new droplet, paste the following script into the `User data` field. This runs once when the droplet is first created and also configures a firewall with the required ports.
+To automatically install Fluxomni on the new droplet, paste the following script into the `User data` field. This runs once when the droplet is first created and also configures a firewall with the required ports.
 
 ```bash
 #!/bin/bash
@@ -57,7 +57,7 @@ curl -fsSL https://install.fluxomni.io | WITH_UFW=1 bash -s
 
 ### 1.6. Select Authentication Method
 
-[DigitalOcean] requires an authentication method to access the droplet. You can use an [SSH] key (recommended) or set a root password. This is for managing the server itself; it is not required for using the FluxOmni application.
+[DigitalOcean] requires an authentication method to access the droplet. You can use an [SSH] key (recommended) or set a root password. This is for managing the server itself; it is not required for using the Fluxomni application.
 
 ![SSH access](../images/do_1.6.jpg)
 
@@ -69,7 +69,7 @@ Choose a hostname for your droplet to easily identify it later. You can leave th
 
 Click **Create Droplet** to begin provisioning.
 
-## 2. Access FluxOmni
+## 2. Access Fluxomni
 
 After you launch the droplet, allow 5-15 minutes for the provisioning and installation to complete.
 
@@ -84,7 +84,7 @@ Open your web browser and navigate to the IP address of the droplet.
 Current releases serve the operator UI from the `control-plane` container directly.
 Use `/routes` for route management and `/fleet` to inspect attached media nodes.
 
-> __NOTE__: By default, FluxOmni is served over `http://`. For production use, it is highly recommended to set up a domain name and configure a reverse proxy (e.g., Nginx or Caddy) to enable `https://` for secure access.
+> __NOTE__: By default, Fluxomni is served over `http://`. For production use, it is highly recommended to set up a domain name and configure a reverse proxy (e.g., Nginx or Caddy) to enable `https://` for secure access.
 
 [DigitalOcean]: https://digitalocean.com
 [SSH]: https://en.wikipedia.org/wiki/SSH_(Secure_Shell)

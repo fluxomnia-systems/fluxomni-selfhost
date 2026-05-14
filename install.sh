@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# FluxOmni self-host installer.
+# Fluxomni self-host installer.
 # Downloads compose assets from this repository and starts the stack.
 
 set -euo pipefail
@@ -853,7 +853,7 @@ print_recent_service_logs() {
   "${DOCKER_CMD[@]}" compose logs --tail=80 "$service" || true
 }
 
-echo "Installing FluxOmni (${FLUXOMNI_INSTALL_TARGET}) to ${FLUXOMNI_DIR}"
+echo "Installing Fluxomni (${FLUXOMNI_INSTALL_TARGET}) to ${FLUXOMNI_DIR}"
 
 validate_install_target
 require_cmd curl
@@ -1154,7 +1154,7 @@ MEDIA_HOST="${MEDIA_HOST:-$HOST}"
 HTTP_PORT="${HTTP_PORT:-80}"
 
 echo
-echo "FluxOmni is ready"
+echo "Fluxomni is ready"
 echo "Web UI: $(derive_browser_http_url "$HOST" "$HTTP_PORT")"
 echo "RTMP : rtmp://${MEDIA_HOST}:1935/app"
 echo "Data : ${FLUXOMNI_DIR}/data"

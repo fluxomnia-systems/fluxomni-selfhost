@@ -9,7 +9,7 @@ DOCS_BUILD := $(DOCS_DIR)/book
 .PHONY: help check.tools.docs build serve clean lint lint.ci screenshots docs.build docs.serve docs.clean docs.lint.links docs.lint docs.lint.ci
 
 help:
-	@echo "FluxOmni Self-Hosted: common targets"
+	@echo "Fluxomni Self-Hosted: common targets"
 	@echo ""
 	@echo "  make build          Build mdBook docs"
 	@echo "  make serve          Serve docs locally (PORT=3000 by default)"

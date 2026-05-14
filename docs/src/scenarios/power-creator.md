@@ -6,10 +6,10 @@ Individual creators and small teams streaming to 4+ platforms simultaneously who
 
 ## What you'll build
 
-Single-host FluxOmni on a small cloud VM (Hetzner CPX21, €5–10/mo). OBS on your desk pushes RTMP to FluxOmni, which fans out to YouTube, Twitch, Kick, Facebook, and any custom RTMP endpoint.
+Single-host Fluxomni on a small cloud VM (Hetzner CPX21, €5–10/mo). OBS on your desk pushes RTMP to Fluxomni, which fans out to YouTube, Twitch, Kick, Facebook, and any custom RTMP endpoint.
 
 ```text
-OBS → FluxOmni (single VM) → { YouTube, Twitch, Kick, Facebook, Custom RTMP }
+OBS → Fluxomni (single VM) → { YouTube, Twitch, Kick, Facebook, Custom RTMP }
 ```
 
 ## Setup
@@ -17,7 +17,7 @@ OBS → FluxOmni (single VM) → { YouTube, Twitch, Kick, Facebook, Custom RTMP 
 1. Provision a small cloud VM. See [Deployment guides](../deployment/overview.md).
 2. Install: `curl -fsSL https://install.fluxomni.io | bash`.
 3. Open the control surface, create a single route, add platform outputs.
-4. Point OBS at the route's publish URL — FluxOmni fans it out to every platform.
+4. Point OBS at the route's publish URL — Fluxomni fans it out to every platform.
 
 ## Cost and scale notes
 

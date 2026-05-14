@@ -20,7 +20,7 @@ export default {
 
     return new Response(
       [
-        "FluxOmni Installer",
+        "Fluxomni Installer",
         "",
         "Usage:",
         "  curl -fsSL https://install.fluxomni.io | bash",
@@ -43,12 +43,12 @@ export default {
 async function proxyScript(ref, fallbackToMain = false) {
   const upstream = `${SCRIPT_BASE}/${ref}/install.sh`;
   const resp = await fetch(upstream, {
-    headers: { "User-Agent": "FluxOmni-Install-Proxy/1.0" },
+    headers: { "User-Agent": "Fluxomni-Install-Proxy/1.0" },
   });
 
   if (!resp.ok && fallbackToMain) {
     const fallback = await fetch(`${SCRIPT_BASE}/main/install.sh`, {
-      headers: { "User-Agent": "FluxOmni-Install-Proxy/1.0" },
+      headers: { "User-Agent": "Fluxomni-Install-Proxy/1.0" },
     });
     if (!fallback.ok) {
       return new Response(`Failed to fetch install script (ref=${ref}, fallback=main)\n`, {
@@ -60,8 +60,8 @@ async function proxyScript(ref, fallbackToMain = false) {
       headers: {
         "Content-Type": "text/plain; charset=utf-8",
         "Cache-Control": "public, max-age=300",
-        "X-FluxOmni-Ref": "main",
-        "X-FluxOmni-Requested-Ref": ref,
+        "X-Fluxomni-Ref": "main",
+        "X-Fluxomni-Requested-Ref": ref,
       },
     });
   }
@@ -77,7 +77,7 @@ async function proxyScript(ref, fallbackToMain = false) {
     headers: {
       "Content-Type": "text/plain; charset=utf-8",
       "Cache-Control": ref === "main" ? "public, max-age=300" : "public, max-age=3600",
-      "X-FluxOmni-Ref": ref,
+      "X-Fluxomni-Ref": ref,
     },
   });
 }

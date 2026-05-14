@@ -1,6 +1,6 @@
 # Changelog
 
-Operator-facing highlights from recent FluxOmni releases.
+Operator-facing highlights from recent Fluxomni releases.
 
 ## 2026.05.0 — May 2026
 
@@ -30,7 +30,7 @@ Routes now use the media-node lifecycle as the source of truth. The Control Surf
 
 ### Cleaner Route Identity Model
 
-FluxOmni now completes the migration away from legacy `RestreamKey`, `IngressKey`, `restream_key`, and `ingress_key` fields. Current exports use route IDs, labels, `publish_token`, and `internal_namespace`; older imported specs are still upgraded automatically before state is materialized.
+Fluxomni now completes the migration away from legacy `RestreamKey`, `IngressKey`, `restream_key`, and `ingress_key` fields. Current exports use route IDs, labels, `publish_token`, and `internal_namespace`; older imported specs are still upgraded automatically before state is materialized.
 
 > **Upgrade note:** external clients or automations that still read or submit the removed key fields must move to the current route ID and publish-token fields before upgrading.
 

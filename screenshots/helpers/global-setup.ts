@@ -18,7 +18,7 @@ export default async function globalSetup(_config: FullConfig) {
   // Check whether auth is required
   const res = await fetch(`${baseURL}/api/auth/status`);
   if (!res.ok) {
-    throw new Error(`Cannot reach FluxOmni at ${baseURL} (status ${res.status})`);
+    throw new Error(`Cannot reach Fluxomni at ${baseURL} (status ${res.status})`);
   }
   const status = (await res.json()) as { authRequired: boolean };
 
@@ -31,7 +31,7 @@ export default async function globalSetup(_config: FullConfig) {
 
   if (!password) {
     throw new Error(
-      'FluxOmni auth is enabled — set FLUXOMNI_ADMIN_PASSWORD before capturing screenshots',
+      'Fluxomni auth is enabled — set FLUXOMNI_ADMIN_PASSWORD before capturing screenshots',
     );
   }
 

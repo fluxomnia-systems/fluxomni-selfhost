@@ -19,7 +19,7 @@ The script verifies:
 
 ## Container Does Not Start
 
-Navigate to your FluxOmni install directory and check the logs:
+Navigate to your Fluxomni install directory and check the logs:
 
 ```bash
 # Default: ~/fluxomni
@@ -176,7 +176,7 @@ All port mappings in `docker-compose.yml` support the same pattern — override 
 
 ## Firewall and Port Issues
 
-FluxOmni uses both TCP and UDP ports. A common mistake is only opening TCP:
+Fluxomni uses both TCP and UDP ports. A common mistake is only opening TCP:
 
 | Port | Protocol | Service |
 | ---- | -------- | ------- |
@@ -207,7 +207,7 @@ If you are locked out of the Control Surface:
 
 - Verify the username and password. Passwords are case-sensitive.
 - If you forgot the admin password, current installs store user accounts in `data/state.db`, not `data/state.json`. Stop the stack first, back up `data/`, and use `sqlite3 data/state.db` as a last-resort recovery path if you need to inspect or repair the `users` table before restarting.
-- If no user accounts exist, FluxOmni falls back to the open admin shell. After emergency recovery, use Settings to create a new admin account before re-enabling named-user sign-in.
+- If no user accounts exist, Fluxomni falls back to the open admin shell. After emergency recovery, use Settings to create a new admin account before re-enabling named-user sign-in.
 
 ## Rollback to a Previous Version
 
