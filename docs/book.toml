@@ -1,7 +1,7 @@
 [book]
-title = "Fluxomni Self-Hosted Documentation"
-description = "User guides for installing and running Fluxomni with Docker"
-authors = ["Fluxomni Contributors"]
+title = "Fluxomni Studio Self-Hosted Documentation"
+description = "User guides for installing and running Fluxomni Studio with Docker"
+authors = ["Fluxomni Studio Contributors"]
 language = "en"
 src = "src"
 

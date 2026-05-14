@@ -1,6 +1,6 @@
 # Configuration
 
-Fluxomni is configured through environment variables in `.env`.
+Fluxomni Studio is configured through environment variables in `.env`.
 
 ## Core Variables
 
@@ -16,7 +16,7 @@ Fluxomni is configured through environment variables in `.env`.
 - `FLUXOMNI_MEDIA_NODE_ZONE`: optional placement zone used to describe where the node runs.
 
 `FLUXOMNI_MEDIA_NODE_PUBLIC_HOST` is especially important for standalone media-node installs.
-Fluxomni uses it in two places:
+Fluxomni Studio uses it in two places:
 
 - It is shown in the RTMP, HLS, SRT, and WebRTC URLs that operators and publishers use.
 - For standalone media-node installs, it is used to derive the default `FLUXOMNI_MEDIA_NODE_ENDPOINT` as `http://<FLUXOMNI_MEDIA_NODE_PUBLIC_HOST>:50051`. Single-host compose installs use Docker-internal networking (`http://media-node:50051`) instead.

@@ -1,6 +1,6 @@
 # Deployment
 
-Fluxomni deploys to Docker hosts on Linux, macOS, or Windows (WSL2 Ubuntu).
+Fluxomni Studio deploys to Docker hosts on Linux, macOS, or Windows (WSL2 Ubuntu).
 The installer handles Docker installation, firewall setup, and starting the stack from a single command.
 
 ## Quick Install
@@ -25,14 +25,14 @@ If you plan to run many concurrent routes or use transcoding, size up accordingl
 
 ## Cloud Provider Guides
 
-Step-by-step instructions for creating a server and auto-installing Fluxomni:
+Step-by-step instructions for creating a server and auto-installing Fluxomni Studio:
 
 - [DigitalOcean](digitalocean.md) — Droplets
 - [Hetzner Cloud](hetzner.md) — Cloud Servers
 - [Oracle Cloud](oracle.md) — OCI Compute (includes Free Tier notes)
 - [VScale / Selectel](vscale.md) — Moscow / St. Petersburg regions
 
-Each guide ends with Fluxomni running at `http://<server-ip>/routes`.
+Each guide ends with Fluxomni Studio running at `http://<server-ip>/routes`.
 
 ## Installer Variables
 
@@ -46,7 +46,7 @@ curl -fsSL https://install.fluxomni.io | WITH_UFW=1 FLUXOMNI_VERSION=edge bash -
 ### Server provisioning
 
 - `WITH_INITIAL_UPGRADE=1` — run `apt-get upgrade` before installing (useful for fresh servers)
-- `WITH_UFW=1` — install and configure ufw with the required Fluxomni ports
+- `WITH_UFW=1` — install and configure ufw with the required Fluxomni Studio ports
 - `WITH_FIREWALLD=1` — install and configure firewalld instead of ufw (required for Oracle Cloud)
 - `ALLOWED_IPS` — comma-separated list of IPs to allow through the firewall (default: `*` for all)
 

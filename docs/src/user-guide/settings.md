@@ -1,6 +1,6 @@
 # Settings
 
-The Settings workspace (`/settings`) is where Fluxomni exposes server defaults, artifact ingest settings, media-profile references, self-service account information, and local user administration. Access it from **Settings** in the sidebar.
+The Settings workspace (`/settings`) is where Fluxomni Studio exposes server defaults, artifact ingest settings, media-profile references, self-service account information, and local user administration. Access it from **Settings** in the sidebar.
 
 ![The General settings section with the section rail, hero card, and admin controls](../images/user-guide/settings.jpg)
 
@@ -48,7 +48,7 @@ Google Drive settings control Drive imports into the artifact library and route 
 
 #### Get an API key
 
-Fluxomni uses a Google Drive **API key**, not an OAuth user token. The key lets the control plane list and download files that are already shared with link access.
+Fluxomni Studio uses a Google Drive **API key**, not an OAuth user token. The key lets the control plane list and download files that are already shared with link access.
 
 To create one:
 
@@ -56,7 +56,7 @@ To create one:
 2. In Google Cloud Console, create or select a project.
 3. Open **APIs & Services → Library**, search for **Google Drive API**, and enable it for the project.
 4. Open **APIs & Services → Credentials** and choose **Create credentials → API key**.
-5. Copy the generated key into **Settings → Artifacts → Google Drive → Google API Key** in Fluxomni.
+5. Copy the generated key into **Settings → Artifacts → Google Drive → Google API Key** in Fluxomni Studio.
 6. Recommended: restrict the key to the **Google Drive API** in Google Cloud Console. If your deployment has a stable public egress IP, also restrict usage to that IP.
 
 Drive files and folders must be shared so the key can read them. Use link sharing such as **Anyone with the link can view** for the folders/files you import. Private files that require a signed-in Google account are not available through this API-key flow.
@@ -72,7 +72,7 @@ The remaining cards are read-only reminders for the current artifact workflow:
 
 ## Media Profiles
 
-The **Media profiles** settings section is admin-only and lists the baseline presets Fluxomni uses when checking route playlist compatibility.
+The **Media profiles** settings section is admin-only and lists the baseline presets Fluxomni Studio uses when checking route playlist compatibility.
 
 ![The Media profiles settings section showing baseline preset definitions](../images/user-guide/settings-media-profiles.jpg)
 
@@ -85,7 +85,7 @@ Profiles are reference presets, not encoder controls. They describe the video an
 - `720p60`
 - `720p25`
 
-Each row shows the comparable fields Fluxomni checks:
+Each row shows the comparable fields Fluxomni Studio checks:
 
 - video codec
 - width and height
@@ -112,7 +112,7 @@ The top card shows the current auth boundary for this session:
 
 ### Change my password
 
-When you are signed in as a named local user, use the password form to rotate that account's password. Fluxomni invalidates the current session and signs the browser back in with the new password once the change succeeds.
+When you are signed in as a named local user, use the password form to rotate that account's password. Fluxomni Studio invalidates the current session and signs the browser back in with the new password once the change succeeds.
 
 ### Sign-in screen
 
@@ -152,7 +152,7 @@ Changing your own role or deleting your own account forces the shell to reload u
 
 ### Route ownership
 
-Fluxomni routes can be either **Shared** or owned by a single named user.
+Fluxomni Studio routes can be either **Shared** or owned by a single named user.
 
 - **Shared routes** remain visible to every signed-in user.
 - **Owned routes** stay scoped to their assignee plus admins.
@@ -163,7 +163,7 @@ The Users page organizes this with per-user **Route ownership** panels plus a **
 
 ### User roles
 
-Fluxomni has three built-in roles:
+Fluxomni Studio has three built-in roles:
 
 | Role | Access |
 | ---- | ------ |
@@ -176,5 +176,5 @@ Fluxomni has three built-in roles:
 Accessible from **Export / Import** in the sidebar, this page lets you bulk export or import route configurations. Use it to:
 
 - back up your routing configuration before major changes
-- migrate routes between Fluxomni instances
+- migrate routes between Fluxomni Studio instances
 - share route templates with other operators

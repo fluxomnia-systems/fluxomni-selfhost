@@ -1,7 +1,7 @@
 import { defineConfig } from '@playwright/test';
 
 /**
- * Screenshot capture configuration for Fluxomni selfhost user-guide docs.
+ * Screenshot capture configuration for Fluxomni Studio selfhost user-guide docs.
  *
  * Environment variables:
  *   FLUXOMNI_URL           — base URL of the running instance (default: http://localhost)

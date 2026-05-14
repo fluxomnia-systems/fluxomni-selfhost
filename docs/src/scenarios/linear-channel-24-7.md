@@ -6,16 +6,16 @@ Broadcast operators running a 24/7 channel from pre-recorded content: corporate 
 
 ## What you'll build
 
-Fluxomni single-host (or a small fleet if you need regional reach), one route with a large playlist backed by Google Drive, file-backup as the safety net, and outputs to YouTube + custom CDN + Icecast audio.
+Fluxomni Studio single-host (or a small fleet if you need regional reach), one route with a large playlist backed by Google Drive, file-backup as the safety net, and outputs to YouTube + custom CDN + Icecast audio.
 
 ```text
-Files (local + Google Drive) → Playlist → Fluxomni → { YouTube, Custom CDN, Icecast audio }
+Files (local + Google Drive) → Playlist → Fluxomni Studio → { YouTube, Custom CDN, Icecast audio }
                                               ↘︎ file-backup loop (safety net)
 ```
 
 ## Setup
 
-1. Install Fluxomni: `curl -fsSL https://install.fluxomni.io | bash`.
+1. Install Fluxomni Studio: `curl -fsSL https://install.fluxomni.io | bash`.
 2. Upload your files to Google Drive, organized by channel or day-part.
 3. Link the Drive account in Settings. See [Configuration](../getting-started/configuration.md).
 4. Create a route and add the playlist files in schedule order.

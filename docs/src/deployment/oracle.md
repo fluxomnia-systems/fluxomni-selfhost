@@ -1,7 +1,7 @@
-How to Deploy Fluxomni to Oracle Cloud Infrastructure
+How to Deploy Fluxomni Studio to Oracle Cloud Infrastructure
 ====================================================
 
-This guide provides a common and recommended way to deploy Fluxomni as a standalone instance on [Oracle Cloud Infrastructure] (OCI).
+This guide provides a common and recommended way to deploy Fluxomni Studio as a standalone instance on [Oracle Cloud Infrastructure] (OCI).
 
 OCI can be a cost-effective option due to its [Free Tier] instances. However, be aware that their resources and bandwidth are limited and may not be suitable for a large number of high-bitrate streams.
 
@@ -43,13 +43,13 @@ For simple restreaming, a [Free Tier] eligible shape (e.g., `VM.Standard.A1.Flex
 
 ### 1.4. Add SSH Keys
 
-You can add an [SSH] key to access the instance for server administration. This is not required for using the Fluxomni application itself. If you do not wish to add a key, you can select "No SSH keys".
+You can add an [SSH] key to access the instance for server administration. This is not required for using the Fluxomni Studio application itself. If you do not wish to add a key, you can select "No SSH keys".
 
 ![SSH access](../images/oci_1.4.png)
 
 ### 1.5. Use Cloud-Init Script
 
-Expand the **Show advanced options** section. Go to the **Management** tab and paste the following script into the `Cloud-init script` field. This runs once when the instance is first created, configures the OS-level firewall (firewalld), and installs Fluxomni.
+Expand the **Show advanced options** section. Go to the **Management** tab and paste the following script into the `Cloud-init script` field. This runs once when the instance is first created, configures the OS-level firewall (firewalld), and installs Fluxomni Studio.
 
 ```bash
 #!/bin/bash
@@ -62,7 +62,7 @@ Click **Create** to begin provisioning the VM instance.
 
 ## 2. Configure Networking
 
-By default, OCI instances have a restrictive firewall. You must create ingress rules to allow traffic to Fluxomni.
+By default, OCI instances have a restrictive firewall. You must create ingress rules to allow traffic to Fluxomni Studio.
 
 ### 2.1. Navigate to Virtual Cloud Network
 
@@ -88,7 +88,7 @@ This allows all incoming traffic to your instance. For a production environment,
 
 ![Allow all Ingress Rule](../images/oci_2.3.2.png)
 
-## 3. Access Fluxomni
+## 3. Access Fluxomni Studio
 
 After the instance is created and the networking is configured, allow 5-15 minutes for the provisioning and installation to complete.
 
@@ -103,7 +103,7 @@ Open your web browser and navigate to the IP address.
 Current releases serve the operator UI from the `control-plane` container directly.
 Use `/routes` for route management and `/fleet` to inspect attached media nodes.
 
-> __NOTE__: By default, Fluxomni is served over `http://`. For production use, it is highly recommended to set up a domain name and configure a reverse proxy (e.g., Nginx or Caddy) to enable `https://` for secure access.
+> __NOTE__: By default, Fluxomni Studio is served over `http://`. For production use, it is highly recommended to set up a domain name and configure a reverse proxy (e.g., Nginx or Caddy) to enable `https://` for secure access.
 
 [Free Tier]: https://www.oracle.com/cloud/free
 [Oracle Cloud Infrastructure]: https://www.oracle.com/cloud

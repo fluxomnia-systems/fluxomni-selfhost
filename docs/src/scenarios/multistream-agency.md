@@ -6,10 +6,10 @@ Agencies and teams operating multistreaming ops on behalf of clients — typical
 
 ## What you'll build
 
-Single-host Fluxomni on a modest cloud VM serving dozens of copy-through routes — one per client brand — with per-route labels and exported configs ready to migrate to a multi-node fleet when load grows.
+Single-host Fluxomni Studio on a modest cloud VM serving dozens of copy-through routes — one per client brand — with per-route labels and exported configs ready to migrate to a multi-node fleet when load grows.
 
 ```text
-1 OBS per client → Fluxomni single-host → fan-out to { YouTube, Twitch, Custom RTMP }
+1 OBS per client → Fluxomni Studio single-host → fan-out to { YouTube, Twitch, Custom RTMP }
 ```
 
 ## Setup

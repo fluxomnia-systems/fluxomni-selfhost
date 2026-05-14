@@ -1,6 +1,6 @@
 # Backup & Restore
 
-Fluxomni stores all persistent state in the `data/` directory inside
+Fluxomni Studio stores all persistent state in the `data/` directory inside
 your install path (default `~/fluxomni`). Backing up this directory
 preserves your entire configuration: routes, settings, user accounts,
 and cached playlist files.

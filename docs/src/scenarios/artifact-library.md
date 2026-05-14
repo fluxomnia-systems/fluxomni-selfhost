@@ -15,7 +15,7 @@ Local files / folders / Google Drive → Artifacts → playlists and file-backup
 
 ## Setup
 
-1. Install Fluxomni: `curl -fsSL https://install.fluxomni.io | bash`.
+1. Install Fluxomni Studio: `curl -fsSL https://install.fluxomni.io | bash`.
 2. Open **Artifacts** from the Control Surface sidebar.
 3. Use **Add files** to upload a file, upload a folder, or import from Google Drive.
 4. Tag reusable files by campaign, client, show, or day-part.

@@ -1,11 +1,11 @@
 # Reverse Proxy & TLS
 
-Most production deployments place Fluxomni behind a reverse proxy to
+Most production deployments place Fluxomni Studio behind a reverse proxy to
 terminate TLS, serve the UI on port 443, and optionally restrict access.
 
 ## Overview
 
-Fluxomni exposes an HTTP surface (UI + API) and several media-plane ports.
+Fluxomni Studio exposes an HTTP surface (UI + API) and several media-plane ports.
 A reverse proxy sits in front of the HTTP surface while media ports
 (RTMP, SRT, HLS/WebRTC) are typically passed through directly.
 
@@ -113,7 +113,7 @@ RTMP (TCP 1935), SRT (UDP 10080), and HLS/WebRTC (TCP+UDP 8000) carry
 media traffic that is not typically proxied through an HTTP reverse proxy.
 Leave these ports published directly on the host.
 
-If you need TLS on RTMP, some CDN endpoints accept RTMPS. Fluxomni
+If you need TLS on RTMP, some CDN endpoints accept RTMPS. Fluxomni Studio
 outputs support `rtmps://` destination URLs natively.
 
 ## Firewall considerations

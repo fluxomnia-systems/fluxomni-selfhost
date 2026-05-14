@@ -1,6 +1,6 @@
 # Routes
 
-Routes are the core of Fluxomni. Each route is an independent streaming pipeline with its own ingest input, one or more outputs, an optional playlist, and a live playback monitor.
+Routes are the core of Fluxomni Studio. Each route is an independent streaming pipeline with its own ingest input, one or more outputs, an optional playlist, and a live playback monitor.
 
 ## Routes List
 
@@ -56,8 +56,8 @@ Choose the ingest protocol for the route:
 
 Then choose the source mode:
 
-- **Accept publish** — Fluxomni generates an ingest address and waits for a publisher to push into it.
-- **Pull from remote** — Fluxomni fetches a remote source URL itself.
+- **Accept publish** — Fluxomni Studio generates an ingest address and waits for a publisher to push into it.
+- **Pull from remote** — Fluxomni Studio fetches a remote source URL itself.
 
 The **Generated publish address** area becomes actionable after the route is saved and assigned to a media node.
 
@@ -169,7 +169,7 @@ The **Live playback** tab embeds the HLS monitor for the route's output. When a 
 
 ## Output Protocols
 
-When adding an output destination, Fluxomni supports several destination URL families:
+When adding an output destination, Fluxomni Studio supports several destination URL families:
 
 - **RTMP / RTMPS** — the common choice for YouTube, Twitch, Facebook Live, and custom RTMP servers.
 - **SRT** — useful for contribution or delivery over less predictable networks.
@@ -193,7 +193,7 @@ Route-level and fleet-level issues surface on the **Attention** page.
 
 ![The Attention page showing the all-clear state when no active alerts exist](../images/user-guide/attention.jpg)
 
-When active issues exist, Fluxomni groups them into **Route alerts** and **Fleet alerts**. Operators can mark items as **Known** to move them into the muted known-issues area without keeping the sidebar urgency badge lit forever. When nothing is active, the page collapses to the all-clear state shown above.
+When active issues exist, Fluxomni Studio groups them into **Route alerts** and **Fleet alerts**. Operators can mark items as **Known** to move them into the muted known-issues area without keeping the sidebar urgency badge lit forever. When nothing is active, the page collapses to the all-clear state shown above.
 
 Alert severity levels include:
 

@@ -1,7 +1,7 @@
 import { expect, type Page } from '@playwright/test';
 
 /**
- * Waits until the Fluxomni shell is fully rendered.
+ * Waits until the Fluxomni Studio shell is fully rendered.
  *
  * Use this before screenshots and before any recorded video action. It checks
  * the sidebar, branding, primary nav, main area, fonts, and stable layout so
@@ -11,7 +11,7 @@ export async function waitForAppReady(page: Page) {
   await page.waitForLoadState('domcontentloaded');
   const sidebar = page.locator('[data-testid="sidebar"], aside').first();
   await sidebar.waitFor({ state: 'visible', timeout: 30_000 });
-  await expect(sidebar.getByText(/Fluxomni/i).first()).toBeVisible({
+  await expect(sidebar.getByText(/Fluxomni(?: Studio)?/i).first()).toBeVisible({
     timeout: 30_000,
   });
   await expect(sidebar.getByRole('link', { name: /routes/i }).first()).toBeVisible({
@@ -49,7 +49,9 @@ export async function waitForStableLayout(page: Page) {
         '[data-testid="sidebar"], aside',
       );
       const main = document.querySelector<HTMLElement>('main');
-      const logo = document.querySelector<HTMLElement>('img[alt="Fluxomni Logo"]');
+      const logo = document.querySelector<HTMLElement>(
+        'img[alt="Fluxomni Logo"], img[alt="Fluxomni Studio Logo"]',
+      );
       if (!sidebar || !main) return false;
       const sidebarBox = sidebar.getBoundingClientRect();
       const mainBox = main.getBoundingClientRect();

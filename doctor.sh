@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Fluxomni Self-Host Doctor — installation health check
+# Fluxomni Studio Self-Host Doctor — installation health check
 set -euo pipefail
 
 PASS="✅"
@@ -31,7 +31,7 @@ check() {
 }
 
 echo "═══════════════════════════════════════════════════════════════"
-echo " Fluxomni Self-Host Doctor"
+echo " Fluxomni Studio Self-Host Doctor"
 echo "═══════════════════════════════════════════════════════════════"
 echo ""
 
@@ -195,7 +195,7 @@ fi
 
 echo ""
 if [ "$required_fail" -eq 0 ]; then
-  echo -e "${GREEN}🎉 Fluxomni self-host environment looks good!${NC}"
+  echo -e "${GREEN}🎉 Fluxomni Studio self-host environment looks good!${NC}"
 else
   echo -e "${RED}❌ Some issues were detected in your self-host setup.${NC}"
   exit 1

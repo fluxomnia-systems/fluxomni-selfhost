@@ -1,10 +1,10 @@
-# Fluxomni Self-Hosted
+# Fluxomni Studio Self-Hosted
 
 <p align="center">
-  <img src="docs/src/images/logo.webp" alt="Fluxomni Logo" width="10%">
+  <img src="docs/src/images/logo.webp" alt="Fluxomni Studio Logo" width="10%">
 </p>
 
-Fluxomni runs live streams on your own server. Send one stream in. Fluxomni can send it out to many places at once: RTMP, SRT, or Icecast.
+Fluxomni Studio runs live streams on your own server. Send one stream in. Fluxomni Studio can send it out to many places at once: RTMP, SRT, or Icecast.
 
 This repo is for self-host installs. Linux and macOS are supported on x64 and ARM64. Windows is supported through WSL2 with Ubuntu.
 
@@ -36,7 +36,7 @@ After installation:
 
 ### Self-Hosted Stack
 
-Best for most users. Installs Fluxomni on one server.
+Best for most users. Installs Fluxomni Studio on one server.
 
 ```bash
 curl -fsSL https://install.fluxomni.io | bash
@@ -44,7 +44,7 @@ curl -fsSL https://install.fluxomni.io | bash
 
 ### Standalone Media Node
 
-Use this when Fluxomni already runs somewhere else and this server should only move video.
+Use this when Fluxomni Studio already runs somewhere else and this server should only move video.
 
 ```bash
 FLUXOMNI_VERSION=edge \
@@ -54,7 +54,7 @@ FLUXOMNI_MEDIA_NODE_PUBLIC_HOST=media2.example.com \
   curl -fsSL https://install.fluxomni.io | bash -s -- media-node
 ```
 
-Set `FLUXOMNI_MEDIA_NODE_PUBLIC_HOST` to the real hostname or IP for this media server. Fluxomni uses it for ingest and playback URLs.
+Set `FLUXOMNI_MEDIA_NODE_PUBLIC_HOST` to the real hostname or IP for this media server. Fluxomni Studio uses it for ingest and playback URLs.
 
 ## Common Install Examples
 
@@ -83,7 +83,7 @@ For the default self-host setup, the installer:
 - installs Docker automatically on supported Debian and Ubuntu hosts if needed
 - downloads the correct `docker-compose.yml` and `.env.example`
 - creates or updates `.env` in place
-- pulls and starts Fluxomni
+- pulls and starts Fluxomni Studio
 - preserves your existing `data/` directory on reruns
 - verifies that the local services actually start before printing success
 
@@ -93,7 +93,7 @@ The web UI is included in the default install.
 
 | Install type | Default directory | Main services |
 | --- | --- | --- |
-| Self-hosted stack | `~/fluxomni` | Fluxomni |
+| Self-hosted stack | `~/fluxomni` | Fluxomni Studio |
 | Standalone media node | `~/fluxomni-media-node` | `media-node` |
 
 The installer manages:
@@ -194,7 +194,7 @@ Useful local commands:
 - `make serve` - serve the docs locally
 - `make lint` - build docs, check local Markdown links, and run markdownlint when available
 - `make lint.ci` - strict CI docs lint; requires `markdownlint-cli2`
-- `make screenshots` - refresh user-guide page and guided-flow screenshots from a running Fluxomni instance
+- `make screenshots` - refresh user-guide page and guided-flow screenshots from a running Fluxomni Studio instance
 
 Compatibility aliases still exist for the older `make docs.build`, `make docs.serve`, `make docs.lint`, and `make docs.lint.ci` targets.
 

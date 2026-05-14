@@ -1,7 +1,7 @@
-How to Deploy Fluxomni to Hetzner Cloud
+How to Deploy Fluxomni Studio to Hetzner Cloud
 =========================================
 
-This guide provides a common and recommended way to deploy Fluxomni as a standalone server on [Hetzner Cloud].
+This guide provides a common and recommended way to deploy Fluxomni Studio as a standalone server on [Hetzner Cloud].
 
 ## 0. Prerequisites
 
@@ -44,11 +44,11 @@ If you intend to record live streams, you may need more disk space than the defa
 ![Add volume](../images/hcloud_1.4.1.jpg)
 ![Setup volume](../images/hcloud_1.4.2.jpg)
 
-The installer will automatically detect and use the attached volume for Fluxomni.
+The installer will automatically detect and use the attached volume for Fluxomni Studio.
 
 ### 1.5. Add User Data
 
-To automatically install Fluxomni on the new server, paste the following script into the `User data` field. This runs once when the server is first created and also configures a firewall with the required ports.
+To automatically install Fluxomni Studio on the new server, paste the following script into the `User data` field. This runs once when the server is first created and also configures a firewall with the required ports.
 
 ```bash
 #!/bin/bash
@@ -59,7 +59,7 @@ curl -fsSL https://install.fluxomni.io | WITH_UFW=1 bash -s
 
 ### 1.6. Add an SSH Key
 
-[Hetzner Cloud] requires an [SSH] key to access the server. This is for managing the server itself; it is not required for using the Fluxomni application.
+[Hetzner Cloud] requires an [SSH] key to access the server. This is for managing the server itself; it is not required for using the Fluxomni Studio application.
 
 ![SSH access](../images/hcloud_1.6.jpg)
 
@@ -71,7 +71,7 @@ Choose a name for your server to easily identify it later. You can leave the oth
 
 Click **Create & Buy Now** to begin provisioning.
 
-## 2. Access Fluxomni
+## 2. Access Fluxomni Studio
 
 After you launch the server, allow 5-15 minutes for the provisioning and installation to complete.
 
@@ -86,7 +86,7 @@ Open your web browser and navigate to the IP address of the server.
 Current releases serve the operator UI from the `control-plane` container directly.
 Use `/routes` for route management and `/fleet` to inspect attached media nodes.
 
-> __NOTE__: By default, Fluxomni is served over `http://`. For production use, it is highly recommended to set up a domain name and configure a reverse proxy (e.g., Nginx or Caddy) to enable `https://` for secure access.
+> __NOTE__: By default, Fluxomni Studio is served over `http://`. For production use, it is highly recommended to set up a domain name and configure a reverse proxy (e.g., Nginx or Caddy) to enable `https://` for secure access.
 
 [Hetzner Cloud]: https://hetzner.com/cloud
 [Project]: https://console.hetzner.cloud/projects

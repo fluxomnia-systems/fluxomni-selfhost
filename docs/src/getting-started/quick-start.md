@@ -1,6 +1,6 @@
 # Quick Start
 
-Get Fluxomni running in minutes. Fluxomni runs live streams on your own server. Send one stream in. Fluxomni can send it out to many places at once: RTMP, SRT, or Icecast.
+Get Fluxomni Studio running in minutes. Fluxomni Studio runs live streams on your own server. Send one stream in. Fluxomni Studio can send it out to many places at once: RTMP, SRT, or Icecast.
 
 ## Prerequisites
 
@@ -17,7 +17,7 @@ If Docker is already installed, the installer uses it. Manual installs and non-D
 curl -fsSL https://install.fluxomni.io | bash
 ```
 
-By default, Fluxomni installs to `~/fluxomni` and follows the newest stable release channel (`latest`).
+By default, Fluxomni Studio installs to `~/fluxomni` and follows the newest stable release channel (`latest`).
 The installer creates one Docker Compose stack and stores data in `./data`.
 The web UI is included in the default install.
 
@@ -47,7 +47,7 @@ FLUXOMNI_MEDIA_NODE_PUBLIC_HOST=media2.example.com \
   curl -fsSL https://install.fluxomni.io | bash -s -- media-node
 ```
 
-The installer writes files to `~/fluxomni-media-node`. It checks that it can reach the main Fluxomni server before it starts.
+The installer writes files to `~/fluxomni-media-node`. It checks that it can reach the main Fluxomni Studio server before it starts.
 Set `FLUXOMNI_MEDIA_NODE_PUBLIC_HOST` to the real hostname or IP for this media server.
 
 Set `FLUXOMNI_MEDIA_NODE_ENDPOINT` only when the media server uses a custom gRPC endpoint.
@@ -56,7 +56,7 @@ You can also set `FLUXOMNI_MEDIA_NODE_ID`, `FLUXOMNI_MEDIA_NODE_NAME`, `FLUXOMNI
 
 ## Access the Operator UI
 
-After Fluxomni starts, open `http://<your-server-ip>`.
+After Fluxomni Studio starts, open `http://<your-server-ip>`.
 Current releases use these primary operator surfaces:
 
 - `/routes` for the route list

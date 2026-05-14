@@ -1,6 +1,6 @@
 # Scenarios
 
-End-to-end walkthroughs for the most common ways teams run Fluxomni.
+End-to-end walkthroughs for the most common ways teams run Fluxomni Studio.
 
 Each scenario explains who it's for, what you'll build, the exact setup steps, and rough cost and scale notes. Start from the scenario closest to your team, then branch into the [User Guide](../user-guide/overview.md) for deeper topics.
 
