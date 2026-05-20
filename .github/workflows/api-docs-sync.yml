@@ -68,4 +68,6 @@ jobs:
             self-host API automation docs.
 
             Review the changed upstream files listed in the workflow summary
-            and update public guide prose if the API contract changed.
+            and update public guide prose if the API contract changed. This
+            workflow does not merge changes automatically; a maintainer must
+            approve and merge the pull request.

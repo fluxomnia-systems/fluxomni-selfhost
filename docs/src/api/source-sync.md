@@ -30,4 +30,5 @@ review before they match the current Fluxomni contract.
 The GitHub workflow reads the private Fluxomni repository with the
 `FLUXOMNI_REPO_TOKEN` secret. Scheduled runs only report drift;
 manual `update` runs refresh this snapshot on a pull request for
-human review and merge.
+human review, approval, and merge. The workflow never auto-merges
+the generated pull request.
