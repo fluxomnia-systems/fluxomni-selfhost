@@ -57,6 +57,7 @@ jobs:
         if: inputs.mode == 'update'
         uses: peter-evans/create-pull-request@v7
         with:
+          token: ${{ secrets.SELFHOST_PR_TOKEN }}
           branch: automation/sync-api-docs-source
           delete-branch: true
           title: "docs: sync API docs source snapshot"

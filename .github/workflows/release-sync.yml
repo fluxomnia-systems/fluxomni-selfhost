@@ -104,6 +104,7 @@ jobs:
         if: inputs.mode == 'update'
         uses: peter-evans/create-pull-request@v7
         with:
+          token: ${{ secrets.SELFHOST_PR_TOKEN }}
           branch: automation/sync-release-${{ inputs.public_version }}
           delete-branch: true
           title: "docs: sync Fluxomni ${{ inputs.public_version }} release data"
