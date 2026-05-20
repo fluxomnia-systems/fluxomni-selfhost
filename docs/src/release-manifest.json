@@ -4,7 +4,7 @@
     "docsPath": "/edge/",
     "imageTag": "edge"
   },
-  "latestStable": "v2026.05.0",
+  "latestStable": "v2026.05.1",
   "releases": {
     "v2026.04.1": {
       "coreVersion": "v0.10.1",
@@ -67,6 +67,58 @@
         "generatedFrom": "6a9cad830"
       },
       "summary": "Artifacts are now reusable source and derived files instead of route-scoped playlist assets. Operators can upload, import, tag, filter, bulk tag, bulk delete, and reuse artifacts across routes, while source and derived catalog rows share one GraphQL, SQLite, generated-client, manifest, and persisted-file surface."
+    },
+    "v2026.05.1": {
+      "api": {
+        "automationDocsPath": "/api/",
+        "contract": "stable",
+        "schemaPath": "api/schema.graphql",
+        "schemaSha256": "2633b6433ceee64aabff48bdc90b6a99f9a2128d7f23279457441842c5f04044",
+        "typescriptClient": "@fluxomni/api-client@0.12.0"
+      },
+      "coreCommit": "6c799101cc336b624832e18664be3ed404647b0c",
+      "coreVersion": "v0.12.0",
+      "docsStablePath": "/",
+      "docsVersionPath": "/v2026.05.1/",
+      "highlights": [
+        {
+          "area": "Public GraphQL automation now uses Route and Artifacts vocabulary with a session-aware `@fluxomni/api-client` transport",
+          "description": "Control planes expose their active GraphQL SDL at /api/schema.graphql, with /api/sdl kept as an alias, so operators and automation tooling can discover the live API contract outside debug mode. The schema, generated operations, TypeScript client, webapp callers, Playwright helpers, and repo-owned Python control...",
+          "title": "Public GraphQL automation now uses Route and Artifacts vocabulary with a session-aware `@fluxomni/api-client` transport"
+        },
+        {
+          "area": "Artifact storage, playlists, and route workspaces now share durable media-library policy and baseline-aware playback",
+          "description": "Playlist routes can schedule one-shot sequential starts, teach or enforce route baseline media profiles, reject incompatible live or playlist sources before they reach the media node, and surface baseline mismatch details through Attention and route workspace issue affordances. Route workspaces now follow...",
+          "title": "Artifact storage, playlists, and route workspaces now share durable media-library policy and baseline-aware playback"
+        },
+        {
+          "area": "Fluxomni now publishes a standalone frontend image and richer live-route diagnostics alongside the split runtime images",
+          "description": "ghcr.io/fluxomnia-systems/fluxomni-frontend is a first-class release artifact, with CI deciding whether backend images, frontend images, or all three need rebuilding. Dev and production deploy flows accept FLUXOMNIFRONTENDIMAGE, route /api and /files back to the compatible control plane, and keep the embedded...",
+          "title": "Fluxomni now publishes a standalone frontend image and richer live-route diagnostics alongside the split runtime images"
+        },
+        {
+          "area": "Developer and CI tooling now line up around the public automation surface and package-based operator helpers",
+          "description": "Playwright owns the backend GraphQL and protocol integration suite that previously lived in Rust integration tests, while Rust backend tests were reorganized under tests/ so only pure unit coverage remains in src/. The old Rust API-client crate and regeneration feature are retired, and CI Summary now treats...",
+          "title": "Developer and CI tooling now line up around the public automation surface and package-based operator helpers"
+        },
+        {
+          "area": "Stable release publication now produces a durable public release handoff for self-host docs, installer mappings, and marketing release data",
+          "description": "The release workflow cuts stable tags only from stable, verifies the GraphQL schema and TypeScript API client examples, publishes or confirms @fluxomni/api-client@<core-version, renders public-release-manifest.json, and uploads that manifest plus public release notes as GitHub Release assets. The manifest records...",
+          "title": "Stable release publication now produces a durable public release handoff for self-host docs, installer mappings, and marketing release data"
+        }
+      ],
+      "images": {
+        "controlPlane": "ghcr.io/fluxomnia-systems/fluxomni-control-plane:v0.12.0",
+        "frontend": "ghcr.io/fluxomnia-systems/fluxomni-frontend:v0.12.0",
+        "mediaNode": "ghcr.io/fluxomnia-systems/fluxomni-media-node:v0.12.0"
+      },
+      "releasedAt": "2026-05-20",
+      "selfhostRef": "v2026.05.1",
+      "source": {
+        "coreTag": "v0.12.0",
+        "generatedFrom": "6c799101"
+      },
+      "summary": "Control planes expose their active GraphQL SDL at /api/schema.graphql, with /api/sdl kept as an alias, so operators and automation tooling can discover the live API contract outside debug mode. The schema, generated operations, TypeScript client, webapp callers, Playwright helpers, and repo-owned Python control..."
     }
   },
   "schemaVersion": 1

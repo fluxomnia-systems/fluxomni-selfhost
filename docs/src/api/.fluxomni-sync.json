@@ -1,5 +1,5 @@
 {
-  "coreVersion": "v0.11.0",
+  "coreVersion": "v0.12.0",
   "files": {
     "api/clients/typescript/README.md": {
       "bytes": 7057,
@@ -52,8 +52,8 @@
       "sha256": "42c65a41a56c4e7bbcda998d183e4242167a4d4a03932c1c68bad20b816c99f4"
     }
   },
-  "release": "v2026.05.0",
-  "resolvedSha": "6a9cad830913856ab8d08f2655683be5114f06e2",
+  "release": "v2026.05.1",
+  "resolvedSha": "6c799101cc336b624832e18664be3ed404647b0c",
   "schemaVersion": 2,
-  "updatedAt": "2026-05-20T18:47:17+00:00"
+  "updatedAt": "2026-05-20T22:05:46+00:00"
 }
