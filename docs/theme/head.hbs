@@ -1,0 +1,128 @@
+<style>
+/* Hide rust, coal, and ayu themes; keep only Light and Navy. */
+#theme-list > button[id="rust"],
+#theme-list > button[id="coal"],
+#theme-list > button[id="ayu"] {
+    display: none;
+}
+
+.fluxomni-version-select {
+    align-self: center;
+    max-width: 12rem;
+    height: 2rem;
+    margin: 0 .35rem;
+    padding: 0 .5rem;
+    border: 1px solid var(--table-border-color);
+    border-radius: 4px;
+    background: var(--bg);
+    color: var(--fg);
+    font: inherit;
+    font-size: .85rem;
+}
+
+@media (max-width: 700px) {
+    .fluxomni-version-select {
+        max-width: 8.5rem;
+        font-size: .78rem;
+    }
+}
+</style>
+<script>
+(function () {
+    function trimSlashes(value) {
+        return value.replace(/^\/+|\/+$/g, "");
+    }
+
+    function versionRootUrl(releases) {
+        var root = new URL(typeof path_to_root === "string" && path_to_root ? path_to_root : ".", window.location.href);
+        var segments = root.pathname.split("/").filter(Boolean);
+        var current = segments.length ? segments[segments.length - 1] : "";
+        var versionNames = releases.map(function (release) { return release.version; });
+        if (versionNames.indexOf(current) === -1) {
+            return { root: root, base: root, currentVersion: "" };
+        }
+        segments.pop();
+        var base = new URL("/" + (segments.length ? segments.join("/") + "/" : ""), window.location.origin);
+        return { root: root, base: base, currentVersion: current };
+    }
+
+    function relativePage(root) {
+        var currentPath = window.location.pathname;
+        var rootPath = root.pathname;
+        if (currentPath.indexOf(rootPath) !== 0) {
+            return "";
+        }
+        return trimSlashes(currentPath.slice(rootPath.length));
+    }
+
+    function pageUrl(base, version, page) {
+        var parts = [trimSlashes(base.pathname)];
+        if (version) {
+            parts.push(version);
+        }
+        if (page) {
+            parts.push(page);
+        }
+        var path = "/" + parts.filter(Boolean).join("/");
+        if (!/\.[^/]+$/.test(path)) {
+            path = path.replace(/\/?$/, "/");
+        }
+        return new URL(path, window.location.origin).href;
+    }
+
+    function labelFor(release, latestStable) {
+        var label = release.version;
+        if (release.version === latestStable) {
+            label += " (latest)";
+        }
+        if (release.coreVersion) {
+            label += " / " + release.coreVersion;
+        }
+        return label;
+    }
+
+    function installSelector(payload) {
+        var releases = payload.releases || [];
+        if (!releases.length) {
+            return;
+        }
+        var rightButtons = document.querySelector("#mdbook-menu-bar .right-buttons");
+        if (!rightButtons) {
+            return;
+        }
+        var roots = versionRootUrl(releases);
+        var page = relativePage(roots.root);
+        var selected = roots.currentVersion || payload.latestStable;
+        var select = document.createElement("select");
+        select.className = "fluxomni-version-select";
+        select.title = "Documentation version";
+        select.setAttribute("aria-label", "Documentation version");
+        releases.forEach(function (release) {
+            var option = document.createElement("option");
+            option.value = release.version;
+            option.textContent = labelFor(release, payload.latestStable);
+            option.selected = release.version === selected;
+            select.appendChild(option);
+        });
+        select.addEventListener("change", function () {
+            var target = select.value === payload.latestStable ? "" : select.value;
+            window.location.href = pageUrl(roots.base, target, page);
+        });
+        rightButtons.insertBefore(select, rightButtons.firstChild);
+    }
+
+    document.addEventListener("DOMContentLoaded", function () {
+        var root = typeof path_to_root === "string" ? new URL(path_to_root || ".", window.location.href) : window.location.href;
+        var manifestUrl = new URL("versions.json", root);
+        fetch(manifestUrl.href)
+            .then(function (response) {
+                if (!response.ok) {
+                    throw new Error("versions.json not found");
+                }
+                return response.json();
+            })
+            .then(installSelector)
+            .catch(function () {});
+    });
+})();
+</script>

@@ -62,6 +62,7 @@ release.sync.update:
 
 docs.build: check.tools.docs
 	@mdbook build $(DOCS_DIR)
+	@python3 scripts/build-versioned-docs.py --book-dir "$(DOCS_BUILD)" --manifest "$(DOCS_SRC)/release-manifest.json"
 
 docs.serve: check.tools.docs
 	@mdbook serve $(DOCS_DIR) --hostname 127.0.0.1 --port $${PORT:-3000}
