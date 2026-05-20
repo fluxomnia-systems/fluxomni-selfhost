@@ -161,14 +161,15 @@ def write_status_page(snapshot: dict[str, Any]) -> None:
     lines.extend(
         [
             "",
-            "Scheduled GitHub Actions compare these hashes with the upstream",
+            "Manual GitHub Actions runs compare these hashes with the upstream",
             "Fluxomni ref. A failed check means the public API docs may need",
             "review before they match the current Fluxomni contract.",
             "",
             "The GitHub workflow reads the private Fluxomni repository with the",
-            "`FLUXOMNI_REPO_TOKEN` secret. Scheduled runs only report drift;",
+            "`FLUXOMNI_REPO_TOKEN` secret. Manual `check` runs only report drift;",
             "manual `update` runs refresh this snapshot on a pull request for",
-            "human review and merge.",
+            "human review, approval, and merge. The workflow never auto-merges",
+            "the generated pull request.",
             "",
         ],
     )
