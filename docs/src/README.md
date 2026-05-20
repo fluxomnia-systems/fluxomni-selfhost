@@ -38,6 +38,7 @@ After installation:
 - [Private Access & Tunnels](getting-started/private-access.md) — Tailscale and Cloudflare Tunnel setup examples
 - [Troubleshooting](getting-started/troubleshooting.md)
 - [User Guide](user-guide/overview.md) — operating the Control Surface
+- [API Automation](api/overview.md) — session auth, raw GraphQL, TypeScript client, subscriptions, errors, and workflow recipes
 - [Deployment](deployment/overview.md) — cloud provider guides and server provisioning
 
 ## Release Channels

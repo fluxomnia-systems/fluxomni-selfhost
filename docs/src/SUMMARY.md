@@ -35,6 +35,16 @@
   - [Fleet](user-guide/fleet.md)
   - [Settings](user-guide/settings.md)
 
+## API Automation
+
+- [API Automation](api/overview.md)
+  - [Authentication](api/auth.md)
+  - [Raw GraphQL](api/graphql.md)
+  - [TypeScript Client](api/typescript-client.md)
+  - [Subscriptions](api/subscriptions.md)
+  - [Error Handling](api/errors.md)
+  - [Workflows](api/workflows.md)
+
 ## Deployment
 
 - [Deployment](deployment/overview.md)
