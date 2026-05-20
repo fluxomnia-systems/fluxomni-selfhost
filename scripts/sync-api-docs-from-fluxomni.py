@@ -165,6 +165,11 @@ def write_status_page(snapshot: dict[str, Any]) -> None:
             "Fluxomni ref. A failed check means the public API docs may need",
             "review before they match the current Fluxomni contract.",
             "",
+            "The GitHub workflow reads the private Fluxomni repository with the",
+            "`FLUXOMNI_REPO_TOKEN` secret. Scheduled runs only report drift;",
+            "manual `update` runs refresh this snapshot on a pull request for",
+            "human review and merge.",
+            "",
         ],
     )
     STATUS_PAGE_PATH.write_text("\n".join(lines), encoding="utf-8")
@@ -228,6 +233,8 @@ def main() -> int:
     write_step_summary(args.mode, drift, snapshot)
 
     if args.mode == "update":
+        if not drift and previous is not None:
+            snapshot["updatedAt"] = previous.get("updatedAt", snapshot["updatedAt"])
         STATE_PATH.parent.mkdir(parents=True, exist_ok=True)
         STATE_PATH.write_text(
             json.dumps(snapshot, indent=2, sort_keys=True) + "\n",

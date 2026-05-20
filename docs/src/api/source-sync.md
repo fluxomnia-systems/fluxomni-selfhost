@@ -6,7 +6,7 @@ were last checked against.
 - Upstream repository: `https://github.com/fluxomnia-systems/fluxomni.git`
 - Requested ref: `refactor/prepare-public-api`
 - Resolved commit: `7b66bd62f67c`
-- Updated at: `2026-05-20T15:22:45+00:00`
+- Updated at: `2026-05-20T15:48:29+00:00`
 
 ## Tracked Source Files
 
@@ -26,3 +26,8 @@ were last checked against.
 Scheduled GitHub Actions compare these hashes with the upstream
 Fluxomni ref. A failed check means the public API docs may need
 review before they match the current Fluxomni contract.
+
+The GitHub workflow reads the private Fluxomni repository with the
+`FLUXOMNI_REPO_TOKEN` secret. Scheduled runs only report drift;
+manual `update` runs refresh this snapshot on a pull request for
+human review and merge.
