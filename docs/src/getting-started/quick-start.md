@@ -31,7 +31,7 @@ FLUXOMNI_VERSION=edge \
   curl -fsSL https://install.fluxomni.io | bash
 ```
 
-To pin a stable release, set `FLUXOMNI_VERSION=v2026.05.0` or another public `vYYYY.MM.N` tag.
+To pin a stable release, set `FLUXOMNI_VERSION=v2026.05.1` or another public `vYYYY.MM.N` tag.
 
 Use `FLUXOMNI_SELFHOST_REF` only when the config files must come from a different ref.
 
@@ -66,7 +66,7 @@ Current releases use these primary operator surfaces:
 ## Manual Install
 
 ```bash
-ASSET_REF=main # or a published versioned self-host ref, for example v2026.05.0
+ASSET_REF=main # or a published versioned self-host ref, for example v2026.05.1
 mkdir -p ~/fluxomni
 cd ~/fluxomni
 curl -fsSL "https://raw.githubusercontent.com/fluxomnia-systems/fluxomni-selfhost/${ASSET_REF}/docker-compose.yml" -o docker-compose.yml

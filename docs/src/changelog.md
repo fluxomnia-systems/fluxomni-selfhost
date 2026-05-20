@@ -2,6 +2,30 @@
 
 Operator-facing highlights from recent Fluxomni Studio releases.
 
+## 2026.05.1 — May 2026
+
+### Stable Automation Surface
+
+Public GraphQL automation now uses Route and Artifacts vocabulary across the schema, generated operations, TypeScript client, webapp callers, Playwright helpers, and repo-owned operator tooling. Control planes expose the active SDL at `/api/schema.graphql`, so scripts and integrations can discover the live contract outside debug mode.
+
+### Recipes and Session-Aware Client
+
+`@fluxomni/api-client@0.12.0` exposes generated documents, raw GraphQL execution, and session-aware transport helpers. The public docs now cover session login, desired-state route convergence, route-source controls, playlist and artifact settings, Fleet command safety, subscriptions, and error helpers.
+
+### API-Visible Route Telemetry
+
+Automation and operators can read clearer source freshness, bitrate, viewer activity, and availability signals through the API and Control Surface. Playlist route workflows also expose baseline mismatch details through Attention and route workspace issue affordances, so automations can converge routes without scraping UI state.
+
+### Split Frontend Image
+
+The web UI now has its own image alongside the control-plane and media-node images. This makes reverse-proxy and split-runtime deployments easier to reason about while preserving the embedded control-plane UI as a fallback.
+
+### Safer Playlist Automation
+
+Playlist routes can teach or enforce media baselines, reject incompatible live or playlist sources earlier, and surface mismatch details through Attention and route workspace issue affordances. Automations can converge routes against these states without scraping UI-only signals.
+
+---
+
 ## 2026.05.0 — May 2026
 
 ### Shared Media Library
@@ -16,9 +40,9 @@ Uploads and imports now surface usable capacity, configured headroom, top consum
 
 Bulk tagging, filtered selection, protected deletes, route references, and route-baseline compatibility indicators make larger content libraries safer to manage during live channel operations.
 
-### Public Date-Style Release Tag
+### Stable Release Pins
 
-Public install examples now use `v2026.05.0`. The installer resolves that public tag to the core `v0.11.0` control-plane and media-node image tags.
+Public examples now use date-style pins such as `v2026.05.0`, while known core tags remain accepted for direct image pinning. This gives operators a readable stable version to copy into deployment notes and rollback plans.
 
 ---
 
@@ -40,15 +64,11 @@ Playlist lifecycle callbacks now flow through the same runtime-event path as pus
 
 ### Quieter, Safer Media-Node Logs
 
-Routine manifest reconciliation, file-download churn, and expected FFmpeg/SRS lifecycle messages stay below operator warning level. Playlist probes no longer create RTMP probe storms, and media-node artifact download logs redact userinfo, query strings, and fragments from fetch URLs.
+Routine manifest reconciliation, file-download churn, and expected media lifecycle messages stay below operator warning level. Playlist probes no longer create noisy feedback loops, and media-node artifact download logs redact userinfo, query strings, and fragments from fetch URLs.
 
 ### No Telemetry Unless Enabled
 
 Self-hosted webapp builds no longer initialize PostHog by default. Analytics only run when both `VITE_POSTHOG_ENABLED=true` and a non-empty `VITE_POSTHOG_KEY` are provided at build time, preserving the no-telemetry promise for standard self-host installs.
-
-### Date-Style Version Pins
-
-Public release examples now use date-style pins such as `v2026.04.2`. During the migration, the installer accepts both date-style pins and legacy semantic pins such as `v0.10.2`, mapping known date releases to the matching legacy image tag when needed.
 
 ---
 

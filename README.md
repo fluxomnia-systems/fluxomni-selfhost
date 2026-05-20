@@ -8,11 +8,11 @@ Fluxomni Studio runs live streams on your own server. Send one stream in. Fluxom
 
 This repo is for self-host installs. Linux and macOS are supported on x64 and ARM64. Windows is supported through WSL2 with Ubuntu.
 
-## What's New in 2026.05.0
+## What's New in 2026.05.1
 
-- **Shared media library** — upload files once, tag them by client or show, and reuse the same assets across playlists, fallback loops, and route workflows
-- **Storage-aware uploads** — see usable capacity, headroom, top consumers, and recent storage rejections before starting large local or Drive imports
-- **Cleaner asset operations** — bulk tagging, filtered selection, protected deletes, and route compatibility indicators make large content libraries safer to operate
+- **Stable public automation API** — GraphQL automation now uses Route and Artifacts vocabulary, release-pinned schema discovery at `/api/schema.graphql`, and a session-aware `@fluxomni/api-client`
+- **Automation recipes and generated clients** — the docs cover login, desired-state route convergence, source controls, playlist and artifact settings, subscriptions, and error handling
+- **Richer API telemetry** — scripts and operators can read clearer source freshness, bitrate, viewer activity, and availability signals through the API and Control Surface
 
 For older versions, see the [Release Channels](#release-channels) section below.
 
@@ -64,7 +64,7 @@ FLUXOMNI_DIR=/opt/fluxomni \
   curl -fsSL https://install.fluxomni.io | bash
 
 # Pin a specific stable release
-FLUXOMNI_VERSION=v2026.05.0 \
+FLUXOMNI_VERSION=v2026.05.1 \
   curl -fsSL https://install.fluxomni.io | bash
 
 # Use the newest main-branch build
@@ -111,7 +111,7 @@ The installer manages:
 | `vX.Y.Z` | Core image tag, accepted for direct image pinning |
 | `edge` | Latest successful publish from `main` |
 
-Use `latest` unless you need a pinned release or a test build. The current stable public release is `v2026.05.0`; it maps to core image tag `v0.11.0`.
+Use `latest` unless you need a pinned release or a test build. The current stable public release is `v2026.05.1`; it maps to core image tag `v0.12.0`.
 
 See the What's New section above for the latest highlights.
 

@@ -14,7 +14,7 @@ The current self-host release covers the production workflows most teams need be
 - **Storage-aware operations.** See usable capacity, configured headroom, top consumers, and recent storage rejections before large uploads or imports fail.
 - **Fleet and failover visibility.** Add regional media nodes, pin routes when needed, and see route, node, and failover health in the Control Surface and Attention feed.
 - **Controlled self-host access.** Run behind public DNS, a reverse proxy, Tailscale, WireGuard, NetBird, or Cloudflare Tunnel, with named operators and role-based access.
-- **Pinned, recoverable installs.** Use public date-style release pins such as `v2026.05.0`, rollback with known tags, or track `edge` only when you intentionally want main-branch builds.
+- **Pinned, recoverable installs.** Use public date-style release pins such as `v2026.05.1`, rollback with known tags, or track `edge` only when you intentionally want main-branch builds.
 
 ## In focus
 
