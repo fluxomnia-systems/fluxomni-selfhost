@@ -1,0 +1,27 @@
+{
+  "apiClient": "@fluxomni/api-client@0.11.0",
+  "recipes": [
+    {
+      "id": "session-raw-subscription",
+      "source": "api/examples/typescript/session-raw-subscription.ts",
+      "title": "Session raw subscription"
+    },
+    {
+      "id": "ensure-route-desired-state",
+      "source": "api/examples/typescript/ensure-route-desired-state.ts",
+      "title": "Ensure route desired state"
+    },
+    {
+      "id": "manage-route-controls",
+      "source": "api/examples/typescript/manage-route-controls.ts",
+      "title": "Manage route controls"
+    },
+    {
+      "id": "manage-playlist-artifacts-settings-fleet",
+      "source": "api/examples/typescript/manage-playlist-artifacts-settings-fleet.ts",
+      "title": "Manage playlist artifacts settings fleet"
+    }
+  ],
+  "release": "v2026.05.0",
+  "schemaVersion": 1
+}

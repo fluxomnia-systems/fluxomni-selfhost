@@ -1,4 +1,5 @@
 {
+  "coreVersion": "v0.11.0",
   "files": {
     "api/clients/typescript/README.md": {
       "bytes": 7057,
@@ -49,21 +50,10 @@
       "bytes": 3963,
       "present": true,
       "sha256": "42c65a41a56c4e7bbcda998d183e4242167a4d4a03932c1c68bad20b816c99f4"
-    },
-    "docs/public-api/selfhost-docs-handoff.md": {
-      "bytes": 3481,
-      "present": true,
-      "sha256": "7a80dfef4f4151a00c92f96e7a13a8f36fe28e12319783de7611b53b38b15bdd"
-    },
-    "lat.md/public-api.md": {
-      "bytes": 17129,
-      "present": true,
-      "sha256": "ded1f8f0789ba2477da427bf4135ce49483c54d56a2d5f902ca4696b16a31516"
     }
   },
-  "repo": "https://github.com/fluxomnia-systems/fluxomni.git",
-  "requestedRef": "refactor/prepare-public-api",
-  "resolvedSha": "7b66bd62f67c3d34788c3689a157a27de5ceeb9c",
-  "schemaVersion": 1,
-  "updatedAt": "2026-05-20T15:48:29+00:00"
+  "release": "v2026.05.0",
+  "resolvedSha": "6a9cad830913856ab8d08f2655683be5114f06e2",
+  "schemaVersion": 2,
+  "updatedAt": "2026-05-20T18:47:17+00:00"
 }

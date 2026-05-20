@@ -142,7 +142,7 @@ You can run `install.sh` again on the same install. It keeps your data and updat
 
 ## Advanced Installer Notes
 
-- If `FLUXOMNI_VERSION` is pinned, the installer tries the matching self-host files first. If they are missing, it warns and uses `main`.
+- If `FLUXOMNI_VERSION` is pinned, the installer tries the matching self-host files first. Stable public pins fail loudly when matching assets are missing after release sync.
 - Use `FLUXOMNI_SELFHOST_REF` to force a self-host asset ref.
 - Use `FLUXOMNI_REPO_RAW` to use a custom raw asset base.
 - Use `FLUXOMNI_CONTROL_PLANE_IMAGE` and `FLUXOMNI_MEDIA_NODE_IMAGE` only when you publish your own images.

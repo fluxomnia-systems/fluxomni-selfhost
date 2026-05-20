@@ -1,0 +1,9 @@
+# Fluxomni Self-Host API
+
+Stable public release: v2026.05.0
+Core runtime: v0.11.0
+Core API client: @fluxomni/api-client@0.11.0
+GraphQL SDL: /api/schema.graphql
+Automation recipes: /api/automation-recipes.json
+
+Use the stable API docs, generated schema, and pinned TypeScript client version for automation against self-hosted Fluxomni instances. Treat fleet commands and destructive mutations as operator-confirmed actions.

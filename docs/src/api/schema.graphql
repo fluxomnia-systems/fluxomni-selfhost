@@ -1,0 +1,4476 @@
+"""
+Operator-facing active source details for a route presentation surface.
+"""
+type ActiveSourcePresentation {
+	"""
+	Operator-facing source label.
+	"""
+	label: String!
+	"""
+	Operator-facing sentence describing the selected source.
+	"""
+	description: String!
+	"""
+	Operator-facing role badge copy.
+	"""
+	roleLabel: String!
+	"""
+	Coarse source kind.
+	"""
+	kind: ObservedSourceKind!
+	"""
+	Configured route-source id when the active source maps to a source row.
+	"""
+	sourceId: RouteSourceId
+}
+
+"""
+Admin settings view that omits raw secrets but retains editable values.
+"""
+type AdminSettingsInfo {
+	"""
+	Title for the operator UI.
+	"""
+	title: String
+	"""
+	Whether destructive actions should ask for confirmation.
+	"""
+	deleteConfirmation: Boolean
+	"""
+	Whether enable/disable actions should ask for confirmation.
+	"""
+	enableConfirmation: Boolean
+	"""
+	Whether a password is configured (presence flag, hash never exposed).
+	"""
+	hasPassword: Boolean!
+	"""
+	Google API key for file playback (editable, so returned as value).
+	"""
+	googleApiKey: String
+	"""
+	Maximum playlist download concurrency, when configured.
+	"""
+	maxDownloadingFiles: Unumber
+	"""
+	Owned artifact-library defaults for imports, probing, and picker behavior.
+	"""
+	artifactLibraryPolicy: ArtifactLibraryPolicy!
+	"""
+	Host that this server is reachable via in public.
+	"""
+	publicHost: String!
+}
+
+"""
+Whether the published location is durable artifact authority.
+"""
+enum ArtifactAuthority {
+	"""
+	The location is the durable catalog authority for the artifact bytes.
+	"""
+	DURABLE
+	"""
+	The location is a temporary relay or cache copy and not durable truth.
+	"""
+	NON_DURABLE
+}
+
+"""
+Catalog entry for a tracked asset or derived artifact with explicit policy metadata.
+"""
+type ArtifactCatalogEntry {
+	"""
+	Semantic role of this asset or artifact.
+	"""
+	kind: ArtifactKind!
+	"""
+	Location contract used for node-side fetch and publishing.
+	"""
+	location: ArtifactLocation!
+	"""
+	Explicit publish metadata carried alongside the location.
+	"""
+	publish: ArtifactPublishMetadata!
+	"""
+	Explicit lookup metadata carried alongside the location.
+	"""
+	lookup: ArtifactLookupMetadata!
+	"""
+	Explicit lifecycle policy carried alongside the location.
+	"""
+	lifecycle: ArtifactLifecycleMetadata!
+}
+
+enum ArtifactDuplicateImportPolicy {
+	MERGE
+	IGNORE
+	REPLACE
+}
+
+"""
+Canonical asset/artifact role carried by the catalog.
+"""
+enum ArtifactKind {
+	"""
+	Source asset referenced by a file-backed route or playlist.
+	"""
+	SOURCE_ASSET
+	"""
+	Recording emitted by a live pipeline.
+	"""
+	RECORDING
+	"""
+	Render or transcode output.
+	"""
+	RENDER
+	"""
+	Thumbnail or still image derived from media.
+	"""
+	THUMBNAIL
+	"""
+	Transcript or subtitle artifact.
+	"""
+	TRANSCRIPT
+	"""
+	AI-generated output artifact.
+	"""
+	AI_OUTPUT
+}
+
+type ArtifactLibraryPolicy {
+	duplicateImport: ArtifactDuplicateImportPolicy!
+	probe: ArtifactProbePolicy!
+	pickerCompatibilityDefault: ArtifactPickerCompatibilityDefault!
+	defaultDerivedArtifactLifecyclePolicy: ArtifactLifecyclePolicy!
+}
+
+input ArtifactLibraryPolicyInput {
+	duplicateImport: ArtifactDuplicateImportPolicy!
+	probe: ArtifactProbePolicy!
+	pickerCompatibilityDefault: ArtifactPickerCompatibilityDefault!
+	defaultDerivedArtifactLifecyclePolicy: ArtifactLifecyclePolicy!
+}
+
+"""
+Explicit lifecycle metadata for a catalog entry.
+"""
+type ArtifactLifecycleMetadata {
+	"""
+	Policy describing how long this artifact should remain addressable.
+	"""
+	policy: ArtifactLifecyclePolicy!
+	"""
+	Source file whose deletion also removes this artifact.
+	"""
+	sourceFileId: FileId
+	"""
+	Explicit expiration timestamp or retention horizon label.
+	"""
+	expiresAt: String
+}
+
+"""
+Lifecycle policy for a catalog entry.
+"""
+enum ArtifactLifecyclePolicy {
+	"""
+	Retain only while the source row remains the durable owner.
+	"""
+	FOLLOW_SOURCE
+	"""
+	Retain until an operator or workflow deletes the artifact.
+	"""
+	KEEP_UNTIL_DELETED
+	"""
+	Retain only while the copy remains on non-durable cache storage.
+	"""
+	CACHE_ONLY
+}
+
+"""
+Location coordinates for one artifact publication.
+"""
+type ArtifactLocation {
+	"""
+	Location type that currently serves this artifact.
+	"""
+	locationType: ArtifactLocationType!
+	"""
+	Whether this location is durable artifact authority or a temporary copy.
+	"""
+	authority: ArtifactAuthority!
+	"""
+	Stable storage key or object path for the artifact.
+	"""
+	objectKey: String!
+	"""
+	Remote fetch URL for this location, when node-side pull is allowed.
+	"""
+	fetchUrl: String
+}
+
+"""
+Location type for a published artifact.
+"""
+enum ArtifactLocationType {
+	"""
+	Control-plane-hosted relay delivery over the `/files/*` surface.
+	"""
+	CONTROL_PLANE_RELAY
+	"""
+	Durable object storage, such as an S3-compatible bucket.
+	"""
+	OBJECT_STORAGE
+	"""
+	Node-local cache or other non-authoritative scratch storage.
+	"""
+	NODE_CACHE
+}
+
+"""
+Explicit lookup policy for a catalog entry.
+"""
+type ArtifactLookupMetadata {
+	"""
+	Stable storage key or object path for the artifact.
+	"""
+	objectKey: String!
+	"""
+	Remote fetch URL for this location, when node-side pull is allowed.
+	"""
+	fetchUrl: String
+	"""
+	Source library file that produced this artifact, when derived from one.
+	"""
+	sourceFileId: FileId
+	"""
+	Stable recipe identifier for render/normalize-style derived artifacts.
+	"""
+	recipeId: String
+	"""
+	Deterministic hash of recipe parameters used for invalidation.
+	"""
+	recipeHash: String
+	"""
+	Language or locale identifier for transcript/AI text artifacts.
+	"""
+	language: String
+	"""
+	Output, route, or DVR stream identifier used for recording lookup.
+	"""
+	outputId: String
+	"""
+	Inclusive recording/window start timestamp or offset.
+	"""
+	windowStart: String
+	"""
+	Exclusive recording/window end timestamp or offset.
+	"""
+	windowEnd: String
+}
+
+enum ArtifactPickerCompatibilityDefault {
+	MATCH
+	MISMATCH
+	UNKNOWN
+	ALL
+}
+
+enum ArtifactProbePolicy {
+	EAGER
+	LAZY
+	DISABLED
+}
+
+"""
+Explicit publish metadata for a catalog entry.
+"""
+type ArtifactPublishMetadata {
+	"""
+	Location type intended to serve the published bytes.
+	"""
+	locationType: ArtifactLocationType!
+	"""
+	Whether the published location is durable artifact truth.
+	"""
+	authority: ArtifactAuthority!
+	"""
+	Logical destination for produced artifacts, such as an output, route, or bucket.
+	"""
+	destination: String
+}
+
+type ArtifactsMutation {
+	"""
+	Force download file from Google Drive by its ID.
+	"""
+	downloadFile(
+		"""
+		ID of the file from Google Drive to be downloaded.
+		"""
+		fileId: FileId!
+	): FileMutationResult!
+	"""
+	Renames a reusable library file.
+	"""
+	renameLibraryFile(input: RenameLibraryFileInput!): LibraryFileMutationResult!
+	"""
+	Adds one or more tags to reusable library files atomically.
+	"""
+	addFileTags(input: LibraryFileTagsInput!): BulkLibraryFileMutationResult!
+	"""
+	Removes one or more tags from reusable library files atomically.
+	"""
+	removeFileTags(input: LibraryFileTagsInput!): BulkLibraryFileMutationResult!
+	"""
+	Records a derived artifact in the shared library catalog.
+	"""
+	recordDerivedArtifact(input: RecordDerivedArtifactInput!): LibraryFileMutationResult!
+	"""
+	Deletes unused reusable library files.
+	"""
+	deleteLibraryFiles(ids: [FileId!]!): LibraryDeleteResult!
+	"""
+	Detaches route references and deletes reusable library files.
+	"""
+	forceDeleteLibraryFiles(ids: [FileId!]!): LibraryDeleteResult!
+	"""
+	Cancel download of a file by its ID.
+	"""
+	cancelFileDownload(
+		"""
+		ID of the file to cancel download.
+		"""
+		fileId: FileId!
+	): FileMutationResult!
+	"""
+	Remove a DVR recorded file.
+	"""
+	removeDvrFile(input: RemoveDvrFileInput!): DvrFileMutationResult!
+}
+
+type ArtifactsQuery {
+	"""
+	Returns reusable library files with derived route references and artifact metadata.
+	"""
+	libraryFiles(filter: LibraryFileFilter): [LibraryFile!]!
+	"""
+	Returns one reusable library file by id with artifact metadata.
+	"""
+	libraryFile(id: FileId!): LibraryFile
+	"""
+	Returns the workspace tag summary for library files.
+	"""
+	libraryTags: [LibraryTag!]!
+	"""
+	Returns list of recorded files of the specified Output.
+	"""
+	dvrFiles(
+		"""
+		ID of the Output to return recorded files of.
+		"""
+		id: OutputId!
+	): [String!]!
+}
+
+"""
+Route-level media profile that playlist files must match.
+"""
+type BaselineProfile {
+	"""
+	Stable preset identifier, such as `1080p30`.
+	"""
+	presetId: String!
+	"""
+	Required video codec name.
+	"""
+	videoCodec: String!
+	"""
+	Required video width in pixels.
+	"""
+	width: Int!
+	"""
+	Required video height in pixels.
+	"""
+	height: Int!
+	"""
+	Required frame rate as a rational string.
+	"""
+	framerate: String!
+	"""
+	Required audio codec name.
+	"""
+	audioCodec: String!
+	"""
+	Required audio channel count.
+	"""
+	audioChannels: Int!
+	"""
+	Required audio sample rate in hertz.
+	"""
+	audioSampleRate: Int!
+}
+
+"""
+Fixed baseline preset exposed to operator clients.
+"""
+type BaselineProfilePreset {
+	"""
+	Stable preset identifier.
+	"""
+	id: String!
+	"""
+	Operator-facing preset label.
+	"""
+	label: String!
+	"""
+	Full media profile represented by this preset.
+	"""
+	profile: BaselineProfile!
+}
+
+"""
+Explicit result payload for bulk library catalog mutations.
+"""
+type BulkLibraryFileMutationResult {
+	"""
+	Mutation outcome status.
+	"""
+	status: MutationResultStatus!
+	"""
+	File identities associated with the mutation.
+	"""
+	fileIds: [FileId!]!
+	"""
+	Hydrated library file rows after the mutation.
+	"""
+	libraryFiles: [LibraryFile!]!
+}
+
+"""
+Explicit result payload for mutations that affect output collections.
+"""
+type BulkOutputMutationResult {
+	"""
+	Mutation outcome status.
+	"""
+	status: MutationResultStatus!
+	"""
+	Route identities associated with the output mutation.
+	"""
+	routeIds: [RouteId!]!
+	"""
+	Output identities associated with the mutation.
+	"""
+	outputIds: [OutputId!]!
+}
+
+"""
+Explicit result payload for playlist broadcast mutations.
+"""
+type BulkPlaylistMutationResult {
+	"""
+	Mutation outcome status.
+	"""
+	status: MutationResultStatus!
+	"""
+	Route identities associated with the playlist mutation.
+	"""
+	routeIds: [RouteId!]!
+	"""
+	File identity associated with the playlist mutation, when one file is targeted.
+	"""
+	fileId: FileId
+}
+
+"""
+Explicit result payload for mutations that affect route collections.
+"""
+type BulkRouteMutationResult {
+	"""
+	Mutation outcome status.
+	"""
+	status: MutationResultStatus!
+	"""
+	Route identities associated with the mutation.
+	"""
+	routeIds: [RouteId!]!
+}
+
+input CreateUserInput {
+	"""
+	Canonical username (case-insensitive).
+	"""
+	username: String!
+	"""
+	Optional operator-facing display label.
+	"""
+	displayName: String
+	"""
+	Initial password.
+	"""
+	password: String!
+	"""
+	Authorization role.
+	"""
+	role: UserRole!
+}
+
+"""
+Implement the DateTime<Utc> scalar
+
+The input/output is a string in RFC3339 format.
+"""
+scalar DateTime
+
+"""
+Delay in milliseconds for audio/video synchronization.
+"""
+scalar Delay
+
+"""
+Download progress indication.
+"""
+type DownloadState {
+	"""
+	Expected size in bytes of the whole file.
+	"""
+	maxProgress: NetworkByteSize!
+	"""
+	Number of currently downloaded bytes.
+	"""
+	currentProgress: NetworkByteSize!
+}
+
+"""
+Explicit result payload for DVR file mutations.
+"""
+type DvrFileMutationResult {
+	"""
+	Mutation outcome status.
+	"""
+	status: MutationResultStatus!
+	"""
+	Output identity associated with the recording.
+	"""
+	outputId: OutputId!
+	"""
+	Recording filename associated with the mutation.
+	"""
+	fileName: String!
+}
+
+"""
+Kind of endpoint in the route pipeline.
+"""
+enum EndpointKind {
+	"""
+	Input endpoint.
+	"""
+	SOURCE
+	"""
+	Output endpoint.
+	"""
+	OUTPUT
+}
+
+type FailoverPolicy {
+	"""
+	Minimum seconds to stay on a source before switching back.
+	"""
+	stickinessSecs: Int
+	"""
+	Seconds before retrying a source after it failed.
+	"""
+	cooldownSecs: Int
+}
+
+"""
+Input counterpart of `FileConfig`.
+"""
+input FileConfigInput {
+	"""
+	Identifier of the managed file to play.
+	"""
+	fileId: FileId!
+}
+
+"""
+File identifier for managed files (e.g., Google Drive file IDs).
+"""
+scalar FileId
+
+"""
+Explicit result payload for file and artifact command mutations.
+"""
+type FileMutationResult {
+	"""
+	Mutation outcome status.
+	"""
+	status: MutationResultStatus!
+	"""
+	File identity associated with the command, when the command targets a catalog file.
+	"""
+	fileId: FileId
+}
+
+"""
+GraphQL file-backed source.
+"""
+type FileSource {
+	"""
+	Identifier of the managed file to play.
+	"""
+	fileId: FileId!
+}
+
+"""
+State in which a file can be during download or processing.
+"""
+enum FileState {
+	"""
+	The file is waiting for download processing.
+	"""
+	WAITING
+	"""
+	The file download is pending first server response.
+	"""
+	PENDING
+	"""
+	The file is downloading.
+	"""
+	DOWNLOADING
+	"""
+	File is downloaded and saved locally.
+	"""
+	LOCAL
+	"""
+	Error was encountered during the download.
+	"""
+	DOWNLOAD_ERROR
+}
+
+"""
+Latest bounded artifact-job truth visible on Fleet surfaces.
+"""
+type FleetArtifactJob {
+	"""
+	Stable artifact-job id.
+	"""
+	jobId: String!
+	"""
+	Stable reconciliation key for one logical desired job.
+	"""
+	desiredKey: String!
+	"""
+	Bounded job kind.
+	"""
+	kind: FleetArtifactJobKind!
+	"""
+	Current lifecycle state.
+	"""
+	state: FleetArtifactJobState!
+	"""
+	Actor that requested or emitted the job.
+	"""
+	requester: FleetArtifactJobRequester!
+	"""
+	Route associated with the job, if any.
+	"""
+	routeId: RouteId
+	"""
+	Playlist associated with the job, if any.
+	"""
+	playlistId: PlaylistId
+	"""
+	Declared artifact ids the job expects to materialize or verify.
+	"""
+	artifactIds: [FileId!]!
+	"""
+	Number of attempts started so far.
+	"""
+	attemptCount: Int!
+	"""
+	Preferred node for execution, when locality hints exist.
+	"""
+	preferredMediaNodeId: MediaNodeId
+	"""
+	Assigned worker id for the current attempt, if any.
+	"""
+	assignedWorkerId: Int
+	"""
+	Latest terminal or diagnostic error text persisted for the job, if any.
+	"""
+	error: String
+}
+
+"""
+Bounded artifact-job kinds visible to operators.
+"""
+enum FleetArtifactJobKind {
+	"""
+	Best-effort warming of likely-next route or playlist artifacts.
+	"""
+	QUEUE_WARM
+	"""
+	Explicit cache population for a declared artifact set.
+	"""
+	CACHE_FILL
+}
+
+"""
+Actor that emitted or requested a bounded artifact job.
+"""
+enum FleetArtifactJobRequester {
+	"""
+	Emitted by control-plane planning.
+	"""
+	PLANNER
+	"""
+	Requested directly by an operator action.
+	"""
+	OPERATOR
+}
+
+"""
+Explicit artifact-job lifecycle state visible to operators.
+"""
+enum FleetArtifactJobState {
+	"""
+	Desired job is persisted and waiting for assignment.
+	"""
+	QUEUED
+	"""
+	Scheduler chose a node and attempt for the next run.
+	"""
+	ASSIGNED
+	"""
+	The target node accepted the attempt and is working.
+	"""
+	RUNNING
+	"""
+	The declared side effects completed successfully.
+	"""
+	SUCCEEDED
+	"""
+	The current attempt failed and remains visible to operators.
+	"""
+	FAILED
+	"""
+	The job is no longer relevant to current intent.
+	"""
+	CANCELED
+}
+
+"""
+Rich operator-facing media-node inventory for Fleet surfaces.
+"""
+type FleetMediaNode {
+	"""
+	Stable media-node identifier.
+	"""
+	id: String!
+	"""
+	Human-readable node name.
+	"""
+	name: String!
+	"""
+	Control-plane reachable endpoint for the node.
+	"""
+	endpoint: String!
+	"""
+	Public host or IP that operators should use for node-owned media endpoints.
+	"""
+	publicHost: String
+	"""
+	Public RTMP port for node-owned publish and playback endpoints.
+	"""
+	rtmpPort: Int
+	"""
+	Public SRT port for node-owned ingest endpoints.
+	"""
+	srtPort: Int
+	"""
+	Public HTTP port for node-owned HLS playback.
+	"""
+	hlsHttpPort: Int
+	"""
+	Public `WebRTC` port for node-owned browser publishing and playback.
+	"""
+	rtcPort: Int
+	"""
+	Public HTTP API port for node-owned `WebRTC` publishing.
+	"""
+	rtcApiPort: Int
+	"""
+	Optional placement zone or locality hint.
+	"""
+	zone: String
+	"""
+	Arbitrary node labels for future scheduling and filtering.
+	"""
+	labels: [String!]!
+	"""
+	Optional node software version string.
+	"""
+	version: String
+	"""
+	File artifacts currently present in the node-local cache.
+	"""
+	cachedFileIds: [FileId!]!
+	"""
+	Latest artifact-job truth associated with this node.
+	"""
+	artifactJobs: [FleetArtifactJob!]!
+	"""
+	Latest persisted lifecycle state.
+	"""
+	state: MediaNodeState!
+	"""
+	Optional operator-enforced lifecycle override.
+	"""
+	operatorStateOverride: MediaNodeState
+	"""
+	Latest reported system telemetry from the node host.
+	"""
+	serverInfo: StatisticsServerInfo
+	"""
+	Timestamp when `server_info` was last refreshed from node telemetry.
+	"""
+	serverInfoReportedAt: DateTime
+	"""
+	Whether the last heartbeat omitted telemetry and left `server_info` stale.
+	"""
+	serverInfoStale: Boolean!
+	"""
+	Last heartbeat or registration timestamp in RFC 3339 format.
+	"""
+	lastSeenAt: DateTime
+	"""
+	Durable worker id reserved for the node.
+	"""
+	workerId: Int
+	"""
+	Whether the scheduler should place new workloads on the node.
+	"""
+	acceptsNewWork: Boolean!
+	"""
+	Number of cached file artifacts visible on the node.
+	"""
+	cachedFileCount: Int!
+	"""
+	Number of routes currently assigned to the node.
+	"""
+	assignedRouteCount: Int!
+	"""
+	Routes currently assigned to the node.
+	"""
+	assignedRoutes: [FleetMediaNodeRoute!]!
+	"""
+	Media protocols the node currently advertises.
+	"""
+	advertisedProtocols: [MediaNodeProtocol!]!
+	"""
+	Explicit scheduling capabilities currently implied by node metadata.
+	"""
+	capabilities: [MediaNodeCapability!]!
+	"""
+	Reachability class used for placement and operator routing.
+	"""
+	reachability: MediaNodeReachability!
+	"""
+	Visibility of the control-plane endpoint.
+	"""
+	controlEndpointVisibility: MediaNodeEndpointVisibility!
+	"""
+	Visibility of source ingest endpoints, when the node advertises them.
+	"""
+	sourceEndpointVisibility: MediaNodeEndpointVisibility
+	"""
+	Visibility of egress endpoints, when the node advertises them.
+	"""
+	egressEndpointVisibility: MediaNodeEndpointVisibility
+}
+
+"""
+Route summary attached to a Fleet media-node read model.
+"""
+type FleetMediaNodeRoute {
+	"""
+	Route id currently assigned to the node.
+	"""
+	id: RouteId!
+	"""
+	Optional human-readable route label.
+	"""
+	label: String
+	"""
+	Whether the route is enabled in the current projection.
+	"""
+	enabled: Boolean!
+	"""
+	Desired assignment and manifest state for the route on this node.
+	"""
+	desiredState: FleetMediaNodeRouteDesiredState!
+	"""
+	Latest background artifact-job truth for this route on the node, if any.
+	"""
+	latestArtifactJob: FleetArtifactJob
+	"""
+	Observed runtime state reported by the owning node, if available.
+	"""
+	observedState: ObservedRouteState
+	"""
+	Backend-owned route presentation for operator-facing Fleet summaries.
+	"""
+	presentation: RoutePresentation!
+}
+
+"""
+Desired route state currently assigned to a Fleet media node.
+"""
+type FleetMediaNodeRouteDesiredState {
+	"""
+	Desired assignment epoch for the current owner.
+	"""
+	assignmentEpoch: Int!
+	"""
+	Latest applied epoch acknowledged by the current owner, if any.
+	"""
+	appliedEpoch: Int
+	"""
+	Current lease metadata for the route owner, if any.
+	"""
+	lease: FleetMediaNodeRouteLease
+	"""
+	Delivery state for the current manifest on the owning node.
+	"""
+	manifestDeliveryState: FleetRouteDeliveryState!
+	"""
+	Runtime-selected active route-source id, if one exists.
+	"""
+	currentActiveSourceId: RouteSourceId
+	"""
+	Enabled route-source ids currently ready for service.
+	"""
+	readySourceIds: [RouteSourceId!]!
+	"""
+	Whether the route currently has at least one ready enabled source.
+	"""
+	readyToServe: Boolean!
+	"""
+	Whether the route currently has a playlist file selected for playback.
+	"""
+	hasActivePlaylist: Boolean!
+	"""
+	Current playlist file id selected for playback, if any.
+	"""
+	currentPlaylistFileId: FileId
+	"""
+	File artifacts required by the current manifest on the owning node.
+	"""
+	requiredArtifactIds: [FileId!]!
+	"""
+	Required artifacts that are not currently cached on the owning node.
+	"""
+	missingRequiredArtifactIds: [FileId!]!
+	"""
+	Required artifacts that the owning node can fetch remotely.
+	"""
+	remotelyFetchableArtifactIds: [FileId!]!
+}
+
+"""
+Lease metadata for a route assignment owned by a Fleet media node.
+"""
+type FleetMediaNodeRouteLease {
+	"""
+	Timestamp when the node first acquired the current lease.
+	"""
+	acquiredAt: DateTime!
+	"""
+	Timestamp when the control plane last renewed the lease.
+	"""
+	renewedAt: DateTime!
+	"""
+	Timestamp when the current lease expires without another renewal.
+	"""
+	expiresAt: DateTime!
+	"""
+	Whether the lease still covers the current instant.
+	"""
+	isActive: Boolean!
+}
+
+"""
+Fleet mutation root.
+"""
+type FleetMutation {
+	"""
+	Mark a registered media node as draining. Preconditions: the node must
+	exist. Drain is a temporary scheduling command: the node stops accepting
+	new placements, keeps assigned work while it still owns routes, and can
+	recover to healthy once reachable and no longer assigned. Repeating the
+	command is idempotent.
+	"""
+	drainMediaNode(
+		"""
+		Registered media-node identifier
+		"""
+		nodeId: MediaNodeId!
+	): FleetNodeMutationResult!
+	"""
+	Force a registered media node into operator-held maintenance.
+	Preconditions: the node must exist. Maintenance keeps the node offline
+	for scheduling even if it remains reachable. Repeating the command is
+	idempotent.
+	"""
+	enterMediaNodeMaintenance(
+		"""
+		Registered media-node identifier
+		"""
+		nodeId: MediaNodeId!
+	): FleetNodeMutationResult!
+	"""
+	Clear operator-held maintenance for a registered media node.
+	Preconditions: the node must exist. The command clears the maintenance
+	override; liveness probing or registration then determines whether the
+	node can return to healthy scheduling. Repeating the command is
+	idempotent when maintenance is already cleared.
+	"""
+	exitMediaNodeMaintenance(
+		"""
+		Registered media-node identifier
+		"""
+		nodeId: MediaNodeId!
+	): FleetNodeMutationResult!
+	"""
+	Permanently remove a media node record from the registry. Preconditions:
+	use this only for a node that will never reconnect under the same id.
+	The mutation clears the node's projected and runtime state and triggers
+	a manifest rebuild so pending assignments are revoked. Use
+	`drainMediaNode` for temporary removal.
+	"""
+	removeMediaNode(
+		"""
+		Registered media-node identifier
+		"""
+		nodeId: MediaNodeId!
+	): FleetNodeMutationResult!
+}
+
+"""
+Explicit result payload for fleet node command mutations.
+
+`UPDATED` means the command changed node scheduling state or was accepted
+for the target. `UNCHANGED` means the node was already in the requested
+state or a permanent removal target was already absent. `NOT_FOUND` is
+reserved for missing-node result paths; drain and maintenance commands
+report unknown nodes as GraphQL errors with an extension code.
+"""
+type FleetNodeMutationResult {
+	"""
+	Mutation outcome status.
+	"""
+	status: MutationResultStatus!
+	"""
+	Media node identity associated with the command.
+	"""
+	nodeId: MediaNodeId!
+}
+
+"""
+Fleet query root.
+"""
+type FleetQuery {
+	"""
+	Get persisted media-node registration and liveness snapshots.
+	"""
+	mediaNodes: [FleetMediaNode!]!
+}
+
+"""
+Operator-facing manifest delivery state for a route assigned to a node.
+"""
+enum FleetRouteDeliveryState {
+	"""
+	The current assignment epoch is applied on the owning node.
+	"""
+	APPLIED
+	"""
+	The node owns the route but has not yet reported the desired epoch.
+	"""
+	PENDING
+	"""
+	Required artifacts are still being fetched from remote storage.
+	"""
+	FETCHING_ARTIFACTS
+	"""
+	Required artifacts are missing and cannot be fetched remotely.
+	"""
+	BLOCKED
+}
+
+input GoogleDrivePlaylistInput {
+	"""
+	ID of the Route.
+	"""
+	routeId: RouteId!
+	"""
+	Google Drive file or folder ID.
+	"""
+	fileOrFolderId: String!
+}
+
+"""
+Specific health issue detected in a route.
+"""
+type HealthIssue {
+	"""
+	Type of issue.
+	"""
+	kind: HealthIssueKind!
+	"""
+	Description of the issue.
+	"""
+	description: String!
+	"""
+	Endpoint ID if the issue is specific to an endpoint.
+	"""
+	endpointId: String
+	"""
+	Severity of the issue.
+	"""
+	severity: HealthIssueSeverity!
+}
+
+"""
+Types of health issues that can be detected.
+"""
+enum HealthIssueKind {
+	"""
+	No stream is being received.
+	"""
+	NO_STREAM
+	"""
+	Stream is unstable or intermittent.
+	"""
+	STREAM_UNSTABLE
+	"""
+	Different sources have mismatched stream properties.
+	"""
+	STREAM_MISMATCH
+	"""
+	Endpoint is offline.
+	"""
+	ENDPOINT_OFFLINE
+	"""
+	Endpoint failed to initialize.
+	"""
+	INITIALIZATION_FAILURE
+	"""
+	Playlist file does not match the route baseline profile.
+	"""
+	PLAYLIST_BASELINE_MISMATCH
+}
+
+"""
+Severity levels for health issues.
+"""
+enum HealthIssueSeverity {
+	"""
+	Low severity, informational.
+	"""
+	LOW
+	"""
+	Medium severity, may affect quality.
+	"""
+	MEDIUM
+	"""
+	High severity, affects functionality.
+	"""
+	HIGH
+	"""
+	Critical severity, service is down.
+	"""
+	CRITICAL
+}
+
+"""
+Route-source health counts bucketed by `RouteSourcePresentationPhase` for a single route.
+"""
+type InputHealthSummary {
+	"""
+	Sources actively delivering media as the current source.
+	"""
+	live: Int!
+	"""
+	Sources online and standing by as a backup.
+	"""
+	standby: Int!
+	"""
+	Sources that are ready.
+	"""
+	ready: Int!
+	"""
+	Sources that are online and available.
+	"""
+	healthy: Int!
+	"""
+	Sources degraded or unstable.
+	"""
+	degraded: Int!
+	"""
+	Sources offline.
+	"""
+	offline: Int!
+	"""
+	Sources intentionally disabled.
+	"""
+	disabled: Int!
+	"""
+	Total number of sources.
+	"""
+	total: Int!
+}
+
+"""
+Unified label for routes, sources, and outputs. Must be 1-70 characters, excluding commas and whitespace control characters.
+"""
+scalar Label
+
+input LibraryArtifactFilter {
+	kind: ArtifactKind
+	sourceFileId: FileId
+	recipeId: String
+	language: String
+	outputId: String
+	windowStart: String
+	windowEnd: String
+}
+
+type LibraryDeleteFailure {
+	id: FileId!
+	code: String!
+	message: String!
+}
+
+type LibraryDeleteResult {
+	deleted: [FileId!]!
+	failed: [LibraryDeleteFailure!]!
+}
+
+type LibraryFile {
+	id: FileId!
+	name: String!
+	"""
+	Size in bytes, serialized as a String to stay 64-bit safe (GraphQL `Int` is 32-bit).
+	"""
+	size: String!
+	contentType: String
+	streamStat: StreamStatistics
+	createdAt: DateTime!
+	tags: [String!]!
+	references: [LibraryFileReference!]!
+	artifact: ArtifactCatalogEntry
+}
+
+input LibraryFileFilter {
+	search: String
+	hasReferences: Boolean
+	tagFilter: [String!]
+	artifact: LibraryArtifactFilter
+}
+
+"""
+Explicit result payload for single library catalog mutations.
+"""
+type LibraryFileMutationResult {
+	"""
+	Mutation outcome status.
+	"""
+	status: MutationResultStatus!
+	"""
+	File identity associated with the mutation.
+	"""
+	fileId: FileId
+	"""
+	Hydrated library file row after the mutation, when the target exists.
+	"""
+	libraryFile: LibraryFile
+}
+
+type LibraryFileReference {
+	routeId: RouteId!
+	routeName: String!
+	kind: LibraryFileReferenceKind!
+	label: String!
+}
+
+enum LibraryFileReferenceKind {
+	PLAYLIST_ITEM
+	FILE_BACKUP_SOURCE
+}
+
+input LibraryFileTagsInput {
+	fileIds: [FileId!]!
+	tags: [String!]!
+}
+
+type LibraryTag {
+	tag: String!
+	fileCount: Int!
+}
+
+"""
+Represents a file with its availability and artifact metadata.
+"""
+type LocalFileInfo {
+	"""
+	ID of the file.
+	"""
+	fileId: FileId!
+	"""
+	Name of the file when provider metadata lookup succeeded.
+	"""
+	name: String
+	"""
+	State of the file.
+	"""
+	state: FileState!
+	"""
+	Download or processing error message.
+	"""
+	error: String
+	"""
+	Corresponding stream info.
+	"""
+	streamStat: StreamStatistics
+	"""
+	Download progress state when the file is downloading.
+	"""
+	downloadState: DownloadState
+	"""
+	Artifact-catalog metadata describing publish, lookup, location, and lifecycle policy.
+	"""
+	artifact: ArtifactCatalogEntry
+}
+
+"""
+Registered media-node metadata and latest persisted liveness snapshot.
+"""
+type MediaNode {
+	"""
+	Stable media-node identifier.
+	"""
+	id: String!
+	"""
+	Human-readable node name.
+	"""
+	name: String!
+	"""
+	Control-plane reachable endpoint for the node.
+	"""
+	endpoint: String!
+	"""
+	Public host or IP for node-owned media endpoints.
+	"""
+	publicHost: String
+	"""
+	Public RTMP port for node-owned publish and playback endpoints.
+	"""
+	rtmpPort: Int
+	"""
+	Public SRT port for node-owned ingest endpoints.
+	"""
+	srtPort: Int
+	"""
+	Public HTTP port for node-owned HLS playback.
+	"""
+	hlsHttpPort: Int
+	"""
+	Public `WebRTC` port for node-owned browser publishing and playback.
+	"""
+	rtcPort: Int
+	"""
+	Public HTTP API port for node-owned `WebRTC` publishing.
+	"""
+	rtcApiPort: Int
+	"""
+	Optional placement zone or locality hint.
+	"""
+	zone: String
+	"""
+	Arbitrary node labels for scheduling and filtering.
+	"""
+	labels: [String!]!
+	"""
+	Optional node software version string.
+	"""
+	version: String
+	"""
+	File artifacts currently present in the node-local cache.
+	"""
+	cachedFileIds: [FileId!]!
+	"""
+	Latest persisted lifecycle state.
+	"""
+	state: MediaNodeState!
+	"""
+	Optional operator-enforced lifecycle override.
+	"""
+	operatorStateOverride: MediaNodeState
+	"""
+	Latest reported system telemetry from the node host.
+	"""
+	serverInfo: StatisticsServerInfo
+	"""
+	Timestamp when `server_info` was last refreshed from node telemetry.
+	"""
+	serverInfoReportedAt: String
+	"""
+	Last heartbeat or registration timestamp in RFC 3339 format.
+	"""
+	lastSeenAt: String
+}
+
+"""
+Explicit capability class for a media node.
+"""
+enum MediaNodeCapability {
+	"""
+	The node is suitable for GPU-backed transcode or render work.
+	"""
+	GPU_TRANSCODE
+	"""
+	Private artifact-oriented batch compute.
+	"""
+	ARTIFACT_COMPUTE
+	"""
+	Operator-usable public ingest surfaces.
+	"""
+	PUBLIC_INGEST
+	"""
+	Operator-usable public egress surfaces.
+	"""
+	PUBLIC_EGRESS
+}
+
+"""
+Operator-facing visibility class for one endpoint group on a media node.
+"""
+enum MediaNodeEndpointVisibility {
+	"""
+	Safe to expose directly to public operators or downstream media peers.
+	"""
+	PUBLIC
+	"""
+	Private infrastructure endpoint.
+	"""
+	PRIVATE
+	"""
+	Authenticated admin/control-plane endpoint.
+	"""
+	OPERATOR_ONLY
+	"""
+	Tailnet or equivalent overlay only.
+	"""
+	TAILNET_ONLY
+}
+
+"""
+Media-node identifier used for durable route placement constraints.
+"""
+scalar MediaNodeId
+
+"""
+Operator-facing protocol surface advertised by a media node.
+"""
+enum MediaNodeProtocol {
+	"""
+	The node advertises an RTMP listener.
+	"""
+	RTMP
+	"""
+	The node advertises an SRT listener.
+	"""
+	SRT
+	"""
+	The node advertises an HLS HTTP listener.
+	"""
+	HLS
+	"""
+	The node advertises a `WebRTC` listener.
+	"""
+	WEBRTC
+}
+
+"""
+Reachability class used for placement and operator routing decisions.
+"""
+enum MediaNodeReachability {
+	"""
+	The node advertises public media access.
+	"""
+	PUBLIC
+	"""
+	Private infrastructure only.
+	"""
+	PRIVATE
+	"""
+	Tailnet or equivalent overlay only.
+	"""
+	TAILNET_ONLY
+}
+
+"""
+GraphQL media-node lifecycle state.
+"""
+enum MediaNodeState {
+	"""
+	Node has registered but has not yet reported steady-state liveness.
+	"""
+	REGISTERING
+	"""
+	Node is healthy and available for work.
+	"""
+	HEALTHY
+	"""
+	Node is reachable but operating in a degraded mode.
+	"""
+	DEGRADED
+	"""
+	Node is offline and should not be treated as live.
+	"""
+	OFFLINE
+	"""
+	Node is online but intentionally draining existing work.
+	"""
+	DRAINING
+}
+
+type Mixin {
+	"""
+	Unique ID of this mixin.
+	"""
+	id: MixinId!
+	"""
+	URL of the source to be mixed with an output.
+	"""
+	src: MixinSrcUrl!
+	"""
+	Volume rate of this mixin's audio tracks.
+	"""
+	volume: Volume!
+	"""
+	Delay before this mixin is mixed with an output.
+	"""
+	delay: Delay!
+	"""
+	Status of this mixin.
+	"""
+	status: Status!
+	"""
+	Side-chain audio of output with this mixin.
+	"""
+	sidechain: Boolean!
+}
+
+"""
+Unique identifier for a Mixin.
+"""
+scalar MixinId
+
+"""
+URL of a Mixin src. Supports TeamSpeak URLs and HTTP(S) MP3 URLs.
+"""
+scalar MixinSrcUrl
+
+"""
+Explicit mutation outcome for route, route-source, and output writes.
+"""
+enum MutationResultStatus {
+	"""
+	The mutation changed state or created a new entity.
+	"""
+	UPDATED
+	"""
+	The mutation found the target but no state change was needed.
+	"""
+	UNCHANGED
+	"""
+	The target entity was not found.
+	"""
+	NOT_FOUND
+}
+
+"""
+64-bit byte count used for network and file transfer progress.
+"""
+scalar NetworkByteSize
+
+"""
+Operator-facing active source details observed by a media node.
+"""
+type ObservedRouteSource {
+	"""
+	Coarse source kind currently backing the route.
+	"""
+	kind: ObservedSourceKind!
+	"""
+	Configured route-source id when the observed source maps to a source row.
+	"""
+	sourceId: RouteSourceId
+}
+
+"""
+Full route-level observed-state snapshot uploaded by a media node.
+"""
+type ObservedRouteState {
+	"""
+	Assignment epoch currently observed on the owning node.
+	"""
+	observedAssignmentEpoch: Int!
+	"""
+	Active source currently observed on the owning node, if any.
+	"""
+	activeSource: ObservedRouteSource
+	"""
+	HLS preview URL currently advertised by the owning node, if any.
+	"""
+	previewUrl: Url
+	"""
+	Whether the owning node has observed route-level HLS readiness.
+	"""
+	hlsReady: Boolean!
+	"""
+	Current playlist file id observed on the owning node, if any.
+	"""
+	currentPlaylistFileId: FileId
+	"""
+	Source generation currently observed on the owning node.
+	"""
+	generation: Int!
+	"""
+	Last observed route transition kind, if any.
+	"""
+	lastTransitionKind: ObservedTransitionKind
+	"""
+	Timestamp of the last observed transition, if any.
+	"""
+	lastTransitionAt: DateTime
+	"""
+	Last observed execution error, if any.
+	"""
+	lastError: String
+	"""
+	Timestamp when this observed snapshot was reported by the node.
+	"""
+	reportedAt: DateTime!
+	"""
+	Last lifecycle state reported for the active source.
+	"""
+	sourceLifecycleState: SourceLifecycleState
+}
+
+"""
+Source kind explicitly observed by a media node for an assigned route.
+"""
+enum ObservedSourceKind {
+	"""
+	The route is using the primary source.
+	"""
+	PRIMARY
+	"""
+	The route is using a backup source.
+	"""
+	BACKUP
+	"""
+	The route is using playlist playback.
+	"""
+	PLAYLIST
+	"""
+	The route is using a file-backed fallback source.
+	"""
+	FILE_FALLBACK
+	"""
+	The route is using a route source.
+	"""
+	SOURCE
+}
+
+"""
+Last observed transition reported by a media node for an assigned route.
+"""
+enum ObservedTransitionKind {
+	"""
+	A manifest assignment was applied or refreshed.
+	"""
+	MANIFEST_APPLIED
+	"""
+	The current active source changed.
+	"""
+	SOURCE_CHANGED
+	"""
+	HLS output became ready.
+	"""
+	HLS_READY
+	"""
+	HLS output is no longer ready.
+	"""
+	HLS_LOST
+	"""
+	The current playlist file completed successfully.
+	"""
+	PLAYLIST_FILE_COMPLETED
+	"""
+	The current playlist file failed.
+	"""
+	PLAYLIST_FILE_FAILED
+	"""
+	The runtime reported an execution error.
+	"""
+	RUNTIME_ERROR
+}
+
+type Output {
+	"""
+	Unique ID of this output.
+	"""
+	id: OutputId!
+	"""
+	Downstream URL to stream a live stream onto.
+	"""
+	dst: OutputDstUrl!
+	"""
+	Optional label of this output.
+	"""
+	label: Label
+	"""
+	Url of stream preview.
+	"""
+	previewUrl: Url
+	"""
+	Volume rate of this output's audio tracks when mixed with mixins.
+	"""
+	volume: Volume!
+	"""
+	Mixins to mix this output with before streaming.
+	"""
+	mixins: [Mixin!]!
+	"""
+	Whether this output is enabled.
+	"""
+	enabled: Boolean!
+	"""
+	Operator-facing presentation of this output's current runtime state.
+	"""
+	presentation: OutputPresentation!
+}
+
+"""
+Output destination URL. Supports RTMP(S), SRT, Icecast, and root-level file:/// FLV/WAV/MP3 URLs.
+"""
+scalar OutputDstUrl
+
+"""
+Output health counts bucketed by `OutputPresentationPhase` for a single route.
+"""
+type OutputHealthSummary {
+	"""
+	Outputs actively streaming.
+	"""
+	live: Int!
+	"""
+	Outputs converging toward confirmed live streaming.
+	"""
+	converging: Int!
+	"""
+	Outputs streaming with a degraded signal.
+	"""
+	degraded: Int!
+	"""
+	Outputs that failed to stream.
+	"""
+	error: Int!
+	"""
+	Outputs waiting for media.
+	"""
+	idle: Int!
+	"""
+	Outputs intentionally disabled.
+	"""
+	disabled: Int!
+	"""
+	Total number of outputs.
+	"""
+	total: Int!
+}
+
+"""
+Unique identifier for an Output.
+"""
+scalar OutputId
+
+"""
+Explicit result payload for output mutations.
+"""
+type OutputMutationResult {
+	"""
+	Mutation outcome status.
+	"""
+	status: MutationResultStatus!
+	"""
+	Route identity associated with the output.
+	"""
+	routeId: RouteId!
+	"""
+	Output identity associated with the mutation.
+	"""
+	outputId: OutputId!
+}
+
+"""
+Backend-owned presentation surface for operator-facing output rows.
+"""
+type OutputPresentation {
+	"""
+	Phase of the output from the operator's point of view.
+	"""
+	phase: OutputPresentationPhase!
+	"""
+	Viewer-facing status label.
+	"""
+	label: String!
+	"""
+	Viewer-facing tone.
+	"""
+	tone: StatusTone!
+	"""
+	Operator-safe detail sentence.
+	"""
+	detail: String!
+}
+
+"""
+Backend-owned phase for the operator-facing output presentation model.
+"""
+enum OutputPresentationPhase {
+	"""
+	The output is actively streaming media.
+	"""
+	LIVE
+	"""
+	The output is converging toward confirmed streaming.
+	"""
+	CONVERGING
+	"""
+	The output is streaming with a degraded runtime signal.
+	"""
+	DEGRADED
+	"""
+	The output failed to start or continue streaming.
+	"""
+	ERROR
+	"""
+	The output is intentionally disabled.
+	"""
+	DISABLED
+	"""
+	The output is idle and waiting for media.
+	"""
+	IDLE
+}
+
+"""
+Specific parameter difference between streams.
+"""
+type ParameterDifference {
+	"""
+	Name of the parameter.
+	"""
+	parameter: String!
+	"""
+	Value in reference stream.
+	"""
+	referenceValue: String
+	"""
+	Value in mismatched stream.
+	"""
+	mismatchedValue: String
+}
+
+"""
+Parent relationship information for a route.
+"""
+type ParentInfo {
+	"""
+	The parent route.
+	"""
+	route: Route!
+	"""
+	The output ID being used as input.
+	"""
+	outputId: OutputId!
+}
+
+input PasswordMutationInput {
+	"""
+	New password to set.
+	"""
+	new: String!
+	"""
+	Current password.
+	"""
+	old: String!
+}
+
+"""
+Explicit result payload for password mutations.
+"""
+type PasswordMutationResult {
+	"""
+	Mutation outcome status.
+	"""
+	status: MutationResultStatus!
+}
+
+type Playlist {
+	"""
+	Unique ID of this playlist.
+	"""
+	id: PlaylistId!
+	"""
+	List of video files in this playlist.
+	"""
+	queue: [PlaylistFileInfo!]!
+	"""
+	UTC timestamp when sequential playback should auto-start.
+	"""
+	scheduledStartAt: DateTime
+	"""
+	Currently selected file for runtime playback.
+	"""
+	currentlyPlayingFile: PlaylistFileInfo
+	"""
+	Whether sequential playback mode is active.
+	"""
+	isPlayingAll: Boolean!
+	"""
+	Whether sequential playback should loop at the end of the queue.
+	"""
+	isLooping: Boolean!
+	"""
+	Whether single-file playback should repeat indefinitely.
+	"""
+	singleFileLooping: Boolean!
+	"""
+	Last known runtime playback offset in seconds.
+	"""
+	offsetSeconds: Unumber
+	"""
+	Public UTC timestamp when the current playback position started.
+	"""
+	progressStartedAt: DateTime
+	"""
+	Health summary of the playlist, including stream compatibility warnings
+	"""
+	healthSummary: PlaylistHealthSummary!
+}
+
+"""
+Represents a playlist file that differs from the route baseline profile.
+"""
+type PlaylistBaselineMismatch {
+	"""
+	The playlist file whose probed stream differs from the baseline
+	"""
+	fileId: FileId!
+	"""
+	Stable preset ID of the baseline used for comparison
+	"""
+	baselinePresetId: String!
+	"""
+	List of properties that differ from the baseline profile
+	"""
+	differences: [String!]!
+}
+
+type PlaylistFileInfo {
+	"""
+	Google ID of this file.
+	"""
+	fileId: FileId!
+	"""
+	Name of this file.
+	"""
+	name: String!
+	"""
+	Whether the file was already played during the active sequential pass.
+	"""
+	wasPlayed: Boolean!
+	"""
+	State of the file (resolved from `FileManager`)
+	"""
+	fileState: FileState
+	"""
+	Download progress if the file is currently downloading
+	"""
+	downloadProgress: DownloadState
+	"""
+	Error message if the file has an error
+	"""
+	fileError: String
+	"""
+	Stream statistics from `LocalFileManager` (video/audio codecs, resolution, etc.)
+	"""
+	streamStat: StreamStatistics
+}
+
+input PlaylistFileInput {
+	"""
+	ID of the Route.
+	"""
+	routeId: RouteId!
+	"""
+	ID of the file.
+	"""
+	fileId: FileId!
+}
+
+"""
+Health summary for a playlist, highlighting stream compatibility issues.
+"""
+type PlaylistHealthSummary {
+	"""
+	Whether any files in the playlist have stream errors
+	"""
+	hasStreamErrors: Boolean!
+	"""
+	Whether any files in the playlist have mismatched stream properties
+	"""
+	hasMismatchedStreams: Boolean!
+	"""
+	List of file IDs that have stream errors
+	"""
+	errorFiles: [FileId!]!
+	"""
+	Details of files that differ from the route baseline profile
+	"""
+	mismatchDetails: [PlaylistBaselineMismatch!]!
+}
+
+"""
+ID of a `Playlist`.
+"""
+scalar PlaylistId
+
+input PlaylistLoopInput {
+	"""
+	ID of the Route.
+	"""
+	routeId: RouteId!
+	"""
+	Enable looping.
+	"""
+	isLooping: Boolean!
+}
+
+"""
+Playlist playback and queue mutation operations.
+
+These operations require Admin or Operator role.
+"""
+type PlaylistMutation {
+	"""
+	Start playing the file with the provided `FileId` from the playlist.
+	"""
+	playFileFromPlaylist(input: PlaylistFileInput!): PlaylistMutationResult!
+	"""
+	Stops playing the currently playing file in the playlist.
+	"""
+	stopPlayingFileFromPlaylist(input: PlaylistRouteInput!): PlaylistMutationResult!
+	"""
+	Sets the looping state for playlist playback.
+	"""
+	setPlaylistLoop(input: PlaylistLoopInput!): PlaylistMutationResult!
+	"""
+	Sets or clears the scheduled UTC timestamp for sequential playback.
+	"""
+	setPlaylistSchedule(input: PlaylistScheduleInput!): PlaylistMutationResult!
+	"""
+	Sets the looping state for single-file playback.
+	"""
+	setPlaylistSingleLoop(input: PlaylistSingleLoopInput!): PlaylistMutationResult!
+	"""
+	Sets sequential playback mode (Play All) for the playlist.
+	"""
+	setPlaylistSequential(input: PlaylistSequentialInput!): PlaylistMutationResult!
+	"""
+	Starts playback from the current index (or first) without changing sequential mode.
+	"""
+	startSequentialPlayback(input: PlaylistRouteInput!): PlaylistMutationResult!
+	"""
+	Stops sequential playback, clears current file.
+	"""
+	stopSequentialPlayback(input: PlaylistRouteInput!): PlaylistMutationResult!
+	"""
+	Set playlist to Route by ordering the file IDs.
+	
+	Returns a `PlaylistMutationResult` with `status` set to `UPDATED` or `NOT_FOUND`.
+	"""
+	setPlaylist(input: SetPlaylistInput!): PlaylistMutationResult!
+	"""
+	Sends request to Google API and appends found files to the provided route's playlist.
+	"""
+	getPlaylistFromGdrive(input: GoogleDrivePlaylistInput!): PlaylistMutationResult!
+	"""
+	Play a file across all routes (broadcast).
+	"""
+	broadcastPlayFile(
+		"""
+		ID of the file to broadcast
+		"""
+		fileId: FileId!
+	): BulkPlaylistMutationResult!
+	"""
+	Stop playing file across all routes (broadcast).
+	"""
+	broadcastStopPlayingFile: BulkPlaylistMutationResult!
+}
+
+"""
+Explicit result payload for route-scoped playlist mutations.
+"""
+type PlaylistMutationResult {
+	"""
+	Mutation outcome status.
+	"""
+	status: MutationResultStatus!
+	"""
+	Route identity associated with the playlist mutation.
+	"""
+	routeId: RouteId!
+	"""
+	File identity associated with the playlist mutation, when one file is targeted.
+	"""
+	fileId: FileId
+}
+
+input PlaylistRouteInput {
+	"""
+	ID of the Route.
+	"""
+	routeId: RouteId!
+}
+
+input PlaylistScheduleInput {
+	"""
+	ID of the Route.
+	"""
+	routeId: RouteId!
+	"""
+	UTC timestamp for scheduled playback start.
+	"""
+	scheduledAt: DateTime
+}
+
+input PlaylistSequentialInput {
+	"""
+	ID of the Route.
+	"""
+	routeId: RouteId!
+	"""
+	Enable sequential playback.
+	"""
+	isPlayingAll: Boolean!
+}
+
+input PlaylistSingleLoopInput {
+	"""
+	ID of the Route.
+	"""
+	routeId: RouteId!
+	"""
+	Enable single file looping.
+	"""
+	isSingleLooping: Boolean!
+}
+
+"""
+Operator-facing playback source currently backing a route preview.
+"""
+enum PreviewSource {
+	"""
+	The route is previewing the primary source.
+	"""
+	PRIMARY
+	"""
+	The route is previewing a backup source.
+	"""
+	BACKUP
+	"""
+	The route is previewing playlist playback.
+	"""
+	PLAYLIST
+	"""
+	The route is previewing a file-backed fallback source.
+	"""
+	FILE_FALLBACK
+	"""
+	The route is previewing a route source.
+	"""
+	SOURCE
+}
+
+"""
+Preview endpoint state published by a media runtime.
+"""
+type PreviewState {
+	"""
+	Whether the runtime currently considers this preview playable.
+	"""
+	ready: Boolean!
+	"""
+	Concrete playback URL advertised by the runtime, if available.
+	"""
+	url: Url
+	"""
+	Backend-built RTMP playback URL for this route preview, if available.
+	"""
+	rtmpUrl: Url
+	"""
+	Current playback source for route-level previews.
+	"""
+	source: PreviewSource
+}
+
+"""
+GraphQL read-model for an opaque publish credential.
+"""
+type PublishCredential {
+	"""
+	Unique identifier for this credential record.
+	"""
+	credentialId: String!
+	"""
+	Route this credential is scoped to.
+	"""
+	routeId: RouteId!
+	"""
+	Route source this credential is scoped to.
+	"""
+	sourceId: RouteSourceId!
+	"""
+	Opaque publish token (pk_ prefix + 22 base62 chars).
+	"""
+	token: String
+}
+
+"""
+Explicit result payload for publish credential mutations.
+"""
+type PublishCredentialMutationResult {
+	"""
+	Mutation outcome status.
+	"""
+	status: MutationResultStatus!
+	"""
+	Route identity associated with the credential.
+	"""
+	routeId: RouteId!
+	"""
+	Route source identity associated with the credential.
+	"""
+	sourceId: RouteSourceId!
+	"""
+	Newly generated publish token, when the mutation returns one.
+	"""
+	token: String
+}
+
+input RecordDerivedArtifactInput {
+	fileId: FileId!
+	name: String
+	publishFromFileId: FileId
+	kind: ArtifactKind!
+	objectKey: String!
+	fetchUrl: String
+	sourceFileId: FileId
+	recipeId: String
+	recipeHash: String
+	language: String
+	outputId: String
+	windowStart: String
+	windowEnd: String
+	destination: String
+	locationType: ArtifactLocationType!
+	authority: ArtifactAuthority!
+	lifecyclePolicy: ArtifactLifecyclePolicy
+	expiresAt: String
+}
+
+input RemoveDvrFileInput {
+	"""
+	ID of the Output.
+	"""
+	id: OutputId!
+	"""
+	Filename to remove.
+	"""
+	fileName: String!
+}
+
+input RenameLibraryFileInput {
+	id: FileId!
+	name: String!
+}
+
+type Route {
+	"""
+	Unique ID of this route.
+	"""
+	id: RouteId!
+	"""
+	Optional label of this route.
+	"""
+	label: Label
+	"""
+	Explicit media-node placement constraint for this route.
+	"""
+	pinnedMediaNodeId: MediaNodeId
+	"""
+	Playlist for this route.
+	"""
+	playlist: Playlist!
+	"""
+	Route-level stream profile that playlist files must match.
+	"""
+	baselineProfile: BaselineProfile
+	"""
+	Outputs that a live stream is re-streamed to.
+	"""
+	outputs: [Output!]!
+	"""
+	Whether this route is enabled.
+	"""
+	enabled: Boolean!
+	"""
+	Admin-visible route owner identifier.
+	"""
+	ownerId: ID
+	"""
+	Whether this route is visible to all authenticated users.
+	"""
+	isShared: Boolean!
+	"""
+	Whether the current principal can mutate this route.
+	"""
+	canMutate: Boolean!
+	"""
+	Route-source topology and durable source selection control.
+	"""
+	routeSources: RouteSources!
+	"""
+	Preview state surfaced directly from the runtime seam.
+	"""
+	previewState: PreviewState
+	"""
+	Backend-owned route presentation for operator-facing status surfaces.
+	"""
+	presentation: RoutePresentation!
+	"""
+	Backend-owned workspace profile and surface capabilities for this route.
+	"""
+	workspaceProfile: RouteWorkspaceProfile!
+	"""
+	Health summary providing insights into potential issues.
+	"""
+	healthSummary: RouteHealthSummary!
+	"""
+	The currently assigned media node for this route, if execution is remote.
+	"""
+	assignedMediaNode: MediaNode
+	"""
+	Output health counts bucketed by presentation phase for this route.
+	"""
+	outputHealthSummary: OutputHealthSummary!
+	"""
+	Input health counts bucketed by presentation phase for this route.
+	"""
+	inputHealthSummary: InputHealthSummary!
+	"""
+	Publish credentials (pk_ tokens) issued for this route's sources.
+	"""
+	publishCredentials: [PublishCredential!]!
+}
+
+"""
+Represents an endpoint in a route pipeline that can have health issues.
+"""
+type RouteEndpoint {
+	"""
+	ID of the endpoint.
+	"""
+	id: String!
+	"""
+	Type of the endpoint.
+	"""
+	kind: EndpointKind!
+	"""
+	Label of the endpoint if available.
+	"""
+	label: String
+	"""
+	URL associated with this endpoint.
+	"""
+	url: String
+}
+
+"""
+Health summary for a route, providing insights into potential issues.
+"""
+type RouteHealthSummary {
+	"""
+	List of endpoints that have issues.
+	"""
+	problematicEndpoints: [RouteEndpoint!]!
+	"""
+	Health issues detected in the route.
+	"""
+	issues: [HealthIssue!]!
+	"""
+	Whether there are mismatched streams between sources.
+	"""
+	hasMismatchedStreams: Boolean!
+	"""
+	Detailed information about stream mismatches, if any.
+	"""
+	streamMismatchDetails: StreamMismatchDetails
+	"""
+	Count of online endpoints.
+	"""
+	onlineCount: Int!
+	"""
+	Count of offline endpoints.
+	"""
+	offlineCount: Int!
+	"""
+	Count of unstable endpoints.
+	"""
+	unstableCount: Int!
+	"""
+	Total count of endpoints.
+	"""
+	totalCount: Int!
+}
+
+"""
+Unique identifier for a Route.
+"""
+scalar RouteId
+
+"""
+Mutation operations for the public route domain.
+
+These operations require Admin or Operator role.
+"""
+type RouteMutation {
+	"""
+	Enables a Route by its ID.
+	Returns a `RouteMutationResult` with `status` set to `UPDATED`, `UNCHANGED`, or `NOT_FOUND`.
+	"""
+	enableRoute(
+		"""
+		ID of the Route to be enabled.
+		"""
+		id: RouteId!
+	): RouteMutationResult!
+	"""
+	Disables a Route by its ID.
+	
+	Returns a `RouteMutationResult` with `status` set to `UPDATED`, `UNCHANGED`, or `NOT_FOUND`.
+	"""
+	disableRoute(
+		"""
+		ID of the Route to be disabled.
+		"""
+		id: RouteId!
+	): RouteMutationResult!
+	"""
+	Removes a Route by its ID.
+	Returns a `RouteMutationResult` with `status` set to `UPDATED` or `NOT_FOUND`.
+	"""
+	removeRoute(
+		"""
+		ID of the Route to be removed.
+		"""
+		id: RouteId!
+	): RouteMutationResult!
+	"""
+	Change order of Routes depending on the order of their IDs.
+	"""
+	changeRoutesOrder(
+		"""
+		Ordered list of Route identities
+		"""
+		ids: [RouteId!]!
+	): BulkRouteMutationResult!
+	"""
+	Sets the preferred route source.
+	
+	Returns a `RouteSourceMutationResult` with `status` set to `UPDATED`, `UNCHANGED`, or `NOT_FOUND`.
+	"""
+	preferRouteSource(
+		"""
+		ID of the Route to set the preferred source on
+		"""
+		routeId: RouteId!,
+		"""
+		ID of the RouteSource to prefer
+		"""
+		sourceId: RouteSourceId!
+	): RouteSourceMutationResult!
+	"""
+	Clears the preferred route source.
+	
+	Returns a `RouteSourceMutationResult` with `status` set to `UPDATED`, `UNCHANGED`, or `NOT_FOUND`.
+	"""
+	clearRouteSourcePreference(
+		"""
+		ID of the Route whose source preference should be cleared
+		"""
+		routeId: RouteId!
+	): RouteSourceMutationResult!
+	"""
+	Enables a configured route source.
+	
+	Returns a `RouteSourceMutationResult` with `status` set to `UPDATED`, `UNCHANGED`, or `NOT_FOUND`.
+	"""
+	enableRouteSource(
+		"""
+		ID of the Route containing the source
+		"""
+		routeId: RouteId!,
+		"""
+		ID of the RouteSource to enable
+		"""
+		sourceId: RouteSourceId!
+	): RouteSourceMutationResult!
+	"""
+	Disables a configured route source.
+	
+	Returns a `RouteSourceMutationResult` with `status` set to `UPDATED`, `UNCHANGED`, or `NOT_FOUND`.
+	"""
+	disableRouteSource(
+		"""
+		ID of the Route containing the source
+		"""
+		routeId: RouteId!,
+		"""
+		ID of the RouteSource to disable
+		"""
+		sourceId: RouteSourceId!
+	): RouteSourceMutationResult!
+	"""
+	Updates the label of a configured route source.
+	
+	Returns a `RouteSourceMutationResult` with `status` set to `UPDATED`, `UNCHANGED`, or `NOT_FOUND`.
+	"""
+	updateRouteSourceLabel(
+		"""
+		ID of the Route containing the source
+		"""
+		routeId: RouteId!,
+		"""
+		ID of the RouteSource to update the label for
+		"""
+		sourceId: RouteSourceId!,
+		"""
+		New label for the route source, or null to clear the label
+		"""
+		label: Label
+	): RouteSourceMutationResult!
+	"""
+	Updates the failover policy for the specified Route's source set.
+	
+	Allows tuning failover behavior without full route-source reconstruction.
+	Returns a `RouteSourceMutationResult` with `status` set to `UPDATED`, `UNCHANGED`, or `NOT_FOUND`.
+	"""
+	updateRouteSourcesFailoverPolicy(
+		"""
+		ID of the Route to update the route-source failover policy for
+		"""
+		routeId: RouteId!,
+		"""
+		New failover policy settings for the route source set
+		"""
+		policy: RouteSourceFailoverPolicyInput!
+	): RouteSourceMutationResult!
+	"""
+	Sets a new Route or updates an existing one (if `id` is specified).
+	
+	Idempotent if `id` is specified. Otherwise is non-idempotent, always creates a new Route.
+	
+	Returns a `RouteMutationResult` with `status` set to `UPDATED` for successful writes,
+	and `NOT_FOUND` when the target Route is missing.
+	"""
+	setRoute(
+		"""
+		Route create/update payload.
+		"""
+		input: SetRouteInput!
+	): RouteMutationResult!
+	"""
+	Assign or clear a route owner. Admin only.
+	
+	Returns a `RouteMutationResult` with `status` set to `UPDATED`, `UNCHANGED`, or `NOT_FOUND`.
+	"""
+	setRouteOwner(
+		"""
+		ID of the Route to update
+		"""
+		id: RouteId!,
+		"""
+		User ID to own the route, or null to clear ownership
+		"""
+		ownerId: ID
+	): RouteMutationResult!
+	"""
+	Sets or clears the route baseline profile used to gate playlist files.
+	
+	Returns a `RouteMutationResult` with `status` set to `UPDATED` or `NOT_FOUND`.
+	"""
+	setBaselineProfile(
+		"""
+		ID of the Route to update
+		"""
+		routeId: RouteId!,
+		"""
+		Preset id to set, or null to clear when the playlist is empty
+		"""
+		presetId: String
+	): RouteMutationResult!
+	"""
+	Regenerate the publish token for a given route source.
+	
+	The old token is immediately invalidated. Returns a
+	`PublishCredentialMutationResult` with `status` set to `UPDATED` or
+	`NOT_FOUND`; the `token` field contains the new `pk_` token when updated.
+	"""
+	regeneratePublishCredential(
+		"""
+		ID of the Route to rotate the credential for.
+		"""
+		routeId: RouteId!,
+		"""
+		ID of the RouteSource whose token should be rotated.
+		"""
+		sourceId: RouteSourceId!
+	): PublishCredentialMutationResult!
+	"""
+	Revoke a publish credential by regenerating the token (invalidating the
+	old one). In the credential-in-spec model, tokens always exist on each
+	push-protocol source — "revoking" means rotating so the old token
+	stops working.
+	Uses the route/source pair because publish tokens are embedded in the
+	route-source spec rather than stored as independent credential rows.
+	Returns a `PublishCredentialMutationResult` with `status` set to `UPDATED`
+	or `NOT_FOUND`. The replacement token is not exposed by this mutation.
+	"""
+	revokePublishCredential(
+		"""
+		ID of the Route whose credential should be revoked.
+		"""
+		routeId: RouteId!,
+		"""
+		ID of the RouteSource whose token should be invalidated.
+		"""
+		sourceId: RouteSourceId!
+	): PublishCredentialMutationResult!
+	"""
+	Enables an Output by its ID in the specified Route.
+	
+	Returns an `OutputMutationResult` with `status` set to `UPDATED`, `UNCHANGED`, or `NOT_FOUND`.
+	"""
+	enableOutput(
+		"""
+		ID of the Output to be enabled.
+		"""
+		id: OutputId!,
+		"""
+		ID of the Route to enable the Output in.
+		"""
+		routeId: RouteId!
+	): OutputMutationResult!
+	"""
+	Disables an Output by its ID in the specified Route.
+	
+	Returns an `OutputMutationResult` with `status` set to `UPDATED`, `UNCHANGED`, or `NOT_FOUND`.
+	"""
+	disableOutput(
+		"""
+		ID of the Output to be disabled.
+		"""
+		id: OutputId!,
+		"""
+		ID of the Route to disable the Output in.
+		"""
+		routeId: RouteId!
+	): OutputMutationResult!
+	"""
+	Removes an Output by its ID in the specified Route.
+	
+	Returns an `OutputMutationResult` with `status` set to `UPDATED` or `NOT_FOUND`.
+	"""
+	removeOutput(
+		"""
+		ID of the Output to be removed.
+		"""
+		id: OutputId!,
+		"""
+		ID of the Route to remove the Output from.
+		"""
+		routeId: RouteId!
+	): OutputMutationResult!
+	"""
+	Enables all outputs in the specified Route.
+	"""
+	enableAllOutputs(
+		"""
+		ID of the Route
+		"""
+		routeId: RouteId!
+	): BulkOutputMutationResult!
+	"""
+	Disables all outputs in the specified Route.
+	"""
+	disableAllOutputs(
+		"""
+		ID of the Route
+		"""
+		routeId: RouteId!
+	): BulkOutputMutationResult!
+	"""
+	Enables all outputs across multiple Routes.
+	"""
+	enableAllOutputsOfRoutes(
+		"""
+		IDs of Routes to enable outputs for
+		"""
+		routeIds: [RouteId!]!
+	): BulkOutputMutationResult!
+	"""
+	Disables all outputs across multiple Routes.
+	"""
+	disableAllOutputsOfRoutes(
+		"""
+		IDs of Routes to disable outputs for
+		"""
+		routeIds: [RouteId!]!
+	): BulkOutputMutationResult!
+	"""
+	Reorder Route's outputs depending on the order of their IDs.
+	"""
+	changeOutputsOrder(
+		"""
+		ID of the parent Route
+		"""
+		routeId: RouteId!,
+		"""
+		Ordered list of output identities
+		"""
+		ids: [OutputId!]!
+	): BulkOutputMutationResult!
+	"""
+	Sets a new Output or updates an existing one (if `id` is specified).
+	
+	Idempotent if `id` is specified. Otherwise is non-idempotent, always creates a new Output
+	and errors on the `dst` duplicates within the specified Route.
+	
+	Returns an `OutputMutationResult` with `status` set to `UPDATED` for successful writes,
+	and `NOT_FOUND` when the target Route or Output is missing.
+	"""
+	setOutput(
+		"""
+		Output create/update payload.
+		"""
+		input: SetOutputInput!
+	): OutputMutationResult!
+	"""
+	Move output from one route to another at a specified position.
+	
+	Returns an `OutputMutationResult` with `status` set to `UPDATED`.
+	"""
+	moveOutput(
+		"""
+		ID of the Output to be moved
+		"""
+		srcOutputId: OutputId!,
+		"""
+		ID of the destination parent Route
+		"""
+		dstRouteId: RouteId!,
+		"""
+		Position in destination array of Outputs
+		"""
+		dstPosition: Unumber!
+	): OutputMutationResult!
+	"""
+	Tune volume for an output or mixin. Returns an `OutputMutationResult` with `status` set to `UPDATED`, `UNCHANGED`, or `NOT_FOUND`.
+	"""
+	tuneVolume(input: TuneVolumeInput!): OutputMutationResult!
+	"""
+	Tune delay for a mixin. Returns an `OutputMutationResult` with `status` set to `UPDATED`, `UNCHANGED`, or `NOT_FOUND`.
+	"""
+	tuneDelay(input: TuneDelayInput!): OutputMutationResult!
+	"""
+	Tune sidechain for a mixin. Returns an `OutputMutationResult` with `status` set to `UPDATED`, `UNCHANGED`, or `NOT_FOUND`.
+	"""
+	tuneSidechain(input: TuneSidechainInput!): OutputMutationResult!
+}
+
+"""
+Explicit result payload for route mutations.
+"""
+type RouteMutationResult {
+	"""
+	Mutation outcome status.
+	"""
+	status: MutationResultStatus!
+	"""
+	Route identity associated with the mutation.
+	"""
+	routeId: RouteId!
+}
+
+"""
+Route counts bucketed by presentation phase for operator home summary.
+"""
+type RoutePhaseCounts {
+	"""
+	Routes actively carrying media.
+	"""
+	running: Int!
+	"""
+	Routes with a source selected; runtime is still converging toward confirmed execution.
+	"""
+	converging: Int!
+	"""
+	Routes armed and waiting for a source to go live.
+	"""
+	pending: Int!
+	"""
+	Routes with a runtime execution error.
+	"""
+	error: Int!
+	"""
+	Routes idle or disabled.
+	"""
+	idle: Int!
+}
+
+"""
+Backend-owned route presentation surface for operators.
+"""
+type RoutePresentation {
+	"""
+	Phase of the route from the operator's point of view.
+	"""
+	phase: RoutePresentationPhase!
+	"""
+	Viewer-facing status label.
+	"""
+	label: String!
+	"""
+	Viewer-facing status tone.
+	"""
+	tone: StatusTone!
+	"""
+	Operator-safe detail sentence.
+	"""
+	detail: String!
+	"""
+	Operator-safe last error copy, when present.
+	"""
+	lastErrorCopy: String
+	"""
+	Selected source copy, when present.
+	"""
+	activeSource: ActiveSourcePresentation
+}
+
+"""
+Backend-owned phase for the operator-facing route presentation model.
+"""
+enum RoutePresentationPhase {
+	"""
+	The route is actively carrying media.
+	"""
+	RUNNING
+	"""
+	Source selected; runtime is still converging.
+	"""
+	CONVERGING
+	"""
+	The route is armed and waiting for a source to go live.
+	"""
+	PENDING
+	"""
+	The runtime reported an execution error.
+	"""
+	ERROR
+	"""
+	The route has no active source to present right now.
+	"""
+	IDLE
+}
+
+"""
+Product-level program source classification for the workspace.
+"""
+enum RouteProgramSourceKind {
+	"""
+	A live source feeds the route program.
+	"""
+	LIVE_INGRESS
+	"""
+	Playlist media feeds the route program.
+	"""
+	PLAYLIST_PLAYOUT
+	"""
+	Multiple source mechanics are configured or active.
+	"""
+	MIXED
+	"""
+	No narrower program source can be identified yet.
+	"""
+	UNKNOWN
+}
+
+type RouteQuery {
+	"""
+	Get all routes.
+	"""
+	allRoutes: [Route!]!
+	"""
+	Get current server information (CPU, memory, network stats).
+	"""
+	serverInfo: StatisticsServerInfo!
+	"""
+	Get status summary across all routes.
+	
+	Returns aggregated status information for all routes, including
+	input/output status counts, routes with errors/warnings, and
+	total/enabled route counts.
+	"""
+	statusSummary: RouteStatusSummary!
+	"""
+	Fixed route baseline profiles available for playlist compatibility gating.
+	"""
+	baselineProfilePresets: [BaselineProfilePreset!]!
+}
+
+type RouteSource {
+	"""
+	Stable configured source identity.
+	"""
+	id: RouteSourceId!
+	"""
+	Source role used for priority classification.
+	"""
+	role: SourceRole!
+	"""
+	Ordering within the role.
+	"""
+	order: Int!
+	"""
+	Optional operator-facing label.
+	"""
+	label: Label
+	"""
+	Whether the source participates in automatic or preferred selection.
+	"""
+	enabled: Boolean!
+	"""
+	Protocol or file-backed input definition.
+	"""
+	input: SourceDefinition!
+	"""
+	Kind of this route source based on its input.
+	"""
+	kind: SourceInputKind!
+	"""
+	Stream statistics for this route source.
+	"""
+	streamStat: StreamStatistics
+	"""
+	Live stream information for this route source.
+	"""
+	liveStream: RouteSourceLiveStream
+	"""
+	Operator-facing presentation for this route source.
+	"""
+	presentation: RouteSourcePresentation!
+}
+
+"""
+Failover policy update supplied by route-source clients.
+"""
+input RouteSourceFailoverPolicyInput {
+	"""
+	Minimum seconds to stay on a source before switching back.
+	"""
+	stickinessSecs: Int
+	"""
+	Seconds before retrying a source after it failed.
+	"""
+	cooldownSecs: Int
+}
+
+"""
+Unique identifier for a route source.
+"""
+scalar RouteSourceId
+
+"""
+One configured source row supplied by route creation and edit mutations.
+"""
+input RouteSourceInput {
+	"""
+	Stable configured source identity. A new ID is generated when omitted.
+	"""
+	id: RouteSourceId
+	"""
+	Source role used for priority classification.
+	"""
+	role: SourceRole!
+	"""
+	Ordering within the role.
+	"""
+	order: Int! = 0
+	"""
+	Optional operator-facing label.
+	"""
+	label: Label
+	"""
+	Whether the source participates in automatic or preferred selection.
+	"""
+	enabled: Boolean
+	"""
+	Protocol or file-backed input definition.
+	"""
+	input: RouteSourceInputDefinition!
+}
+
+"""
+Protocol or file-backed input definition supplied by route-source clients.
+"""
+input RouteSourceInputDefinition @oneOf {
+	"""
+	Externally pushed RTMP stream.
+	"""
+	rtmpPush: RtmpPushConfigInput
+	"""
+	Remote RTMP/HLS source pulled into the ingest pipeline.
+	"""
+	rtmpPull: RtmpPullConfigInput
+	"""
+	Externally pushed SRT stream.
+	"""
+	srtPush: SrtPushConfigInput
+	"""
+	Browser-published `WebRTC` source.
+	"""
+	webRtcPush: WebRtcPushConfigInput
+	"""
+	Managed file used as a route source.
+	"""
+	file: FileConfigInput
+}
+
+"""
+Operator-facing live stream information for one route source.
+"""
+type RouteSourceLiveStream {
+	"""
+	Timestamp when the media node sampled transport state.
+	"""
+	sampledAt: DateTime!
+	"""
+	Timestamp when the control plane accepted this observation.
+	"""
+	receivedAt: DateTime!
+	"""
+	Approximate playback clients for the stream, excluding the publisher when active.
+	"""
+	activePullerCount: Int!
+	"""
+	Recent inbound source bitrate in kilobits per second.
+	"""
+	ingressBitrateKbps: Int!
+	"""
+	Recent outbound playback bitrate in kilobits per second.
+	"""
+	egressBitrateKbps: Int!
+	"""
+	Status of live stream telemetry collection.
+	"""
+	telemetryStatus: RouteSourceLiveStreamTelemetryStatus!
+}
+
+"""
+Source status for live stream telemetry collection.
+"""
+enum RouteSourceLiveStreamTelemetryStatus {
+	"""
+	The media node reported a current transport observation.
+	"""
+	REPORTED
+	"""
+	The media node could not query the local transport service.
+	"""
+	UNAVAILABLE
+	"""
+	The media node timed out while querying the local transport service.
+	"""
+	TIMED_OUT
+	"""
+	The latest reported sample is too old to trust.
+	"""
+	STALE
+}
+
+"""
+Explicit result payload for route-source mutations.
+"""
+type RouteSourceMutationResult {
+	"""
+	Mutation outcome status.
+	"""
+	status: MutationResultStatus!
+	"""
+	Route identity associated with the mutation.
+	"""
+	routeId: RouteId!
+	"""
+	Route source identity associated with the mutation, when the mutation targets one source.
+	"""
+	sourceId: RouteSourceId
+}
+
+"""
+Backend-owned presentation surface for operator-facing route-source rows.
+"""
+type RouteSourcePresentation {
+	"""
+	Phase of the source from the operator's point of view.
+	"""
+	phase: RouteSourcePresentationPhase!
+	"""
+	Viewer-facing status label.
+	"""
+	label: String!
+	"""
+	Viewer-facing tone.
+	"""
+	tone: StatusTone!
+	"""
+	Operator-safe detail sentence.
+	"""
+	detail: String!
+	"""
+	Viewer-facing source role label.
+	"""
+	roleLabel: String!
+}
+
+"""
+Backend-owned phase for the operator-facing route-source presentation model.
+"""
+enum RouteSourcePresentationPhase {
+	"""
+	The source is actively carrying media.
+	"""
+	LIVE
+	"""
+	The source is online but waiting while another source is active.
+	"""
+	STANDBY
+	"""
+	The file fallback is ready if the route needs it.
+	"""
+	READY
+	"""
+	The source is online and available to the route.
+	"""
+	HEALTHY
+	"""
+	The source is online but unstable.
+	"""
+	DEGRADED
+	"""
+	The source is offline.
+	"""
+	OFFLINE
+	"""
+	The source is intentionally disabled.
+	"""
+	DISABLED
+}
+
+type RouteSources {
+	"""
+	Configured route sources sorted by `(role.rank(), order, id)`.
+	"""
+	sources: [RouteSource!]!
+	"""
+	Failover behavior for this route's source set.
+	"""
+	failoverPolicy: FailoverPolicy!
+	"""
+	Durable operator preference for route source selection.
+	"""
+	selectionControl: SourceSelectionControl!
+}
+
+"""
+Route-source topology supplied by route creation and edit mutations.
+"""
+input RouteSourcesInput {
+	"""
+	Configured route sources sorted by `(role.rank(), order, id)`.
+	"""
+	sources: [RouteSourceInput!]! = []
+	"""
+	Failover behavior for this route's source set.
+	"""
+	failoverPolicy: RouteSourceFailoverPolicyInput
+}
+
+"""
+Summary of route status counts for Fleet overview.
+"""
+type RouteStatusSummary {
+	"""
+	List of route IDs that have errors.
+	"""
+	errorRouteIds: [RouteId!]!
+	"""
+	List of route IDs that have warnings.
+	"""
+	warningRouteIds: [RouteId!]!
+	"""
+	Total number of routes.
+	"""
+	totalRoutes: Int!
+	"""
+	Number of enabled routes.
+	"""
+	enabledRoutes: Int!
+	"""
+	Count of inputs grouped by status.
+	"""
+	inputs: [StatusStatistics!]!
+	"""
+	Count of outputs grouped by status.
+	"""
+	outputs: [StatusStatistics!]!
+	"""
+	Route counts bucketed by presentation phase.
+	"""
+	routeCountsByPhase: RoutePhaseCounts!
+}
+
+"""
+Route with parent information (for nested outputs).
+"""
+type RouteWithParent {
+	"""
+	The route itself.
+	"""
+	route: Route!
+	"""
+	Parent relationship information (if this route uses another route's output as input).
+	"""
+	parent: ParentInfo
+}
+
+"""
+Backend-owned workspace capabilities for a route mode.
+"""
+type RouteWorkspaceCapabilities {
+	"""
+	Live source setup and readiness surface.
+	"""
+	liveIngress: WorkspaceSurfacePolicy!
+	"""
+	Playlist queue, schedule, and playout surface.
+	"""
+	playlistPlayout: WorkspaceSurfacePolicy!
+	"""
+	File-backed fallback surface.
+	"""
+	fileFallback: WorkspaceSurfacePolicy!
+	"""
+	Output destination management surface.
+	"""
+	outputs: WorkspaceSurfacePolicy!
+	"""
+	Program preview/monitor surface.
+	"""
+	preview: WorkspaceSurfacePolicy!
+	"""
+	Runtime execution diagnostics surface.
+	"""
+	executionDiagnostics: WorkspaceSurfacePolicy!
+}
+
+"""
+Backend-owned route workspace profile and capability read model.
+"""
+type RouteWorkspaceProfile {
+	"""
+	Backend-inferred mode from the current route shape.
+	"""
+	inferred: RouteWorkspaceProfileId!
+	"""
+	Mode the workspace should render now.
+	"""
+	effective: RouteWorkspaceProfileId!
+	"""
+	Product-level source feeding the route program.
+	"""
+	primaryProgramSource: RouteProgramSourceKind!
+	"""
+	Surface policies for profile-aware workspace rendering.
+	"""
+	capabilities: RouteWorkspaceCapabilities!
+	"""
+	Operator-safe explanation for the selected mode.
+	"""
+	reason: String!
+}
+
+"""
+Backend-owned workspace mode for route-specific operator surfaces.
+"""
+enum RouteWorkspaceProfileId {
+	"""
+	Published live inputs are the primary program source.
+	"""
+	LIVE_INGEST
+	"""
+	Playlist media is the primary program source.
+	"""
+	PLAYLIST_PLAYOUT
+	"""
+	Mixed or advanced route behavior should keep every surface reachable.
+	"""
+	COMPOSITE
+}
+
+"""
+Input counterpart of `RtmpPullConfig`.
+"""
+input RtmpPullConfigInput {
+	"""
+	Source RTMP/HLS URL to pull from.
+	"""
+	url: String!
+}
+
+"""
+GraphQL RTMP-pull source.
+"""
+type RtmpPullSource {
+	"""
+	Source RTMP/HLS URL to pull from.
+	"""
+	url: String!
+}
+
+"""
+Input counterpart of `RtmpPushConfig`.
+"""
+input RtmpPushConfigInput {
+	"""
+	Reserved flag to keep the GraphQL shape stable; always `false`.
+	"""
+	reserved: Boolean! = false
+}
+
+"""
+GraphQL RTMP-push source.
+"""
+type RtmpPushSource {
+	"""
+	Whether this push source has a publish credential.
+	"""
+	hasPublishCredential: Boolean!
+}
+
+"""
+Output create/update payload.
+"""
+input SetOutputInput {
+	"""
+	ID of the Route to add a new Output to.
+	"""
+	routeId: RouteId!
+	"""
+	Destination URL to stream a live stream onto.
+	"""
+	dst: OutputDstUrl!
+	"""
+	Optional label to add a new Output with.
+	"""
+	label: Label
+	"""
+	Optional preview URL to preview the Output with.
+	"""
+	previewUrl: Url
+	"""
+	Optional `MixinSrcUrl`s to mix into this Output.
+	"""
+	mixins: [MixinSrcUrl!]! = []
+	"""
+	ID of the Output to be updated rather than creating a new one.
+	"""
+	id: OutputId
+}
+
+input SetPlaylistInput {
+	"""
+	ID of the Route.
+	"""
+	routeId: RouteId!
+	"""
+	Ordered list of file IDs.
+	"""
+	playlist: [FileId!]!
+}
+
+"""
+Route create/update payload.
+"""
+input SetRouteInput {
+	"""
+	Optional label to set the Route with.
+	"""
+	label: Label
+	"""
+	Route-source definition for the Route.
+	"""
+	routeSources: RouteSourcesInput!
+	"""
+	Optional media node id to hard-pin the Route onto.
+	"""
+	pinnedMediaNodeId: MediaNodeId
+	"""
+	ID of the Route to be updated rather than creating a new one.
+	"""
+	id: RouteId
+}
+
+input SetSettingsInput {
+	"""
+	Display title for the application.
+	"""
+	title: String
+	"""
+	Whether to confirm deletions.
+	"""
+	deleteConfirmation: Boolean
+	"""
+	Whether to confirm enabling/disabling.
+	"""
+	enableConfirmation: Boolean
+	"""
+	Google API key for Google Drive access.
+	"""
+	googleApiKey: String
+	"""
+	Maximum number of files in playlist.
+	"""
+	maxDownloadingFiles: Unumber
+	"""
+	Artifact library policy defaults.
+	"""
+	artifactLibraryPolicy: ArtifactLibraryPolicyInput
+	"""
+	Browser session TTL in seconds (0 or null disables expiry).
+	"""
+	sessionTtlSeconds: Unumber
+}
+
+"""
+Explicit result payload for settings import mutations.
+"""
+type SettingsImportMutationResult {
+	"""
+	Mutation outcome status.
+	"""
+	status: MutationResultStatus!
+	"""
+	Route identity targeted by a route-scoped import, when provided.
+	"""
+	routeId: RouteId
+}
+
+"""
+Safe settings view shared with the general authenticated shell.
+"""
+type SettingsInfo {
+	"""
+	Title for the operator UI.
+	"""
+	title: String
+	"""
+	Whether destructive actions should ask for confirmation.
+	"""
+	deleteConfirmation: Boolean
+	"""
+	Whether enable/disable actions should ask for confirmation.
+	"""
+	enableConfirmation: Boolean
+	"""
+	Whether Google Drive integration is configured.
+	"""
+	hasGoogleApiKey: Boolean!
+	"""
+	Maximum playlist download concurrency, when configured.
+	"""
+	maxDownloadingFiles: Unumber
+	"""
+	Owned artifact-library defaults for imports, probing, and picker behavior.
+	"""
+	artifactLibraryPolicy: ArtifactLibraryPolicy!
+	"""
+	Whether the control surface requires a browser sign-in password.
+	"""
+	passwordEnabled: Boolean!
+	"""
+	Host that this server is reachable via in public.
+	"""
+	publicHost: String!
+}
+
+"""
+Explicit result payload for settings mutations.
+"""
+type SettingsMutationResult {
+	"""
+	Mutation outcome status.
+	"""
+	status: MutationResultStatus!
+}
+
+"""
+Protocol or file-backed source definition for a route source.
+"""
+union SourceDefinition = RtmpPushSource | RtmpPullSource | SrtPushSource | WebRtcPushSource | FileSource
+
+"""
+Enumeration of source input kinds based on the protocol type.
+"""
+enum SourceInputKind {
+	"""
+	RTMP push stream from external source.
+	"""
+	RTMP_PUSH
+	"""
+	RTMP pull stream from remote URL.
+	"""
+	RTMP_PULL
+	"""
+	SRT push stream from external source.
+	"""
+	SRT_PUSH
+	"""
+	`WebRTC` push stream from external source.
+	"""
+	WEB_RTC_PUSH
+	"""
+	File-based source.
+	"""
+	FILE
+}
+
+"""
+Raw lifecycle state currently observed for one route source.
+"""
+enum SourceLifecycleState {
+	"""
+	The active source is starting.
+	"""
+	STARTING
+	"""
+	The active source is actively producing media.
+	"""
+	RUNNING
+	"""
+	The active source is stopping.
+	"""
+	STOPPING
+	"""
+	The active source is fully stopped.
+	"""
+	STOPPED
+	"""
+	The active source failed.
+	"""
+	ERRORED
+}
+
+"""
+Priority role for a route source.
+"""
+enum SourceRole {
+	"""
+	Primary live source.
+	"""
+	PRIMARY_LIVE
+	"""
+	Backup live source.
+	"""
+	BACKUP_LIVE
+	"""
+	File-backed fallback source.
+	"""
+	FILE_BACKUP
+}
+
+type SourceSelectionControl {
+	"""
+	Preferred source when it is available; automatic fallback remains active.
+	"""
+	preferredSourceId: RouteSourceId
+}
+
+"""
+Input counterpart of `SrtPushConfig`.
+"""
+input SrtPushConfigInput {
+	"""
+	Optional passphrase required by the SRT listener.
+	"""
+	passphrase: String
+	"""
+	Desired latency in milliseconds.
+	"""
+	latency: Int
+}
+
+"""
+GraphQL SRT-push source.
+"""
+type SrtPushSource {
+	"""
+	Whether this push source has a publish credential.
+	"""
+	hasPublishCredential: Boolean!
+	"""
+	Desired latency in milliseconds.
+	"""
+	latency: Int
+	"""
+	Optional SRT passphrase.
+	"""
+	passphrase: String
+}
+
+"""
+Server health information.
+"""
+type StatisticsServerInfo {
+	"""
+	Total CPU usage, percent.
+	"""
+	cpuUsage: Float
+	"""
+	CPU cores count.
+	"""
+	cpuCores: Int
+	"""
+	Total RAM installed on current machine.
+	"""
+	ramTotal: Float
+	"""
+	Free available RAM.
+	"""
+	ramFree: Float
+	"""
+	Network traffic transferred last second.
+	"""
+	txDelta: Float
+	"""
+	Network traffic received last second.
+	"""
+	rxDelta: Float
+	"""
+	Reliable feedback queue depth at the media node.
+	"""
+	reliableQueueDepth: Int
+	"""
+	Priority feedback queue depth at the media node.
+	"""
+	priorityQueueDepth: Int
+	"""
+	Telemetry feedback queue depth at the media node.
+	"""
+	telemetryQueueDepth: Int
+	"""
+	Error message.
+	"""
+	errorMsg: String
+}
+
+"""
+Status indicating availability of a route source, output, or mixin.
+"""
+enum Status {
+	"""
+	Inactive, no operations are performed and no media traffic is flowed.
+	"""
+	OFFLINE
+	"""
+	Initializing, media traffic doesn't yet flow as expected.
+	"""
+	INITIALIZING
+	"""
+	Active, all operations are performing successfully and media traffic
+	flows as expected.
+	"""
+	ONLINE
+	"""
+	Failed recently.
+	"""
+	UNSTABLE
+}
+
+"""
+Statistics of statuses in route sources or outputs of a client.
+"""
+type StatusStatistics {
+	"""
+	Status of inputs or outputs.
+	"""
+	status: Status!
+	"""
+	Count of items having this status.
+	"""
+	count: Int!
+}
+
+"""
+Backend-owned status tone for operator-facing presentation surfaces.
+"""
+enum StatusTone {
+	"""
+	Actively on air.
+	"""
+	LIVE
+	"""
+	Healthy, but not necessarily carrying media.
+	"""
+	SUCCESS
+	"""
+	Needs attention soon.
+	"""
+	WARNING
+	"""
+	In progress or waiting on a dependency.
+	"""
+	INFO
+	"""
+	Broken or failed.
+	"""
+	ERROR
+	"""
+	Inactive or intentionally idle.
+	"""
+	NEUTRAL
+}
+
+"""
+Runtime descriptor for one artifact storage backend.
+"""
+type StorageBackend {
+	"""
+	Stable backend identifier.
+	"""
+	id: String!
+	"""
+	Operator-facing label.
+	"""
+	label: String!
+	"""
+	Artifact location type served by this backend.
+	"""
+	locationType: ArtifactLocationType!
+	"""
+	Filesystem or object-storage root URI.
+	"""
+	rootUri: String!
+	"""
+	Mount kind, when known.
+	"""
+	mountKind: String
+	"""
+	Capacity in bytes, serialized as a string for 64-bit safety.
+	"""
+	capacityBytes: String
+	"""
+	Used bytes, serialized as a string for 64-bit safety.
+	"""
+	usedBytes: String!
+	"""
+	Free bytes, serialized as a string for 64-bit safety.
+	"""
+	freeBytes: String
+	"""
+	Resolved headroom bytes, serialized as a string for 64-bit safety.
+	"""
+	headroomBytes: String
+	"""
+	Admission limit bytes, serialized as a string for 64-bit safety.
+	"""
+	admissionLimitBytes: String
+	"""
+	In-flight reserved bytes, serialized as a string for 64-bit safety.
+	"""
+	outstandingReservationBytes: String!
+	"""
+	Whether a recent admission rejection should keep the UI in at-limit mode.
+	"""
+	recentlyRejected: Boolean!
+	"""
+	Largest files in this backend.
+	"""
+	topConsumers(limit: Int): [StorageBackendTopConsumer!]!
+}
+
+"""
+File consuming bytes in one storage backend.
+"""
+type StorageBackendTopConsumer {
+	"""
+	Artifact id.
+	"""
+	id: FileId!
+	"""
+	Display name.
+	"""
+	name: String!
+	"""
+	Size in bytes, serialized as a string for 64-bit safety.
+	"""
+	sizeBytes: String!
+}
+
+"""
+Information about a specific stream mismatch.
+"""
+type StreamMismatch {
+	"""
+	Endpoint that has mismatched stream properties.
+	"""
+	endpoint: StreamReference!
+	"""
+	List of specific parameter differences.
+	"""
+	differences: [ParameterDifference!]!
+}
+
+"""
+Detailed stream mismatch information for comparison.
+"""
+type StreamMismatchDetails {
+	"""
+	List of stream mismatches detected.
+	"""
+	mismatches: [StreamMismatch!]!
+	"""
+	Reference endpoint used for comparison.
+	"""
+	referenceEndpoint: StreamReference!
+}
+
+"""
+Reference to a stream source.
+"""
+type StreamReference {
+	"""
+	ID of the endpoint.
+	"""
+	id: String!
+	"""
+	Type of stream source.
+	"""
+	sourceType: StreamSourceType!
+	"""
+	Display name/label for the endpoint.
+	"""
+	name: String!
+	"""
+	Stream statistics.
+	"""
+	streamStat: StreamStatistics
+}
+
+"""
+Type of stream source.
+"""
+enum StreamSourceType {
+	"""
+	Route baseline profile.
+	"""
+	BASELINE
+	"""
+	Route-source stream.
+	"""
+	SOURCE
+	"""
+	Playlist file.
+	"""
+	PLAYLIST_FILE
+}
+
+"""
+Stream statistics for audio/video content.
+"""
+type StreamStatistics {
+	"""
+	Name of audio codec. Example: "aac"
+	"""
+	audioCodecName: String
+	"""
+	Stereo / Mono layout
+	"""
+	audioChannelLayout: String
+	"""
+	Audio sample rate. Example: "44100"
+	"""
+	audioSampleRate: String
+	"""
+	Count of audio channels. Example: 2
+	"""
+	audioChannels: Unumber
+	"""
+	Name of video codec. Example: "h264"
+	"""
+	videoCodecName: String
+	"""
+	Video frame rate (fps). Example: "30/1"
+	"""
+	videoRFrameRate: String
+	"""
+	Video width
+	"""
+	videoWidth: Unumber
+	"""
+	Video height
+	"""
+	videoHeight: Unumber
+	"""
+	Total bit rate
+	"""
+	bitRate: String
+	"""
+	Duration in whole seconds (rounded down)
+	"""
+	durationSeconds: Int
+	"""
+	Error message, if we could not retrieve stream info
+	"""
+	error: String
+}
+
+type SystemSettingsMutation {
+	"""
+	Compatibility password mutation for admin clients.
+	
+	Named users should prefer `changeMyPassword`. This legacy alias continues
+	to target the current named user when one exists, and otherwise falls back
+	to the bootstrap `admin` account for non-user admin principals.
+	
+	# Arguments
+	
+	* `new` - New password to set (empty string removes auth only while the bootstrap admin is the sole user)
+	* `old` - Current password (required if password is already set)
+	"""
+	setPassword(
+		"""
+		Password update payload.
+		"""
+		input: PasswordMutationInput!
+	): PasswordMutationResult!
+	"""
+	Change the current named user's password.
+	"""
+	changeMyPassword(
+		"""
+		Password update payload.
+		"""
+		input: PasswordMutationInput!
+	): PasswordMutationResult!
+	"""
+	Create a local user account.
+	"""
+	createUser(
+		"""
+		User creation payload.
+		"""
+		input: CreateUserInput!
+	): UserMutationResult!
+	"""
+	Update one user's effective role.
+	"""
+	updateUserRole(
+		"""
+		User role update payload.
+		"""
+		input: UpdateUserRoleInput!
+	): UserMutationResult!
+	"""
+	Delete one persisted local user.
+	"""
+	deleteUser(
+		"""
+		User id
+		"""
+		id: String!
+	): UserMutationResult!
+	"""
+	Update application settings.
+	
+	Allows configuration of various application parameters including:
+	- Display title
+	- Confirmation dialogs
+	- Google Drive API key
+	- Maximum downloading files
+	- Browser session TTL (seconds)
+	"""
+	setSettings(
+		"""
+		Application settings update payload.
+		"""
+		input: SetSettingsInput!
+	): SettingsMutationResult!
+	"""
+	Import routes configuration from JSON.
+	
+	This will merge or replace the current configuration with the imported one.
+	Use with caution as this operation cannot be undone.
+	
+	# Arguments
+	
+	* `spec` - JSON string containing the routes configuration
+	* `replace` - Indicator whether the spec should replace existing definitions
+	* `routeId` - Optional ID of a concrete Route to apply the spec to without touching other Routes
+	
+	Returns a `SettingsImportMutationResult` with `status` set to `UPDATED`, `UNCHANGED`, or `NOT_FOUND`.
+	"""
+	import(
+		"""
+		JSON spec to import
+		"""
+		spec: String!,
+		"""
+		Indicator whether the spec should replace existing definitions
+		"""
+		replace: Boolean! = false,
+		"""
+		Optional ID of a concrete Route to apply the spec to without touching other Routes
+		"""
+		routeId: RouteId
+	): SettingsImportMutationResult!
+}
+
+type SystemSettingsQuery {
+	"""
+	Get server configuration and settings.
+	
+	Returns current application settings including title, password status,
+	and various configuration flags.
+	"""
+	info: AdminSettingsInfo!
+	"""
+	Export routes configuration as JSON.
+	
+	If no `ids` specified, then returns all the Routes.
+	Returns a JSON string containing the route configuration
+	that can be imported later.
+	"""
+	export(
+		"""
+		IDs of Routes to be exported. If empty, all will be exported.
+		"""
+		routeIds: [RouteId!]
+	): String
+	"""
+	Returns the current named user when one exists for this session.
+	"""
+	me: UserAccount
+	"""
+	Lists persisted local users for admin management.
+	"""
+	listUsers: [UserAccount!]!
+}
+
+"""
+Mixin delay tuning payload.
+"""
+input TuneDelayInput {
+	"""
+	ID of the Route.
+	"""
+	routeId: RouteId!
+	"""
+	ID of the Output.
+	"""
+	outputId: OutputId!
+	"""
+	ID of the Mixin.
+	"""
+	mixinId: MixinId!
+	"""
+	Delay in milliseconds.
+	"""
+	delay: Delay!
+}
+
+"""
+Mixin sidechain tuning payload.
+"""
+input TuneSidechainInput {
+	"""
+	ID of the Route.
+	"""
+	routeId: RouteId!
+	"""
+	ID of the Output.
+	"""
+	outputId: OutputId!
+	"""
+	ID of the Mixin.
+	"""
+	mixinId: MixinId!
+	"""
+	Enable sidechain.
+	"""
+	sidechain: Boolean!
+}
+
+"""
+Output or mixin volume tuning payload.
+"""
+input TuneVolumeInput {
+	"""
+	ID of the Route.
+	"""
+	routeId: RouteId!
+	"""
+	ID of the Output.
+	"""
+	outputId: OutputId!
+	"""
+	ID of the Mixin; omit to tune origin output audio.
+	"""
+	mixinId: MixinId
+	"""
+	Volume settings.
+	"""
+	volume: VolumeInput!
+}
+
+type UnifiedMutation {
+	routes: RouteMutation!
+	artifacts: ArtifactsMutation!
+	playlist: PlaylistMutation!
+	settings: SystemSettingsMutation!
+	"""
+	Fleet root.
+	"""
+	fleet: FleetMutation!
+}
+
+type UnifiedQuery {
+	routes: RouteQuery!
+	artifacts: ArtifactsQuery!
+	settings: SystemSettingsQuery!
+	"""
+	Fleet root.
+	"""
+	fleet: FleetQuery!
+	"""
+	Returns one row per configured artifact storage backend.
+	"""
+	storageBackends: [StorageBackend!]!
+}
+
+"""
+Unified Subscription root combining all domain subscriptions.
+
+This struct merges subscriptions from all domain modules into a single GraphQL
+Subscription type. Subscription fields remain flat at the root, while the
+domain modules own the emitted streams. Most subscriptions are available to
+all authenticated users, with fleet subscriptions restricted to Admin only.
+"""
+type UnifiedSubscription {
+	"""
+	Subscribe to all routes.
+	"""
+	allRoutes: [Route!]!
+	"""
+	Subscribe to server information updates.
+	"""
+	serverInfo: StatisticsServerInfo!
+	"""
+	Subscribe to status summary across all routes.
+	"""
+	statusSummary: RouteStatusSummary!
+	"""
+	Subscribe to a specific route used for nested outputs.
+	"""
+	routeWithParent(id: RouteId!): RouteWithParent
+	"""
+	Subscribe to one output within a specified route.
+	"""
+	output(
+		"""
+		ID of the Route
+		"""
+		routeId: RouteId!,
+		"""
+		ID of the Output
+		"""
+		outputId: OutputId!
+	): Output
+	"""
+	Subscribe to artifact list changes.
+	"""
+	artifacts: [LocalFileInfo!]!
+	"""
+	Subscribe to a specific file's state changes.
+	"""
+	file(
+		"""
+		ID of the file to watch
+		"""
+		fileId: FileId!
+	): LocalFileInfo
+	"""
+	Subscribe to currently playing file changes for a Route.
+	"""
+	currentlyPlayingFile(
+		"""
+		ID of the Route
+		"""
+		routeId: RouteId!
+	): PlaylistFileInfo
+	"""
+	Subscribe to server settings changes.
+	
+	Emits the safe shell settings view whenever application settings change.
+	"""
+	info: SettingsInfo!
+	"""
+	Subscribe to media-node registry and liveness updates.
+	"""
+	mediaNodes: [FleetMediaNode!]!
+}
+
+"""
+Generic unsigned number (u16 wrapper).
+"""
+scalar Unumber
+
+input UpdateUserRoleInput {
+	"""
+	User id.
+	"""
+	id: String!
+	"""
+	New authorization role.
+	"""
+	role: UserRole!
+}
+
+"""
+URL is a String implementing the [URL Standard](http://url.spec.whatwg.org/)
+"""
+scalar Url
+
+"""
+API-facing local user without secret password material.
+"""
+type UserAccount {
+	"""
+	Stable user id.
+	"""
+	id: String!
+	"""
+	Canonical lowercase username.
+	"""
+	username: String!
+	"""
+	Optional operator-facing display label.
+	"""
+	displayName: String
+	"""
+	Effective authorization role.
+	"""
+	role: UserRole!
+	"""
+	RFC 3339 account creation timestamp.
+	"""
+	createdAt: DateTime!
+	"""
+	RFC 3339 account update timestamp.
+	"""
+	updatedAt: DateTime!
+	"""
+	RFC 3339 timestamp of the last successful browser login.
+	"""
+	lastLoginAt: DateTime
+}
+
+"""
+Explicit result payload for local user account mutations.
+"""
+type UserMutationResult {
+	"""
+	Mutation outcome status.
+	"""
+	status: MutationResultStatus!
+	"""
+	User identity associated with the mutation.
+	"""
+	userId: String!
+	"""
+	User account after the mutation, when the target exists or was created.
+	"""
+	user: UserAccount
+}
+
+"""
+GraphQL user-role enum.
+"""
+enum UserRole {
+	"""
+	Administrator with full access to all operations.
+	"""
+	ADMIN
+	"""
+	Operator with stream and self-service access, excluding fleet/admin settings.
+	"""
+	OPERATOR
+	"""
+	Read-only viewer.
+	"""
+	VIEWER
+}
+
+"""
+Volume rate of an audio track.
+"""
+type Volume {
+	"""
+	Volume level (0-1000, where 100 is the original level).
+	"""
+	level: VolumeLevel!
+	"""
+	Whether the audio is muted.
+	"""
+	muted: Boolean!
+}
+
+"""
+Volume update payload shared by output and mixin volume tuning.
+"""
+input VolumeInput {
+	"""
+	Volume level.
+	"""
+	level: VolumeLevel!
+	"""
+	Whether the audio is muted.
+	"""
+	muted: Boolean!
+}
+
+"""
+Volume level (0-1000, where 100 is the original level).
+"""
+scalar VolumeLevel
+
+"""
+Input counterpart of `WebRtcPushConfig`.
+"""
+input WebRtcPushConfigInput {
+	"""
+	Reserved flag to keep the GraphQL shape stable; always `false`.
+	"""
+	reserved: Boolean! = false
+}
+
+"""
+GraphQL WebRTC-push source.
+"""
+type WebRtcPushSource {
+	"""
+	Whether this push source has a publish credential.
+	"""
+	hasPublishCredential: Boolean!
+}
+
+"""
+Visibility and priority policy for a workspace surface.
+"""
+enum WorkspaceSurfacePolicy {
+	"""
+	Show this surface as part of the main workflow.
+	"""
+	PRIMARY
+	"""
+	Keep this surface available but not leading.
+	"""
+	SECONDARY
+	"""
+	Hide this surface behind advanced/composite affordances.
+	"""
+	ADVANCED
+	"""
+	Do not show this surface for the current mode.
+	"""
+	HIDDEN
+	"""
+	The route cannot support this surface yet.
+	"""
+	UNSUPPORTED
+}
+
+"""
+Directs the executor to include this field or fragment only when the `if` argument is true.
+"""
+directive @include(if: Boolean!) on FIELD | FRAGMENT_SPREAD | INLINE_FRAGMENT
+"""
+Indicates that an Input Object is a OneOf Input Object (and thus requires exactly one of its field be provided)
+"""
+directive @oneOf on INPUT_OBJECT
+"""
+Directs the executor to skip this field or fragment when the `if` argument is true.
+"""
+directive @skip(if: Boolean!) on FIELD | FRAGMENT_SPREAD | INLINE_FRAGMENT
+"""
+Provides a scalar specification URL for specifying the behavior of custom scalar types.
+"""
+directive @specifiedBy(url: String!) on SCALAR
+schema {
+	query: UnifiedQuery
+	mutation: UnifiedMutation
+	subscription: UnifiedSubscription
+}

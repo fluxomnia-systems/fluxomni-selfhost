@@ -4,10 +4,12 @@ DOCS_DIR := docs
 DOCS_SRC := $(DOCS_DIR)/src
 DOCS_BUILD := $(DOCS_DIR)/book
 FLUXOMNI_ROOT ?= ../fluxomni
+RELEASE_MANIFEST ?= $(FLUXOMNI_ROOT)/public-release-manifest.json
+MARKDOWNLINT ?= markdownlint-cli2
 
 .DEFAULT_GOAL := help
 
-.PHONY: help check.tools.docs build serve clean lint lint.ci screenshots api.docs.sync.check api.docs.sync.update docs.build docs.serve docs.clean docs.lint.links docs.lint docs.lint.ci
+.PHONY: help check.tools.docs build serve clean lint lint.ci screenshots api.docs.sync.check api.docs.sync.update release.sync.check release.sync.update docs.build docs.serve docs.clean docs.lint.links docs.lint docs.lint.ci
 
 help:
 	@echo "Fluxomni Studio Self-Hosted: common targets"
@@ -20,6 +22,8 @@ help:
 	@echo "  make screenshots    Capture user-guide screenshots (requires running instance)"
 	@echo "  make api.docs.sync.check   Check API docs source drift"
 	@echo "  make api.docs.sync.update  Refresh API docs source snapshot"
+	@echo "  make release.sync.check    Check public release manifest sync"
+	@echo "  make release.sync.update   Refresh public release manifest sync"
 	@echo ""
 	@echo "  Compatibility aliases: docs.build docs.serve docs.clean docs.lint docs.lint.ci"
 
@@ -50,6 +54,12 @@ api.docs.sync.check:
 api.docs.sync.update:
 	@python3 scripts/sync-api-docs-from-fluxomni.py --mode update --fluxomni-root "$(FLUXOMNI_ROOT)"
 
+release.sync.check:
+	@python3 scripts/sync-release-from-fluxomni.py --mode check --fluxomni-root "$(FLUXOMNI_ROOT)" --manifest "$(RELEASE_MANIFEST)"
+
+release.sync.update:
+	@python3 scripts/sync-release-from-fluxomni.py --mode update --fluxomni-root "$(FLUXOMNI_ROOT)" --manifest "$(RELEASE_MANIFEST)"
+
 docs.build: check.tools.docs
 	@mdbook build $(DOCS_DIR)
 
@@ -63,17 +73,17 @@ docs.lint.links:
 	@./scripts/check-md-links.sh $(DOCS_SRC)
 
 docs.lint: check.tools.docs docs.build docs.lint.links
-	@if command -v markdownlint-cli2 >/dev/null 2>&1; then \
-		markdownlint-cli2; \
+	@if command -v $(firstword $(MARKDOWNLINT)) >/dev/null 2>&1; then \
+		$(MARKDOWNLINT); \
 	else \
 		echo "Skipping markdown style lint (markdownlint-cli2 not installed)."; \
 		echo "Install: npm install -g markdownlint-cli2"; \
 	fi
 
 docs.lint.ci: check.tools.docs docs.build docs.lint.links
-	@command -v markdownlint-cli2 >/dev/null 2>&1 || { \
+	@command -v $(firstword $(MARKDOWNLINT)) >/dev/null 2>&1 || { \
 		echo "Error: markdownlint-cli2 is required for CI lint."; \
 		echo "Install: npm install -g markdownlint-cli2"; \
 		exit 1; \
 	}
-	@markdownlint-cli2
+	@$(MARKDOWNLINT)

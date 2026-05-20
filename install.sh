@@ -124,6 +124,7 @@ SELFHOST_REF_OVERRIDE="${FLUXOMNI_SELFHOST_REF:-}"
 REPO_RAW="${FLUXOMNI_REPO_RAW:-}"
 DOCKER_CMD=(docker)
 DOCKER_DISPLAY="docker"
+VERSION_MAP_LOADED="0"
 
 require_cmd() {
   if ! command -v "$1" >/dev/null 2>&1; then
@@ -192,6 +193,33 @@ resolve_media_node_image() {
 repo_raw_for_ref() {
   local selfhost_ref="$1"
   printf 'https://raw.githubusercontent.com/%s/%s\n' "$SELFHOST_REPO" "$selfhost_ref"
+}
+
+load_generated_version_map() {
+  local map_ref
+  local map_url
+  local map_file
+
+  if [ "$VERSION_MAP_LOADED" = "1" ]; then
+    return
+  fi
+
+  if [ -f "scripts/generated-version-map.sh" ]; then
+    # shellcheck source=/dev/null
+    . "scripts/generated-version-map.sh"
+    VERSION_MAP_LOADED="1"
+    return
+  fi
+
+  map_ref="${SELFHOST_REF_OVERRIDE:-main}"
+  map_url="$(repo_raw_for_ref "$map_ref")/scripts/generated-version-map.sh"
+  map_file="$(mktemp)"
+  if curl -fsSL "$map_url" -o "$map_file" >/dev/null 2>&1; then
+    # shellcheck source=/dev/null
+    . "$map_file"
+    VERSION_MAP_LOADED="1"
+  fi
+  rm -f "$map_file"
 }
 
 remote_asset_exists() {
@@ -534,32 +562,17 @@ transition_version_alias() {
   local requested_ref
   local requested_core
 
+  load_generated_version_map
+
   requested_ref="$(canonical_version_ref "$requested")"
   requested_core="${requested_ref#v}"
 
-  case "$requested_core" in
-    2026.04.1)
-      printf 'v0.10.1\n'
-      ;;
-    2026.04.2)
-      printf 'v0.10.2\n'
-      ;;
-    2026.05.0)
-      printf 'v0.11.0\n'
-      ;;
-    0.10.1)
-      printf 'v2026.04.1\n'
-      ;;
-    0.10.2)
-      printf 'v2026.04.2\n'
-      ;;
-    0.11.0)
-      printf 'v2026.05.0\n'
-      ;;
-    *)
-      return 1
-      ;;
-  esac
+  if command -v generated_public_release_alias >/dev/null 2>&1; then
+    generated_public_release_alias "$requested_ref" && return
+    generated_public_release_alias "$requested_core" && return
+  fi
+
+  return 1
 }
 
 normalize_fluxomni_version() {
@@ -571,12 +584,10 @@ normalize_fluxomni_version() {
   requested_core="${requested_ref#v}"
 
   # Public date releases map to the image tags published by the core release.
-  case "$requested_core" in
-    2026.04.1|2026.04.2|2026.05.0)
-      transition_version_alias "$requested_ref"
-      return
-      ;;
-  esac
+  if [[ "$requested_core" =~ ^[0-9]{4}\.[0-9]{2}\.[0-9]+$ ]]; then
+    transition_version_alias "$requested_ref"
+    return
+  fi
 
   printf '%s\n' "$requested_ref"
 }
@@ -606,6 +617,7 @@ resolve_repo_raw() {
   local alias_ref
   local candidate_repo_raw
   local fallback_repo_raw
+  local requested_core
 
   if [ -n "$REPO_RAW" ]; then
     printf '%s\n' "$REPO_RAW"
@@ -634,6 +646,13 @@ resolve_repo_raw() {
       printf '%s\n' "$candidate_repo_raw"
       return
     fi
+  fi
+
+  requested_core="${selfhost_ref#v}"
+  if [[ "$requested_core" =~ ^[0-9]{4}\.[0-9]{2}\.[0-9]+$ ]]; then
+    echo "Error: stable self-host assets for '${selfhost_ref}' were not found." >&2
+    echo "Publish the matching self-host release tag or set FLUXOMNI_SELFHOST_REF/FLUXOMNI_REPO_RAW explicitly." >&2
+    exit 1
   fi
 
   fallback_repo_raw="$(repo_raw_for_ref "main")"

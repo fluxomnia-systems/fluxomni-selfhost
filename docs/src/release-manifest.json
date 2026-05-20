@@ -1,0 +1,73 @@
+{
+  "edge": {
+    "coreRef": "main",
+    "docsPath": "/edge/",
+    "imageTag": "edge"
+  },
+  "latestStable": "v2026.05.0",
+  "releases": {
+    "v2026.04.1": {
+      "coreVersion": "v0.10.1",
+      "releasedAt": "2026-04-01",
+      "selfhostRef": "v2026.04.1"
+    },
+    "v2026.04.2": {
+      "coreVersion": "v0.10.2",
+      "releasedAt": "2026-04-15",
+      "selfhostRef": "v2026.04.2"
+    },
+    "v2026.05.0": {
+      "api": {
+        "automationDocsPath": "/api/",
+        "contract": "stable",
+        "schemaPath": "api/schema.graphql",
+        "schemaSha256": "2633b6433ceee64aabff48bdc90b6a99f9a2128d7f23279457441842c5f04044",
+        "typescriptClient": "@fluxomni/api-client@0.11.0"
+      },
+      "coreCommit": "6a9cad830913856ab8d08f2655683be5114f06e2",
+      "coreVersion": "v0.11.0",
+      "docsStablePath": "/",
+      "docsVersionPath": "/v2026.05.0/",
+      "highlights": [
+        {
+          "area": "Add a reusable artifact library",
+          "description": "Artifacts are now reusable source and derived files instead of route-scoped playlist assets. Operators can upload, import, tag, filter, bulk tag, bulk delete, and reuse artifacts across routes, while source and derived catalog rows share one GraphQL, SQLite, generated-client, manifest, and persisted-file surface.",
+          "title": "Add a reusable artifact library"
+        },
+        {
+          "area": "Enforce playlist baselines in route workspaces",
+          "description": "Playlist routes now enforce baseline media profiles before broken queues can be saved or started. The first valid-probe playlist file can teach the route baseline, operators can choose or clear fixed presets, queued files are compared against the current route baseline, and route enable, playFileFromPlaylist, and...",
+          "title": "Enforce playlist baselines in route workspaces"
+        },
+        {
+          "area": "Clean up route source and ingress contracts",
+          "description": "Route source identity now drives source selection across APIs, generated clients, failover, manifests, media-node feedback, and observed state. Legacy ingress-group edit/read surfaces were removed, route reads expose non-null routeSources, unsupported legacy playlist ingress rows fail migration instead of...",
+          "title": "Clean up route source and ingress contracts"
+        },
+        {
+          "area": "Keep route runtime status honest",
+          "description": "Route presentation now uses one state-aware evaluation path for route cards, Fleet route rows, ingress summaries, and dashboard phase counts. Playlist and file-backed sources stay Converging until HLS readiness confirms playback, push-ingress sources can still promote from a Running lifecycle signal, and...",
+          "title": "Keep route runtime status honest"
+        },
+        {
+          "area": "Align release validation with operator flows",
+          "description": "Release validation now follows the same artifact and playlist paths operators use. Google Drive Playwright coverage imports through the route playlist artifact picker, force-deletes exact fixture Drive IDs only when safe, and covers multi-select artifact deletion, referenced-artifact force delete, playlist picker...",
+          "title": "Align release validation with operator flows"
+        }
+      ],
+      "images": {
+        "controlPlane": "ghcr.io/fluxomnia-systems/fluxomni-control-plane:v0.11.0",
+        "frontend": "ghcr.io/fluxomnia-systems/fluxomni-frontend:v0.11.0",
+        "mediaNode": "ghcr.io/fluxomnia-systems/fluxomni-media-node:v0.11.0"
+      },
+      "releasedAt": "2026-05-06",
+      "selfhostRef": "v2026.05.0",
+      "source": {
+        "coreTag": "v0.11.0",
+        "generatedFrom": "6a9cad830"
+      },
+      "summary": "Artifacts are now reusable source and derived files instead of route-scoped playlist assets. Operators can upload, import, tag, filter, bulk tag, bulk delete, and reuse artifacts across routes, while source and derived catalog rows share one GraphQL, SQLite, generated-client, manifest, and persisted-file surface."
+    }
+  },
+  "schemaVersion": 1
+}

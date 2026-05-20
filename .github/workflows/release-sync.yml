@@ -1,0 +1,111 @@
+name: Release Sync
+
+on:
+  workflow_dispatch:
+    inputs:
+      mode:
+        description: "Check or update generated public release data"
+        required: true
+        type: choice
+        default: check
+        options:
+          - check
+          - update
+      core_tag:
+        description: "Fluxomni stable core tag to sync, for example v0.11.0"
+        required: true
+        type: string
+      public_version:
+        description: "Public self-host release tag, for example v2026.05.0"
+        required: true
+        type: string
+      release_date:
+        description: "Public release date in YYYY-MM-DD format"
+        required: true
+        type: string
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  sync:
+    name: Sync release data
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout self-host repo
+        uses: actions/checkout@v5
+
+      - name: Validate core tag
+        run: |
+          if [[ ! "${{ inputs.core_tag }}" =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+            echo "::error::core_tag must be a stable vX.Y.Z tag."
+            exit 1
+          fi
+
+      - name: Checkout private Fluxomni source
+        uses: actions/checkout@v5
+        with:
+          repository: fluxomnia-systems/fluxomni
+          ref: ${{ inputs.core_tag }}
+          path: .upstream/fluxomni
+          token: ${{ secrets.FLUXOMNI_REPO_TOKEN }}
+
+      - name: Set up Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+
+      - name: Render public release manifest
+        working-directory: .upstream/fluxomni
+        run: |
+          python3 .github/scripts/render_public_release_manifest.py \
+            --core-tag "${{ inputs.core_tag }}" \
+            --public-version "${{ inputs.public_version }}" \
+            --release-date "${{ inputs.release_date }}" \
+            --core-commit "$(git rev-parse HEAD)" \
+            --manifest-out "$GITHUB_WORKSPACE/.upstream/public-release-manifest.json" \
+            --notes-out "$GITHUB_WORKSPACE/.upstream/public-release-notes.md"
+
+      - name: Check or update release sync outputs
+        run: |
+          python3 scripts/sync-release-from-fluxomni.py \
+            --mode "${{ inputs.mode }}" \
+            --fluxomni-root .upstream/fluxomni \
+            --manifest .upstream/public-release-manifest.json
+
+      - name: Verify release sync outputs
+        run: |
+          python3 scripts/sync-release-from-fluxomni.py \
+            --mode check \
+            --fluxomni-root .upstream/fluxomni \
+            --manifest .upstream/public-release-manifest.json
+
+      - uses: cargo-bins/cargo-binstall@main
+
+      - name: Install mdBook
+        run: cargo binstall --no-confirm mdbook@0.5.2
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Install markdownlint
+        run: npm install -g markdownlint-cli2
+
+      - name: Run self-host release checks
+        run: make docs.lint.ci
+
+      - name: Create release sync pull request
+        if: inputs.mode == 'update'
+        uses: peter-evans/create-pull-request@v7
+        with:
+          branch: automation/sync-release-${{ inputs.public_version }}
+          delete-branch: true
+          title: "docs: sync Fluxomni ${{ inputs.public_version }} release data"
+          commit-message: "docs: sync Fluxomni ${{ inputs.public_version }} release data"
+          body-path: .upstream/public-release-notes.md
