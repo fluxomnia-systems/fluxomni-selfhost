@@ -38,7 +38,6 @@
 ## API Automation
 
 - [API Automation](api/overview.md)
-  - [Source Sync Status](api/source-sync.md)
   - [Authentication](api/auth.md)
   - [Raw GraphQL](api/graphql.md)
   - [TypeScript Client](api/typescript-client.md)

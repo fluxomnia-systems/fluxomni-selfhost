@@ -7,7 +7,7 @@ hashes for the Fluxomni files that public API docs depend on.
 
 Modes:
 - check: fail when upstream source files differ from the recorded snapshot.
-- update: refresh the recorded snapshot and generated sync-status page.
+- update: refresh the recorded snapshot used by the sync workflow.
 """
 
 from __future__ import annotations
@@ -43,7 +43,6 @@ SOURCE_FILES = [
 ]
 
 STATE_PATH = Path("docs/src/api/.fluxomni-sync.json")
-STATUS_PAGE_PATH = Path("docs/src/api/source-sync.md")
 
 
 def run(command: list[str], cwd: Path | None = None) -> str:
@@ -134,48 +133,6 @@ def compare_snapshots(
     return drift
 
 
-def write_status_page(snapshot: dict[str, Any]) -> None:
-    short_sha = snapshot["resolvedSha"][:12]
-    lines = [
-        "# API Source Sync Status",
-        "",
-        "This page records which Fluxomni source files the API automation docs",
-        "were last checked against.",
-        "",
-        f"- Upstream repository: `{snapshot['repo']}`",
-        f"- Requested ref: `{snapshot['requestedRef']}`",
-        f"- Resolved commit: `{short_sha}`",
-        f"- Updated at: `{snapshot['updatedAt']}`",
-        "",
-        "## Tracked Source Files",
-        "",
-    ]
-
-    for relative, details in snapshot["files"].items():
-        if details.get("present"):
-            digest = details["sha256"][:12]
-            lines.append(f"- `{relative}` - `{digest}`")
-        else:
-            lines.append(f"- `{relative}` - missing")
-
-    lines.extend(
-        [
-            "",
-            "Manual GitHub Actions runs compare these hashes with the upstream",
-            "Fluxomni ref. A failed check means the public API docs may need",
-            "review before they match the current Fluxomni contract.",
-            "",
-            "The GitHub workflow reads the private Fluxomni repository with the",
-            "`FLUXOMNI_REPO_TOKEN` secret. Manual `check` runs only report drift;",
-            "manual `update` runs refresh this snapshot on a pull request for",
-            "human review, approval, and merge. The workflow never auto-merges",
-            "the generated pull request.",
-            "",
-        ],
-    )
-    STATUS_PAGE_PATH.write_text("\n".join(lines), encoding="utf-8")
-
-
 def write_step_summary(mode: str, drift: list[str], snapshot: dict[str, Any]) -> None:
     summary_path = os.environ.get("GITHUB_STEP_SUMMARY")
     if not summary_path:
@@ -241,7 +198,6 @@ def main() -> int:
             json.dumps(snapshot, indent=2, sort_keys=True) + "\n",
             encoding="utf-8",
         )
-        write_status_page(snapshot)
         if drift:
             print("Updated API docs source snapshot:")
             for item in drift:
