@@ -2,20 +2,6 @@ name: API Docs Sync
 
 on:
   workflow_dispatch:
-    inputs:
-      mode:
-        description: "Check for drift or update the recorded upstream snapshot"
-        required: true
-        type: choice
-        default: check
-        options:
-          - check
-          - update
-      fluxomni_ref:
-        description: "Fluxomni ref to compare against"
-        required: true
-        type: string
-        default: main
 
 permissions:
   contents: write
@@ -30,11 +16,11 @@ jobs:
       - name: Checkout self-host docs
         uses: actions/checkout@v5
 
-      - name: Checkout private Fluxomni source
+      - name: Checkout private Fluxomni stable source
         uses: actions/checkout@v5
         with:
           repository: fluxomnia-systems/fluxomni
-          ref: ${{ inputs.fluxomni_ref }}
+          ref: stable
           path: .upstream/fluxomni
           token: ${{ secrets.FLUXOMNI_REPO_TOKEN }}
 
@@ -44,17 +30,13 @@ jobs:
           python-version: "3.12"
 
       - name: Check or update API docs source snapshot
-        env:
-          MODE: ${{ inputs.mode }}
-          FLUXOMNI_REF: ${{ inputs.fluxomni_ref }}
         run: |
           python3 scripts/sync-api-docs-from-fluxomni.py \
-            --mode "$MODE" \
-            --fluxomni-ref "$FLUXOMNI_REF" \
+            --mode update \
+            --fluxomni-ref stable \
             --fluxomni-root .upstream/fluxomni
 
       - name: Create sync pull request
-        if: inputs.mode == 'update'
         uses: peter-evans/create-pull-request@v7
         with:
           token: ${{ secrets.SELFHOST_PR_TOKEN }}

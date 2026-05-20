@@ -2,27 +2,6 @@ name: Release Sync
 
 on:
   workflow_dispatch:
-    inputs:
-      mode:
-        description: "Check or update generated public release data"
-        required: true
-        type: choice
-        default: check
-        options:
-          - check
-          - update
-      core_tag:
-        description: "Fluxomni stable core tag to sync, for example v0.11.0"
-        required: true
-        type: string
-      public_version:
-        description: "Public self-host release tag, for example v2026.05.0"
-        required: true
-        type: string
-      release_date:
-        description: "Public release date in YYYY-MM-DD format"
-        required: true
-        type: string
 
 permissions:
   contents: write
@@ -37,20 +16,55 @@ jobs:
       - name: Checkout self-host repo
         uses: actions/checkout@v5
 
-      - name: Validate core tag
-        run: |
-          if [[ ! "${{ inputs.core_tag }}" =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
-            echo "::error::core_tag must be a stable vX.Y.Z tag."
-            exit 1
-          fi
-
-      - name: Checkout private Fluxomni source
+      - name: Checkout private Fluxomni stable source
         uses: actions/checkout@v5
         with:
           repository: fluxomnia-systems/fluxomni
-          ref: ${{ inputs.core_tag }}
+          ref: stable
           path: .upstream/fluxomni
+          fetch-depth: 0
           token: ${{ secrets.FLUXOMNI_REPO_TOKEN }}
+
+      - name: Derive public release inputs
+        id: release
+        run: |
+          core_tag="$(
+            git -C .upstream/fluxomni tag --points-at HEAD --list 'v[0-9]*.[0-9]*.[0-9]*' \
+              | sort -V \
+              | tail -n 1
+          )"
+          if [[ -z "$core_tag" ]]; then
+            echo "::error::stable must point at an exact vX.Y.Z core release tag."
+            exit 1
+          fi
+          release_date="$(date -u +%Y-%m-%d)"
+          release_month="$(date -u +%Y.%m)"
+          next_patch="$(
+            RELEASE_MONTH="$release_month" python3 - <<'PY'
+          import json
+          import os
+          from pathlib import Path
+
+          manifest = json.loads(Path("docs/src/release-manifest.json").read_text(encoding="utf-8"))
+          prefix = f"v{os.environ['RELEASE_MONTH']}."
+          patches = []
+          for version in manifest.get("releases", {}):
+              if version.startswith(prefix):
+                  suffix = version.removeprefix(prefix)
+                  if suffix.isdigit():
+                      patches.append(int(suffix))
+          print(max(patches, default=-1) + 1)
+          PY
+          )"
+          public_version="v${release_month}.${next_patch}"
+          {
+            echo "core_tag=${core_tag}"
+            echo "public_version=${public_version}"
+            echo "release_date=${release_date}"
+          } >> "$GITHUB_OUTPUT"
+          echo "Core tag: ${core_tag}"
+          echo "Public version: ${public_version}"
+          echo "Release date: ${release_date}"
 
       - name: Set up Python
         uses: actions/setup-python@v6
@@ -61,9 +75,9 @@ jobs:
         working-directory: .upstream/fluxomni
         run: |
           python3 .github/scripts/render_public_release_manifest.py \
-            --core-tag "${{ inputs.core_tag }}" \
-            --public-version "${{ inputs.public_version }}" \
-            --release-date "${{ inputs.release_date }}" \
+            --core-tag "${{ steps.release.outputs.core_tag }}" \
+            --public-version "${{ steps.release.outputs.public_version }}" \
+            --release-date "${{ steps.release.outputs.release_date }}" \
             --core-commit "$(git rev-parse HEAD)" \
             --manifest-out "$GITHUB_WORKSPACE/.upstream/public-release-manifest.json" \
             --notes-out "$GITHUB_WORKSPACE/.upstream/public-release-notes.md"
@@ -71,7 +85,7 @@ jobs:
       - name: Check or update release sync outputs
         run: |
           python3 scripts/sync-release-from-fluxomni.py \
-            --mode "${{ inputs.mode }}" \
+            --mode update \
             --fluxomni-root .upstream/fluxomni \
             --manifest .upstream/public-release-manifest.json
 
@@ -97,15 +111,17 @@ jobs:
       - name: Install markdownlint
         run: npm install -g markdownlint-cli2
 
+      - name: Install ripgrep
+        run: sudo apt-get update && sudo apt-get install -y ripgrep
+
       - name: Run self-host release checks
         run: make docs.lint.ci
 
       - name: Create release sync pull request
-        if: inputs.mode == 'update'
         uses: peter-evans/create-pull-request@v7
         with:
           token: ${{ secrets.SELFHOST_PR_TOKEN }}
-          branch: automation/sync-release-${{ inputs.public_version }}
+          branch: automation/sync-release-${{ steps.release.outputs.public_version }}
           delete-branch: true
           add-paths: |
             docs/src/release-manifest.json
@@ -114,6 +130,6 @@ jobs:
             docs/src/api/automation-recipes.json
             docs/src/api/llms.txt
             docs/src/api/.fluxomni-sync.json
-          title: "docs: sync Fluxomni ${{ inputs.public_version }} release data"
-          commit-message: "docs: sync Fluxomni ${{ inputs.public_version }} release data"
+          title: "docs: sync Fluxomni ${{ steps.release.outputs.public_version }} release data"
+          commit-message: "docs: sync Fluxomni ${{ steps.release.outputs.public_version }} release data"
           body-path: .upstream/public-release-notes.md
