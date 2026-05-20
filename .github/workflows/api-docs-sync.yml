@@ -60,6 +60,7 @@ jobs:
           token: ${{ secrets.SELFHOST_PR_TOKEN }}
           branch: automation/sync-api-docs-source
           delete-branch: true
+          add-paths: docs/src/api/.fluxomni-source-sync.json
           title: "docs: sync API docs source snapshot"
           commit-message: "docs: sync API docs source snapshot"
           body: |

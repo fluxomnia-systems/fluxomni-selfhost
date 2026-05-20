@@ -107,6 +107,13 @@ jobs:
           token: ${{ secrets.SELFHOST_PR_TOKEN }}
           branch: automation/sync-release-${{ inputs.public_version }}
           delete-branch: true
+          add-paths: |
+            docs/src/release-manifest.json
+            scripts/generated-version-map.sh
+            docs/src/api/schema.graphql
+            docs/src/api/automation-recipes.json
+            docs/src/api/llms.txt
+            docs/src/api/.fluxomni-sync.json
           title: "docs: sync Fluxomni ${{ inputs.public_version }} release data"
           commit-message: "docs: sync Fluxomni ${{ inputs.public_version }} release data"
           body-path: .upstream/public-release-notes.md

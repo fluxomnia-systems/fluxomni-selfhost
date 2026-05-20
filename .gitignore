@@ -5,9 +5,13 @@
 .DS_Store
 # Pi local task state
 .pi/tasks/
+__pycache__
 
 # Local runtime data
 data/
+
+# Private upstream checkout used by sync workflows
+.upstream/
 
 # Generated mdBook output
 docs/book/

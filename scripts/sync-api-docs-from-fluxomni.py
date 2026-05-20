@@ -42,7 +42,7 @@ SOURCE_FILES = [
     "lat.md/public-api.md",
 ]
 
-STATE_PATH = Path("docs/src/api/.fluxomni-sync.json")
+STATE_PATH = Path("docs/src/api/.fluxomni-source-sync.json")
 
 
 def run(command: list[str], cwd: Path | None = None) -> str:
