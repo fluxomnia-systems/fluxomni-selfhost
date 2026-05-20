@@ -2,7 +2,9 @@
 
 Operator-facing highlights from recent Fluxomni Studio releases.
 
-## 2026.05.1 — May 2026
+The changelog is editorial release copy. Use `release-manifest.json` as the factual inventory for dates, module versions, images, and API client refs, but write the latest changelog entry by hand so it reads as operator-facing release notes instead of generated metadata.
+
+## 2026.05.1 (0.12.0) - 20 May 2026
 
 ### Stable Automation Surface
 
@@ -26,7 +28,7 @@ Playlist routes can teach or enforce media baselines, reject incompatible live o
 
 ---
 
-## 2026.05.0 — May 2026
+## 2026.05.0 (0.11.0) - 6 May 2026
 
 ### Shared Media Library
 
@@ -46,7 +48,7 @@ Public examples now use date-style pins such as `v2026.05.0`, while known core t
 
 ---
 
-## 2026.04.2 — April 2026
+## 2026.04.2 (0.10.2) - 26 April 2026
 
 ### Clearer Live Route Status
 
@@ -72,7 +74,7 @@ Self-hosted webapp builds no longer initialize PostHog by default. Analytics onl
 
 ---
 
-## 2026.04.1 — April 2026
+## 2026.04.1 (0.10.1) - 19 April 2026
 
 ### Stable Push Token Rotation
 
@@ -92,7 +94,7 @@ File-ingress ffprobe now uses a 3000 ms per-attempt timeout over 3 attempts with
 
 ---
 
-## 0.10.0 — April 2026
+## 0.10.0 - 14 April 2026
 
 ### Multi-User Authentication
 
@@ -128,7 +130,7 @@ The control plane handles SIGINT and SIGTERM cleanly — HTTP connections drain 
 
 ---
 
-## 0.9 — March 2026
+## 0.9.0 - 13 March 2026
 
 ### Distributed Media-Node Orchestration
 

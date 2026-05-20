@@ -8,12 +8,12 @@
   "releases": {
     "v2026.04.1": {
       "coreVersion": "v0.10.1",
-      "releasedAt": "2026-04-01",
+      "releasedAt": "2026-04-19",
       "selfhostRef": "v2026.04.1"
     },
     "v2026.04.2": {
       "coreVersion": "v0.10.2",
-      "releasedAt": "2026-04-15",
+      "releasedAt": "2026-04-26",
       "selfhostRef": "v2026.04.2"
     },
     "v2026.05.0": {
