@@ -145,3 +145,49 @@ The operator UI is standardized around Routes (`/routes`) and Fleet (`/fleet`). 
 ### Durable Assignment Tracking
 
 Route-to-node assignments persist across control-plane restarts with per-resource epochs. Stale ownership updates from disconnected nodes cannot override newer placement decisions.
+
+---
+
+## Ephyr Restreamer predecessor — 2021-2024
+
+Fluxomni Studio continues the Ephyr Restreamer line. The predecessor releases established the single-host restreaming model, GraphQL control API, dashboard operations, deployment scripts, and media-server integrations that later evolved into Fluxomni routes, fleet nodes, artifacts, and operator automation.
+
+### Restreamer 0.8.0 — November 4, 2024
+
+The final released Ephyr Restreamer line expanded playlist-oriented workflows, made playlists optional per restream, added playback encoding work, and introduced drag-and-drop ordering for inputs and outputs. It also improved memory and network statistics, moved images to GitHub Container Registry, updated FFmpeg to 6.0, updated SRS to v5-r3, switched GraphQL subscriptions to `graphql-ws`, and extracted shared GraphQL and SRS client code into reusable crates.
+
+### Restreamer 0.7.0 — April 17, 2023
+
+Restreamer 0.7.0 added dashboard-wide Start All and Stop All controls, last command and error visibility, password-state indicators, input-stream information, file-backup playback metadata, Google Drive link normalization, input endpoint reordering, and server CPU-core visibility. Deployment gained default port opening, OpenTelemetry collector configuration, allowed-IP controls, and optional state clearing on restart. Runtime work moved logging to `tracing`, added OpenTelemetry trace support, updated SRS to v4.0-r4, and routed SRS and FFmpeg logs through the same tracing pipeline.
+
+### Restreamer 0.6.0 — October 2, 2022
+
+Restreamer 0.6.0 expanded audio mixing and backup workflows. Outputs could use up to three TeamSpeak mixers, specify TeamSpeak identity, apply sidechain behavior, and change delay smoothly. Inputs gained multiple backups per input, clearer primary and playback naming, keyboard-friendly label editing, and more visible endpoint labels. The release also introduced graceful FFmpeg shutdown, FIFO-based mixer feeding, FFmpeg 5.1, SRS v4.0-r1, Ubuntu 20.04 images, Rust 1.64, Tokio v1, Actix v4, and broader frontend tooling updates.
+
+### Restreamer 0.5.0 — April 20, 2022
+
+Restreamer 0.5.0 focused on dashboard operations and deployment portability. Operators gained CPU, memory, and network statistics, dashboard filters, export and import, title-bar connection-loss indication, search by label, and clearer input-number status markers. Deployments could be sourced from a custom Docker registry, and the embedded SRS server moved to v4.
+
+### Restreamer 0.4.0 — November 27, 2021
+
+Restreamer 0.4.0 introduced the dashboard application, Docker-based deployment, VScale support, custom input labels, multiple-JSON input mode, preview links for broadcasts, public mixer output pages, YouTube preview embeds, copy buttons for input and output URLs, unstable status reporting, and a broader GraphQL schema with settings, IDs, and longer input keys. It also fixed several early operator-facing UI issues, including lingering errors, stale active inputs after deletion, wrong output indication, long-label trimming, and volume resets during output edits.
+
+### Restreamer 0.3.0 — May 11, 2021
+
+Restreamer 0.3.0 added operator settings for server title and deletion confirmation, dashboard-level Start All and Stop All controls, input and output counts, bounded copyable error messages, and matching GraphQL settings mutations and subscriptions.
+
+### Restreamer 0.2.0 — March 18, 2021
+
+Restreamer 0.2.0 reworked the original API around unified restream objects, import and export specs, backup endpoints, HLS endpoints and HLS pulling, output editing, DVR file management, and richer output destinations including TeamSpeak, MP3, Icecast, SRT, and local FLV recording. Deployment automation added Ubuntu 20.04 provisioning, optional firewalld setup, mounted-volume detection for DigitalOcean and Hetzner Cloud, and Oracle Cloud Infrastructure documentation.
+
+### Restreamer 0.1.2 — February 13, 2021
+
+Restreamer 0.1.2 fixed incorrect default registry selection in the Ubuntu 20.04 provisioning script.
+
+### Restreamer 0.1.1 — February 5, 2021
+
+Restreamer 0.1.1 fixed the broken GraphQL Playground in debug mode.
+
+### Restreamer 0.1.0 — January 26, 2021
+
+The initial Ephyr Restreamer release shipped the core web UI, GraphQL API, Docker image, Ubuntu provisioning script, DigitalOcean and Hetzner deployment guides, RTMP push and pull inputs, output fan-out, online and offline status indicators, enable and disable actions, and optional Basic HTTP authentication.
