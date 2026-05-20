@@ -1,0 +1,69 @@
+{
+  "files": {
+    "api/clients/typescript/README.md": {
+      "bytes": 7057,
+      "present": true,
+      "sha256": "9fe2b83429f944de16c43bb65db7551dcf0604616452b3ca64c507243e502b88"
+    },
+    "api/examples/typescript/ensure-route-desired-state.ts": {
+      "bytes": 7033,
+      "present": true,
+      "sha256": "4d9a1e15f2a4078ec8ac7c9e1ed72931bbf622647cf6866bb9709c0cd96ed282"
+    },
+    "api/examples/typescript/manage-playlist-artifacts-settings-fleet.ts": {
+      "bytes": 6270,
+      "present": true,
+      "sha256": "60abb675027a101e6b21ee35e0368a0cb9500539e8587062c0397a7fd9fdbf92"
+    },
+    "api/examples/typescript/manage-route-controls.ts": {
+      "bytes": 7363,
+      "present": true,
+      "sha256": "79a8f85e73964fb417356102cf05450f12cb7ea075f41322665d25958acc7c20"
+    },
+    "api/examples/typescript/session-raw-subscription.ts": {
+      "bytes": 2740,
+      "present": true,
+      "sha256": "bf277ec1cefc99b06928e87786543828f2bc00aa4a243e5f7aeb2a00b4dec4fe"
+    },
+    "api/schema.graphql": {
+      "bytes": 87375,
+      "present": true,
+      "sha256": "2633b6433ceee64aabff48bdc90b6a99f9a2128d7f23279457441842c5f04044"
+    },
+    "docs/public-api/compatibility-policy.md": {
+      "bytes": 2548,
+      "present": true,
+      "sha256": "791905b788b072f94ee6cf03d5707a51f9043bc2cf87400bce0c0b721156bdf8"
+    },
+    "docs/public-api/contract-inventory.md": {
+      "bytes": 11428,
+      "present": true,
+      "sha256": "eed1a09214d9758449e77f4b5f8e732b852212a1944eb991ec183e02f3578b32"
+    },
+    "docs/public-api/error-taxonomy.md": {
+      "bytes": 2874,
+      "present": true,
+      "sha256": "d31385852f87b6cea75369dec6299d843c8c3ab1b4c3cceda5ffa3d7d3081ccb"
+    },
+    "docs/public-api/fleet-command-safety.md": {
+      "bytes": 3963,
+      "present": true,
+      "sha256": "42c65a41a56c4e7bbcda998d183e4242167a4d4a03932c1c68bad20b816c99f4"
+    },
+    "docs/public-api/selfhost-docs-handoff.md": {
+      "bytes": 3481,
+      "present": true,
+      "sha256": "7a80dfef4f4151a00c92f96e7a13a8f36fe28e12319783de7611b53b38b15bdd"
+    },
+    "lat.md/public-api.md": {
+      "bytes": 17129,
+      "present": true,
+      "sha256": "ded1f8f0789ba2477da427bf4135ce49483c54d56a2d5f902ca4696b16a31516"
+    }
+  },
+  "repo": "https://github.com/fluxomnia-systems/fluxomni.git",
+  "requestedRef": "refactor/prepare-public-api",
+  "resolvedSha": "7b66bd62f67c3d34788c3689a157a27de5ceeb9c",
+  "schemaVersion": 1,
+  "updatedAt": "2026-05-20T15:22:45+00:00"
+}

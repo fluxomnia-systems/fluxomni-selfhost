@@ -3,10 +3,11 @@ SHELL := /bin/bash
 DOCS_DIR := docs
 DOCS_SRC := $(DOCS_DIR)/src
 DOCS_BUILD := $(DOCS_DIR)/book
+FLUXOMNI_ROOT ?= ../fluxomni
 
 .DEFAULT_GOAL := help
 
-.PHONY: help check.tools.docs build serve clean lint lint.ci screenshots docs.build docs.serve docs.clean docs.lint.links docs.lint docs.lint.ci
+.PHONY: help check.tools.docs build serve clean lint lint.ci screenshots api.docs.sync.check api.docs.sync.update docs.build docs.serve docs.clean docs.lint.links docs.lint docs.lint.ci
 
 help:
 	@echo "Fluxomni Studio Self-Hosted: common targets"
@@ -17,6 +18,8 @@ help:
 	@echo "  make lint           Build + local link lint (+ markdownlint if installed)"
 	@echo "  make lint.ci        Strict lint for CI (requires markdownlint-cli2)"
 	@echo "  make screenshots    Capture user-guide screenshots (requires running instance)"
+	@echo "  make api.docs.sync.check   Check API docs source drift"
+	@echo "  make api.docs.sync.update  Refresh API docs source snapshot"
 	@echo ""
 	@echo "  Compatibility aliases: docs.build docs.serve docs.clean docs.lint docs.lint.ci"
 
@@ -40,6 +43,12 @@ check.tools.docs:
 screenshots:
 	@cd screenshots && npm install --silent && npx playwright install chromium --with-deps 2>/dev/null; \
 	 npx playwright test
+
+api.docs.sync.check:
+	@python3 scripts/sync-api-docs-from-fluxomni.py --mode check --fluxomni-root "$(FLUXOMNI_ROOT)"
+
+api.docs.sync.update:
+	@python3 scripts/sync-api-docs-from-fluxomni.py --mode update --fluxomni-root "$(FLUXOMNI_ROOT)"
 
 docs.build: check.tools.docs
 	@mdbook build $(DOCS_DIR)

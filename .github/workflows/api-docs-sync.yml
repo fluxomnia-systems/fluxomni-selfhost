@@ -1,0 +1,62 @@
+name: API Docs Sync
+
+on:
+  workflow_dispatch:
+    inputs:
+      mode:
+        description: "Check for drift or update the recorded upstream snapshot"
+        required: true
+        type: choice
+        default: check
+        options:
+          - check
+          - update
+      fluxomni_ref:
+        description: "Fluxomni ref to compare against"
+        required: true
+        type: string
+        default: main
+  schedule:
+    - cron: "23 5 * * *"
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  sync:
+    name: Check API docs source sync
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout self-host docs
+        uses: actions/checkout@v5
+
+      - name: Set up Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+
+      - name: Check or update API docs source snapshot
+        env:
+          MODE: ${{ github.event_name == 'schedule' && 'check' || inputs.mode }}
+          FLUXOMNI_REF: ${{ github.event_name == 'schedule' && 'main' || inputs.fluxomni_ref }}
+        run: |
+          python3 scripts/sync-api-docs-from-fluxomni.py \
+            --mode "$MODE" \
+            --fluxomni-ref "$FLUXOMNI_REF"
+
+      - name: Create sync pull request
+        if: github.event_name == 'workflow_dispatch' && inputs.mode == 'update'
+        uses: peter-evans/create-pull-request@v7
+        with:
+          branch: automation/sync-api-docs-source
+          delete-branch: true
+          title: "docs: sync API docs source snapshot"
+          commit-message: "docs: sync API docs source snapshot"
+          body: |
+            Updates the recorded Fluxomni API source snapshot used by the
+            self-host API automation docs.
+
+            Review the changed upstream files listed in the workflow summary
+            and update public guide prose if the API contract changed.
