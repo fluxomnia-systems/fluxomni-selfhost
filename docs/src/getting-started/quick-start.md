@@ -37,6 +37,11 @@ Use `FLUXOMNI_SELFHOST_REF` only when the config files must come from a differen
 
 ## Attach Another Media Node
 
+Before attaching a remote media node, expose `50052/tcp` from the main
+control-plane host only to trusted node IPs. For direct binding, set
+`FLUXOMNI_CONTROL_PLANE_RPC_PORT=50052` in the main install's `.env`,
+restart the stack, and restrict access with a firewall.
+
 Run this on the remote media server:
 
 ```bash
@@ -85,7 +90,7 @@ FLUXOMNI_CONTROL_PLANE_IMAGE=ghcr.io/fluxomnia-systems/fluxomni-control-plane
 FLUXOMNI_MEDIA_NODE_IMAGE=ghcr.io/fluxomnia-systems/fluxomni-media-node
 FLUXOMNI_CONTROL_PLANE_INTERNAL_AUTH_TOKEN=${AUTH_TOKEN}
 FLUXOMNI_FRONTEND_HTTP_PORT=80
-FLUXOMNI_CONTROL_PLANE_HTTP_PORT=8080
+FLUXOMNI_CONTROL_PLANE_RPC_PORT=127.0.0.1:50052
 FLUXOMNI_MEDIA_NODE_RTMP_PORT=1935
 FLUXOMNI_MEDIA_NODE_HLS_PORT=8000
 FLUXOMNI_MEDIA_NODE_SRT_PORT=10080

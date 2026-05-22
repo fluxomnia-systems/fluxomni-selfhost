@@ -81,8 +81,7 @@ Config is env-driven via `.env` (see `.env.example`). Never commit `.env`.
 | Service       | Port  | Protocol |
 |---------------|-------|----------|
 | HTTP (UI/API) | 80    | TCP      |
-| Control-plane HTTP | 8080 | TCP   |
-| gRPC (CP)     | 50052 | TCP      |
+| gRPC (CP)     | 127.0.0.1:50052 | TCP |
 | RTMP          | 1935  | TCP      |
 | HLS           | 8000  | TCP+UDP  |
 | SRT           | 10080 | UDP      |

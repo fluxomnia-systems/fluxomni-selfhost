@@ -40,7 +40,7 @@ Common causes:
 - Docker daemon is not running.
 - The selected image tag does not exist.
 - `FLUXOMNI_CONTROL_PLANE_INTERNAL_AUTH_TOKEN` is missing from `.env` after a manual install.
-- Port 80, 8080, 1935, 8000/tcp, 8000/udp, 8081/tcp (loopback), 10080/udp, 50051/tcp, or 50052/tcp is already in use.
+- The configured frontend HTTP port, 1935, 8000/tcp, 8000/udp, 8081/tcp (loopback), 10080/udp, 50051/tcp, or 50052/tcp is already in use.
 - For standalone media-node installs, the control-plane RPC endpoint in `.env` is unreachable from the media server.
 - For standalone media-node installs, the advertised `FLUXOMNI_MEDIA_NODE_ENDPOINT` does not point back to the media server.
 
@@ -169,8 +169,7 @@ All port mappings in `docker-compose.yml` support the same pattern — override 
 | Variable | Default | Service |
 | -------- | ------- | ------- |
 | `FLUXOMNI_FRONTEND_HTTP_PORT` | 80 | Control Surface (HTTP) |
-| `FLUXOMNI_CONTROL_PLANE_HTTP_PORT` | 8080 | Control-plane HTTP |
-| `FLUXOMNI_CONTROL_PLANE_RPC_PORT` | 50052 | Control-plane gRPC |
+| `FLUXOMNI_CONTROL_PLANE_RPC_PORT` | 127.0.0.1:50052 | Control-plane gRPC |
 | `FLUXOMNI_MEDIA_NODE_RTMP_PORT` | 1935 | RTMP ingest |
 | `FLUXOMNI_MEDIA_NODE_HLS_PORT` | 8000 | HLS and WebRTC |
 | `FLUXOMNI_MEDIA_NODE_SRT_PORT` | 10080 | SRT ingest |
@@ -187,7 +186,7 @@ Fluxomni Studio uses both TCP and UDP ports. A common mistake is only opening TC
 | 8081 | TCP (localhost) | SRS callback (internal) |
 | 10080 | UDP | SRT ingest |
 | 50051 | TCP | Media-node gRPC |
-| 50052 | TCP | Control-plane gRPC |
+| 50052 | TCP | Control-plane gRPC (localhost by default) |
 
 SRT (port 10080) is **UDP only**. If SRT publishers cannot connect, verify that UDP traffic is allowed through your firewall or cloud security group.
 

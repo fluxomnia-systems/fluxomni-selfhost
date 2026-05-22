@@ -51,8 +51,7 @@ The installer maps public date-style pins to the matching core image tag when na
 ## Optional Variables
 
 - `FLUXOMNI_FRONTEND_HTTP_PORT`: host HTTP port for the frontend UI and proxied API.
-- `FLUXOMNI_CONTROL_PLANE_HTTP_PORT`: host HTTP port for direct control-plane HTTP access.
-- `FLUXOMNI_CONTROL_PLANE_RPC_PORT`: host gRPC port for remote media-node registration and delivery.
+- `FLUXOMNI_CONTROL_PLANE_RPC_PORT`: host gRPC port for remote media-node registration and delivery. Defaults to localhost-only; expose it deliberately when attaching external media nodes.
 - `FLUXOMNI_MEDIA_NODE_RTMP_PORT`: host RTMP ingest port.
 - `FLUXOMNI_MEDIA_NODE_HLS_PORT`: host HLS/WebRTC port.
 - `FLUXOMNI_MEDIA_NODE_SRS_CALLBACK_PORT`: host loopback port for the internal SRS callback listener.
@@ -82,8 +81,8 @@ The operator UI is served from the frontend host:
 
 ## Attach an External Media Node
 
-The full self-host install now publishes the control-plane RPC listener on TCP `50052` by default.
-To attach another media server, run the installer on that server in explicit `media-node` mode.
+The full self-host install binds the control-plane RPC listener to localhost by default.
+Before attaching another media server, expose `50052/tcp` only to trusted node IPs, then run the installer on that server in explicit `media-node` mode.
 `FLUXOMNI_CONTROL_PLANE_RPC_ENDPOINT`, `FLUXOMNI_CONTROL_PLANE_INTERNAL_AUTH_TOKEN`, and `FLUXOMNI_MEDIA_NODE_PUBLIC_HOST` are required for that mode:
 
 ```bash
