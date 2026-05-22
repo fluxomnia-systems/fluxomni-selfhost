@@ -54,6 +54,7 @@ curl -fsSL https://install.fluxomni.io | WITH_UFW=1 FLUXOMNI_VERSION=edge bash -
 
 - `FLUXOMNI_DIR` — install path (default: `~/fluxomni`, or `~/fluxomni-media-node` for media-node installs)
 - `FLUXOMNI_VERSION` — image tag: `latest` (default), `edge`, public `vYYYY.MM.N`, or core-image `vX.Y.Z`
+- `FLUXOMNI_FRONTEND_IMAGE` — override frontend image repository
 - `FLUXOMNI_CONTROL_PLANE_IMAGE` — override control-plane image repository
 - `FLUXOMNI_MEDIA_NODE_IMAGE` — override media-node image repository
 - `FLUXOMNI_IMAGE` — legacy base repository override (derives split image names when explicit variables are unset)

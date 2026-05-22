@@ -1,4 +1,19 @@
 services:
+  frontend:
+    image: ${FLUXOMNI_FRONTEND_IMAGE:-ghcr.io/fluxomnia-systems/fluxomni-frontend}:${FLUXOMNI_VERSION:-latest}
+    container_name: ${FLUXOMNI_FRONTEND_CONTAINER_NAME:-fluxomni-frontend}
+    depends_on:
+      - control-plane
+    restart: unless-stopped
+    env_file: .env
+    environment:
+      FLUXOMNI_CONTROL_PLANE_HTTP_ENDPOINT: http://control-plane:80
+      FLUXOMNI_SERVICE_NAME: fluxomni-frontend
+    ports:
+      - "${FLUXOMNI_FRONTEND_HTTP_PORT:-80}:80"
+    labels:
+      - com.centurylinklabs.watchtower.enable=true
+
   control-plane:
     image: ${FLUXOMNI_CONTROL_PLANE_IMAGE:-ghcr.io/fluxomnia-systems/fluxomni-control-plane}:${FLUXOMNI_VERSION:-latest}
     container_name: ${FLUXOMNI_CONTROL_PLANE_CONTAINER_NAME:-fluxomni-control-plane}
@@ -13,7 +28,7 @@ services:
       FLUXOMNI_PUBLIC_HOST: ${FLUXOMNI_PUBLIC_HOST:-127.0.0.1}
       FLUXOMNI_SERVICE_NAME: fluxomni-control-plane
     ports:
-      - "${FLUXOMNI_CONTROL_PLANE_HTTP_PORT:-80}:80"
+      - "${FLUXOMNI_CONTROL_PLANE_HTTP_PORT:-8080}:80"
       - "${FLUXOMNI_CONTROL_PLANE_RPC_PORT:-50052}:50052"
     volumes:
       - ${FLUXOMNI_CONTROL_PLANE_DATA_DIR:-./data}:/app/fluxomni-data

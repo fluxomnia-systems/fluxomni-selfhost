@@ -93,10 +93,12 @@ fi
 
 REQUESTED_FLUXOMNI_VERSION="${FLUXOMNI_VERSION:-}"
 LEGACY_FLUXOMNI_IMAGE="${FLUXOMNI_IMAGE:-}"
+FLUXOMNI_FRONTEND_IMAGE="${FLUXOMNI_FRONTEND_IMAGE:-}"
 FLUXOMNI_CONTROL_PLANE_IMAGE="${FLUXOMNI_CONTROL_PLANE_IMAGE:-}"
 FLUXOMNI_MEDIA_NODE_IMAGE="${FLUXOMNI_MEDIA_NODE_IMAGE:-}"
 REQUESTED_PUBLIC_URL="${FLUXOMNI_PUBLIC_URL:-}"
 REQUESTED_PUBLIC_HOST="${FLUXOMNI_PUBLIC_HOST:-}"
+REQUESTED_FRONTEND_HTTP_PORT="${FLUXOMNI_FRONTEND_HTTP_PORT:-}"
 REQUESTED_CONTROL_PLANE_HTTP_PORT="${FLUXOMNI_CONTROL_PLANE_HTTP_PORT:-}"
 REQUESTED_CONTROL_PLANE_RPC_PORT="${FLUXOMNI_CONTROL_PLANE_RPC_PORT:-}"
 REQUESTED_MEDIA_NODE_PUBLIC_HOST="${FLUXOMNI_MEDIA_NODE_PUBLIC_HOST:-}"
@@ -112,6 +114,7 @@ REQUESTED_MEDIA_NODE_ZONE="${FLUXOMNI_MEDIA_NODE_ZONE:-}"
 REQUESTED_CONTROL_PLANE_DATA_DIR="${FLUXOMNI_CONTROL_PLANE_DATA_DIR:-}"
 REQUESTED_MEDIA_NODE_DATA_DIR="${FLUXOMNI_MEDIA_NODE_DATA_DIR:-}"
 REQUESTED_SHARED_VIDEO_DIR="${FLUXOMNI_SHARED_VIDEO_DIR:-}"
+REQUESTED_FRONTEND_CONTAINER_NAME="${FLUXOMNI_FRONTEND_CONTAINER_NAME:-}"
 REQUESTED_CONTROL_PLANE_CONTAINER_NAME="${FLUXOMNI_CONTROL_PLANE_CONTAINER_NAME:-}"
 REQUESTED_MEDIA_NODE_CONTAINER_NAME="${FLUXOMNI_MEDIA_NODE_CONTAINER_NAME:-}"
 REQUESTED_WATCHTOWER_CONTAINER_NAME="${FLUXOMNI_WATCHTOWER_CONTAINER_NAME:-}"
@@ -166,6 +169,17 @@ derive_split_image_repo() {
   fi
 
   printf '%s-%s\n' "$base_repo" "$suffix"
+}
+
+resolve_frontend_image() {
+  local base_repo="${1:-${LEGACY_FLUXOMNI_IMAGE:-ghcr.io/fluxomnia-systems/fluxomni}}"
+
+  if [ -n "$FLUXOMNI_FRONTEND_IMAGE" ]; then
+    printf '%s\n' "$FLUXOMNI_FRONTEND_IMAGE"
+    return
+  fi
+
+  derive_split_image_repo "$base_repo" "frontend"
 }
 
 resolve_control_plane_image() {
@@ -458,13 +472,14 @@ derive_http_endpoint() {
 derive_browser_http_url() {
   local host="$1"
   local port="$2"
+  local published_port="${port##*:}"
 
-  if [ "$port" = "80" ]; then
+  if [ "$published_port" = "80" ]; then
     printf 'http://%s\n' "$(format_host_for_url "$host")"
     return
   fi
 
-  derive_http_endpoint "$host" "$port"
+  derive_http_endpoint "$host" "$published_port"
 }
 
 sanitize_identifier() {
@@ -708,9 +723,16 @@ assert_install_assets_match_target() {
     return
   fi
 
+  if ! grep -q 'FLUXOMNI_FRONTEND_IMAGE' "$compose_file" ||
+    ! grep -q 'FLUXOMNI_FRONTEND_IMAGE' "$env_example_file"; then
+    echo "Error: downloaded self-host assets from '${REPO_RAW}' do not include the separated frontend image contract." >&2
+    exit 1
+  fi
+
   if ! grep -q '^  control-plane:' "$compose_file" ||
-    ! grep -q '^  media-node:' "$compose_file"; then
-    echo "Error: downloaded self-host assets from '${REPO_RAW}' are missing the full control-plane/media-node install bundle." >&2
+    ! grep -q '^  media-node:' "$compose_file" ||
+    ! grep -q '^  frontend:' "$compose_file"; then
+    echo "Error: downloaded self-host assets from '${REPO_RAW}' are missing the full frontend/control-plane/media-node install bundle." >&2
     exit 1
   fi
 }
@@ -736,9 +758,10 @@ assert_compose_services_match_target() {
     return
   fi
 
-  if ! printf '%s\n' "$services" | grep -qx 'control-plane' ||
+  if ! printf '%s\n' "$services" | grep -qx 'frontend' ||
+    ! printf '%s\n' "$services" | grep -qx 'control-plane' ||
     ! printf '%s\n' "$services" | grep -qx 'media-node'; then
-    echo "Error: full installs must include both control-plane and media-node services." >&2
+    echo "Error: full installs must include frontend, control-plane, and media-node services." >&2
     exit 1
   fi
 }
@@ -922,6 +945,7 @@ assert_install_assets_match_target "${FLUXOMNI_DIR}/docker-compose.yml" "${FLUXO
 ENV_FILE="${CANDIDATE_ENV_FILE}"
 HOST_IP="$(detect_host_ip)"
 LEGACY_IMAGE_BASE="${LEGACY_FLUXOMNI_IMAGE:-$(read_env_file_value "FLUXOMNI_IMAGE" "$ENV_FILE")}"
+FRONTEND_IMAGE_DEFAULT="$(resolve_frontend_image "$LEGACY_IMAGE_BASE")"
 CONTROL_PLANE_IMAGE_DEFAULT="$(resolve_control_plane_image "$LEGACY_IMAGE_BASE")"
 MEDIA_NODE_IMAGE_DEFAULT="$(resolve_media_node_image "$LEGACY_IMAGE_BASE")"
 
@@ -929,6 +953,7 @@ EXISTING_PUBLIC_URL="$(read_env_file_value "FLUXOMNI_PUBLIC_URL" "$ENV_FILE")"
 EXISTING_PUBLIC_HOST="$(read_env_file_value "FLUXOMNI_PUBLIC_HOST" "$ENV_FILE")"
 EXISTING_MEDIA_NODE_PUBLIC_HOST="$(read_env_file_value "FLUXOMNI_MEDIA_NODE_PUBLIC_HOST" "$ENV_FILE")"
 EXISTING_AUTH_TOKEN="$(read_env_file_value "FLUXOMNI_CONTROL_PLANE_INTERNAL_AUTH_TOKEN" "$ENV_FILE")"
+EXISTING_FRONTEND_HTTP_PORT="$(read_env_file_value "FLUXOMNI_FRONTEND_HTTP_PORT" "$ENV_FILE")"
 EXISTING_CONTROL_PLANE_HTTP_PORT="$(read_env_file_value "FLUXOMNI_CONTROL_PLANE_HTTP_PORT" "$ENV_FILE")"
 EXISTING_CONTROL_PLANE_RPC_PORT="$(read_env_file_value "FLUXOMNI_CONTROL_PLANE_RPC_PORT" "$ENV_FILE")"
 EXISTING_CONTROL_PLANE_RPC_ENDPOINT="$(read_env_file_value "FLUXOMNI_CONTROL_PLANE_RPC_ENDPOINT" "$ENV_FILE")"
@@ -950,7 +975,11 @@ AUTH_TOKEN_DEFAULT="${FLUXOMNI_CONTROL_PLANE_INTERNAL_AUTH_TOKEN:-${EXISTING_AUT
 PUBLIC_URL_DEFAULT="${REQUESTED_PUBLIC_URL:-${EXISTING_PUBLIC_URL:-}}"
 PUBLIC_HOST_DEFAULT="${REQUESTED_PUBLIC_HOST:-${EXISTING_PUBLIC_HOST:-$HOST_IP}}"
 MEDIA_NODE_PUBLIC_HOST_DEFAULT="${REQUESTED_MEDIA_NODE_PUBLIC_HOST:-${EXISTING_MEDIA_NODE_PUBLIC_HOST:-${REQUESTED_PUBLIC_HOST:-${EXISTING_PUBLIC_HOST:-$HOST_IP}}}}"
-CONTROL_PLANE_HTTP_PORT_DEFAULT="${REQUESTED_CONTROL_PLANE_HTTP_PORT:-${EXISTING_CONTROL_PLANE_HTTP_PORT:-80}}"
+FRONTEND_HTTP_PORT_DEFAULT="${REQUESTED_FRONTEND_HTTP_PORT:-${EXISTING_FRONTEND_HTTP_PORT:-${REQUESTED_CONTROL_PLANE_HTTP_PORT:-${EXISTING_CONTROL_PLANE_HTTP_PORT:-80}}}}"
+CONTROL_PLANE_HTTP_PORT_DEFAULT="${REQUESTED_CONTROL_PLANE_HTTP_PORT:-${EXISTING_CONTROL_PLANE_HTTP_PORT:-8080}}"
+if [ -z "$REQUESTED_FRONTEND_HTTP_PORT" ] && [ "$FRONTEND_HTTP_PORT_DEFAULT" = "$CONTROL_PLANE_HTTP_PORT_DEFAULT" ]; then
+  CONTROL_PLANE_HTTP_PORT_DEFAULT="8080"
+fi
 CONTROL_PLANE_RPC_PORT_DEFAULT="${REQUESTED_CONTROL_PLANE_RPC_PORT:-${EXISTING_CONTROL_PLANE_RPC_PORT:-50052}}"
 MEDIA_NODE_GRPC_PORT_DEFAULT="${REQUESTED_MEDIA_NODE_GRPC_PORT:-${EXISTING_MEDIA_NODE_GRPC_PORT:-50051}}"
 MEDIA_NODE_RTMP_PORT_DEFAULT="${REQUESTED_MEDIA_NODE_RTMP_PORT:-${EXISTING_MEDIA_NODE_RTMP_PORT:-1935}}"
@@ -1057,9 +1086,11 @@ else
 FLUXOMNI_VERSION=${FLUXOMNI_VERSION}
 FLUXOMNI_PUBLIC_HOST=${PUBLIC_HOST_DEFAULT}
 FLUXOMNI_MEDIA_NODE_PUBLIC_HOST=${MEDIA_NODE_PUBLIC_HOST_DEFAULT}
+FLUXOMNI_FRONTEND_IMAGE=${FRONTEND_IMAGE_DEFAULT}
 FLUXOMNI_CONTROL_PLANE_IMAGE=${CONTROL_PLANE_IMAGE_DEFAULT}
 FLUXOMNI_MEDIA_NODE_IMAGE=${MEDIA_NODE_IMAGE_DEFAULT}
 FLUXOMNI_CONTROL_PLANE_INTERNAL_AUTH_TOKEN=${AUTH_TOKEN_DEFAULT}
+FLUXOMNI_FRONTEND_HTTP_PORT=${FRONTEND_HTTP_PORT_DEFAULT}
 FLUXOMNI_CONTROL_PLANE_HTTP_PORT=${CONTROL_PLANE_HTTP_PORT_DEFAULT}
 FLUXOMNI_CONTROL_PLANE_RPC_PORT=${CONTROL_PLANE_RPC_PORT_DEFAULT}
 FLUXOMNI_MEDIA_NODE_ID=${MEDIA_NODE_ID_DEFAULT}
@@ -1082,9 +1113,11 @@ ENVVARS
   fi
   upsert_env_value "$ENV_FILE" "FLUXOMNI_PUBLIC_HOST" "$PUBLIC_HOST_DEFAULT"
   upsert_env_value "$ENV_FILE" "FLUXOMNI_MEDIA_NODE_PUBLIC_HOST" "$MEDIA_NODE_PUBLIC_HOST_DEFAULT"
+  upsert_env_value "$ENV_FILE" "FLUXOMNI_FRONTEND_IMAGE" "$FRONTEND_IMAGE_DEFAULT"
   upsert_env_value "$ENV_FILE" "FLUXOMNI_CONTROL_PLANE_IMAGE" "$CONTROL_PLANE_IMAGE_DEFAULT"
   upsert_env_value "$ENV_FILE" "FLUXOMNI_MEDIA_NODE_IMAGE" "$MEDIA_NODE_IMAGE_DEFAULT"
   upsert_env_value "$ENV_FILE" "FLUXOMNI_CONTROL_PLANE_INTERNAL_AUTH_TOKEN" "$AUTH_TOKEN_DEFAULT"
+  upsert_env_value "$ENV_FILE" "FLUXOMNI_FRONTEND_HTTP_PORT" "$FRONTEND_HTTP_PORT_DEFAULT"
   upsert_env_value "$ENV_FILE" "FLUXOMNI_CONTROL_PLANE_HTTP_PORT" "$CONTROL_PLANE_HTTP_PORT_DEFAULT"
   upsert_env_value "$ENV_FILE" "FLUXOMNI_CONTROL_PLANE_RPC_PORT" "$CONTROL_PLANE_RPC_PORT_DEFAULT"
   upsert_env_value "$ENV_FILE" "FLUXOMNI_MEDIA_NODE_ID" "$MEDIA_NODE_ID_DEFAULT"
@@ -1096,6 +1129,9 @@ ENVVARS
   upsert_env_value "$ENV_FILE" "FLUXOMNI_MEDIA_NODE_DATA_DIR" "$MEDIA_NODE_DATA_DIR_DEFAULT"
   upsert_env_value "$ENV_FILE" "FLUXOMNI_SHARED_VIDEO_DIR" "$SHARED_VIDEO_DIR_DEFAULT"
 
+  if [ -n "$REQUESTED_FRONTEND_CONTAINER_NAME" ]; then
+    upsert_env_value "$ENV_FILE" "FLUXOMNI_FRONTEND_CONTAINER_NAME" "$REQUESTED_FRONTEND_CONTAINER_NAME"
+  fi
   if [ -n "$REQUESTED_CONTROL_PLANE_CONTAINER_NAME" ]; then
     upsert_env_value "$ENV_FILE" "FLUXOMNI_CONTROL_PLANE_CONTAINER_NAME" "$REQUESTED_CONTROL_PLANE_CONTAINER_NAME"
   fi
@@ -1123,6 +1159,8 @@ echo "Pulling images and starting containers..."
 
 CONTROL_PLANE_CONTAINER_NAME="${REQUESTED_CONTROL_PLANE_CONTAINER_NAME:-$(read_env_file_value "FLUXOMNI_CONTROL_PLANE_CONTAINER_NAME" .env)}"
 MEDIA_NODE_CONTAINER_NAME="${REQUESTED_MEDIA_NODE_CONTAINER_NAME:-$(read_env_file_value "FLUXOMNI_MEDIA_NODE_CONTAINER_NAME" .env)}"
+FRONTEND_CONTAINER_NAME="${REQUESTED_FRONTEND_CONTAINER_NAME:-$(read_env_file_value "FLUXOMNI_FRONTEND_CONTAINER_NAME" .env)}"
+FRONTEND_CONTAINER_NAME="${FRONTEND_CONTAINER_NAME:-fluxomni-frontend}"
 CONTROL_PLANE_CONTAINER_NAME="${CONTROL_PLANE_CONTAINER_NAME:-fluxomni-control-plane}"
 MEDIA_NODE_CONTAINER_NAME="${MEDIA_NODE_CONTAINER_NAME:-fluxomni-media-node}"
 
@@ -1155,6 +1193,11 @@ if [ "$FLUXOMNI_INSTALL_TARGET" = "media-node" ]; then
   exit 0
 fi
 
+if ! wait_for_container_ready "$FRONTEND_CONTAINER_NAME" "frontend"; then
+  print_recent_service_logs "frontend"
+  exit 1
+fi
+
 if ! wait_for_container_ready "$CONTROL_PLANE_CONTAINER_NAME" "control-plane"; then
   print_recent_service_logs "control-plane"
   exit 1
@@ -1167,7 +1210,7 @@ fi
 
 HOST="$(read_env_file_value "FLUXOMNI_PUBLIC_HOST" .env)"
 MEDIA_HOST="$(read_env_file_value "FLUXOMNI_MEDIA_NODE_PUBLIC_HOST" .env)"
-HTTP_PORT="$(read_env_file_value "FLUXOMNI_CONTROL_PLANE_HTTP_PORT" .env)"
+HTTP_PORT="$(read_env_file_value "FLUXOMNI_FRONTEND_HTTP_PORT" .env)"
 HOST="${HOST:-127.0.0.1}"
 MEDIA_HOST="${MEDIA_HOST:-$HOST}"
 HTTP_PORT="${HTTP_PORT:-80}"
@@ -1180,5 +1223,5 @@ echo "Data : ${FLUXOMNI_DIR}/data"
 echo
 echo "Common commands:"
 echo "  Update: cd ${FLUXOMNI_DIR} && ${DOCKER_DISPLAY} compose pull && ${DOCKER_DISPLAY} compose up -d"
-echo "  Logs  : cd ${FLUXOMNI_DIR} && ${DOCKER_DISPLAY} compose logs -f control-plane media-node"
+echo "  Logs  : cd ${FLUXOMNI_DIR} && ${DOCKER_DISPLAY} compose logs -f frontend control-plane media-node"
 echo "  Stop  : cd ${FLUXOMNI_DIR} && ${DOCKER_DISPLAY} compose down"

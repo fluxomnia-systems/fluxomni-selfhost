@@ -95,7 +95,7 @@ sudo tailscale up --ssh
 # Bind the Fluxomni Studio HTTP container port to localhost, then let Tailscale Serve
 # publish it privately on https://$TS_DNS.
 curl -fsSL https://install.fluxomni.io | \
-  FLUXOMNI_CONTROL_PLANE_HTTP_PORT=127.0.0.1:8080 \
+  FLUXOMNI_FRONTEND_HTTP_PORT=127.0.0.1:8080 \
   FLUXOMNI_PUBLIC_HOST="$TS_DNS" \
   FLUXOMNI_PUBLIC_URL="https://$TS_DNS" \
   FLUXOMNI_MEDIA_NODE_PUBLIC_HOST="$(tailscale ip -4 | head -n1)" \
@@ -226,7 +226,7 @@ For distributed Fluxomni Studio over Tailscale, keep these TCP paths reachable:
 
 | Host | Port | Purpose |
 | --- | --- | --- |
-| Control-plane host | `80/tcp` | Control Surface UI/API |
+| Frontend host | `80/tcp` | Control Surface UI/API |
 | Control-plane host | `50052/tcp` | Control-plane gRPC for media-node registration |
 | Control-plane host with local media node | `1935/tcp` | RTMP ingest |
 | Control-plane host with local media node | `8000/tcp` | HLS/WebRTC TCP path |
@@ -247,7 +247,7 @@ Quick UI-only test:
 set -euo pipefail
 
 curl -fsSL https://install.fluxomni.io | \
-  FLUXOMNI_CONTROL_PLANE_HTTP_PORT=127.0.0.1:8080 \
+  FLUXOMNI_FRONTEND_HTTP_PORT=127.0.0.1:8080 \
   FLUXOMNI_PUBLIC_HOST=fluxomni.example.com \
   FLUXOMNI_PUBLIC_URL=https://fluxomni.example.com \
   FLUXOMNI_MEDIA_NODE_PUBLIC_HOST="$(hostname -I | awk '{print $1}')" \

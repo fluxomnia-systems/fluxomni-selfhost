@@ -2,13 +2,13 @@
 
 ## Project Overview
 
-Fluxomni Studio Self-Hosted — public installer, Docker Compose configs, and mdBook documentation for running Fluxomni Studio. This repo does **not** contain application source code. Fluxomni Studio is a multi-platform streaming tool with a split `control-plane` + `media-node` runtime.
+Fluxomni Studio Self-Hosted — public installer, Docker Compose configs, and mdBook documentation for running Fluxomni Studio. This repo does **not** contain application source code. Fluxomni Studio is a multi-platform streaming tool with a split `frontend` + `control-plane` + `media-node` runtime.
 
 ## Repository Structure
 
 ```
 install.sh          # Main installer script (curl-pipe-bash)
-docker-compose.yml  # Single-host compose: control-plane + media-node + watchtower
+docker-compose.yml  # Single-host compose: frontend + control-plane + media-node + watchtower
 docker-compose.media-node.yml  # Standalone media-node compose
 .env.example        # Reference env vars for the compose stack
 docs/               # mdBook documentation site (published to GitHub Pages)
@@ -70,10 +70,10 @@ GitHub Actions workflow (`.github/workflows/docs.yml`):
 ## Docker Stack
 
 Two compose files:
-- `docker-compose.yml` — single-host (control-plane + media-node + watchtower)
+- `docker-compose.yml` — single-host (frontend + control-plane + media-node + watchtower)
 - `docker-compose.media-node.yml` — standalone media-node only
 
-Images from `ghcr.io/fluxomnia-systems/fluxomni-{control-plane,media-node}`.
+Images from `ghcr.io/fluxomnia-systems/fluxomni-{frontend,control-plane,media-node}`.
 Config is env-driven via `.env` (see `.env.example`). Never commit `.env`.
 
 ## Key Ports (defaults)
@@ -81,6 +81,7 @@ Config is env-driven via `.env` (see `.env.example`). Never commit `.env`.
 | Service       | Port  | Protocol |
 |---------------|-------|----------|
 | HTTP (UI/API) | 80    | TCP      |
+| Control-plane HTTP | 8080 | TCP   |
 | gRPC (CP)     | 50052 | TCP      |
 | RTMP          | 1935  | TCP      |
 | HLS           | 8000  | TCP+UDP  |

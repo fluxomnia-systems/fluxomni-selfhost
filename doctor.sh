@@ -126,6 +126,8 @@ echo -e "\n${BLUE}--- Port Availability ---${NC}"
 
 check_port() {
   local port=$1 label=$2
+  port="${port##*:}"
+
   if lsof -iTCP:"$port" -sTCP:LISTEN -P -n >/dev/null 2>&1; then
     # Check if it's docker holding the port
     if lsof -iTCP:"$port" -sTCP:LISTEN -P -n | grep -q "docker"; then
@@ -138,12 +140,14 @@ check_port() {
   fi
 }
 
-CP_HTTP_PORT=${FLUXOMNI_CONTROL_PLANE_HTTP_PORT:-80}
+FRONTEND_HTTP_PORT=${FLUXOMNI_FRONTEND_HTTP_PORT:-${FLUXOMNI_CONTROL_PLANE_HTTP_PORT:-80}}
+CP_HTTP_PORT=${FLUXOMNI_CONTROL_PLANE_HTTP_PORT:-8080}
 MN_RTMP_PORT=${FLUXOMNI_MEDIA_NODE_RTMP_PORT:-1935}
 MN_HLS_PORT=${FLUXOMNI_MEDIA_NODE_HLS_PORT:-8000}
 CP_RPC_PORT=${FLUXOMNI_CONTROL_PLANE_RPC_PORT:-50052}
 
-check_port "$CP_HTTP_PORT" "Web UI"
+check_port "$FRONTEND_HTTP_PORT" "Web UI"
+check_port "$CP_HTTP_PORT" "Control Plane HTTP"
 check_port "$MN_RTMP_PORT" "RTMP Ingest"
 check_port "$MN_HLS_PORT" "HLS Playback"
 check_port "$CP_RPC_PORT" "Internal RPC"
@@ -154,20 +158,33 @@ echo -e "\n${BLUE}--- Container Status ---${NC}"
 if command -v docker >/dev/null 2>&1 && [ -f docker-compose.yml ]; then
   services=$(docker compose ps --format json 2>/dev/null || echo "")
   if [ -n "$services" ]; then
-    # Try to find control-plane and media-node
-    cp_status=$(docker compose ps control-plane --format "{{.Status}}" 2>/dev/null || echo "missing")
-    mn_status=$(docker compose ps media-node --format "{{.Status}}" 2>/dev/null || echo "missing")
-    
-    if [[ "$cp_status" == "running"* ]] || [[ "$cp_status" == "Up"* ]]; then
-      check pass "control-plane container" "$cp_status"
-    else
-      check fail "control-plane container NOT running" "$cp_status"
+    expected_services=$(docker compose config --services 2>/dev/null || echo "")
+
+    if printf '%s\n' "$expected_services" | grep -qx 'frontend'; then
+      fe_status=$(docker compose ps frontend --format "{{.Status}}" 2>/dev/null || echo "missing")
+      if [[ "$fe_status" == "running"* ]] || [[ "$fe_status" == "Up"* ]]; then
+        check pass "frontend container" "$fe_status"
+      else
+        check fail "frontend container NOT running" "$fe_status"
+      fi
     fi
-    
-    if [[ "$mn_status" == "running"* ]] || [[ "$mn_status" == "Up"* ]]; then
-      check pass "media-node container" "$mn_status"
-    else
-      check fail "media-node container NOT running" "$mn_status"
+
+    if printf '%s\n' "$expected_services" | grep -qx 'control-plane'; then
+      cp_status=$(docker compose ps control-plane --format "{{.Status}}" 2>/dev/null || echo "missing")
+      if [[ "$cp_status" == "running"* ]] || [[ "$cp_status" == "Up"* ]]; then
+        check pass "control-plane container" "$cp_status"
+      else
+        check fail "control-plane container NOT running" "$cp_status"
+      fi
+    fi
+
+    if printf '%s\n' "$expected_services" | grep -qx 'media-node'; then
+      mn_status=$(docker compose ps media-node --format "{{.Status}}" 2>/dev/null || echo "missing")
+      if [[ "$mn_status" == "running"* ]] || [[ "$mn_status" == "Up"* ]]; then
+        check pass "media-node container" "$mn_status"
+      else
+        check fail "media-node container NOT running" "$mn_status"
+      fi
     fi
   else
     check info "No containers currently managed by docker-compose" "Run: docker compose up -d"

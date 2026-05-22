@@ -92,7 +92,7 @@ By default, Fluxomni Studio logs to stdout which Docker captures. View logs
 with:
 
 ```bash
-docker compose logs -f control-plane media-node
+docker compose logs -f frontend control-plane media-node
 ```
 
 To write logs to files on the host, set:

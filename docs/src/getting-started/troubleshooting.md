@@ -24,7 +24,7 @@ Navigate to your Fluxomni Studio install directory and check the logs:
 ```bash
 # Default: ~/fluxomni
 cd ~/fluxomni
-docker compose logs -f control-plane media-node
+docker compose logs -f frontend control-plane media-node
 ```
 
 For standalone remote media-node installs:
@@ -40,7 +40,7 @@ Common causes:
 - Docker daemon is not running.
 - The selected image tag does not exist.
 - `FLUXOMNI_CONTROL_PLANE_INTERNAL_AUTH_TOKEN` is missing from `.env` after a manual install.
-- Port 80, 1935, 8000/tcp, 8000/udp, 8081/tcp (loopback), 10080/udp, 50051/tcp, or 50052/tcp is already in use.
+- Port 80, 8080, 1935, 8000/tcp, 8000/udp, 8081/tcp (loopback), 10080/udp, 50051/tcp, or 50052/tcp is already in use.
 - For standalone media-node installs, the control-plane RPC endpoint in `.env` is unreachable from the media server.
 - For standalone media-node installs, the advertised `FLUXOMNI_MEDIA_NODE_ENDPOINT` does not point back to the media server.
 
@@ -125,7 +125,7 @@ Another service on the host is already listening on that port. This is common on
 
 ```bash
 # Change the Control Surface port from 80 to 8080
-echo 'FLUXOMNI_CONTROL_PLANE_HTTP_PORT=8080' >> .env
+echo 'FLUXOMNI_FRONTEND_HTTP_PORT=8080' >> .env
 
 # Change HLS/WebRTC port from 8000 to 8800 (if 8000 is also taken)
 echo 'FLUXOMNI_MEDIA_NODE_HLS_PORT=8800' >> .env
@@ -168,7 +168,8 @@ All port mappings in `docker-compose.yml` support the same pattern — override 
 
 | Variable | Default | Service |
 | -------- | ------- | ------- |
-| `FLUXOMNI_CONTROL_PLANE_HTTP_PORT` | 80 | Control Surface (HTTP) |
+| `FLUXOMNI_FRONTEND_HTTP_PORT` | 80 | Control Surface (HTTP) |
+| `FLUXOMNI_CONTROL_PLANE_HTTP_PORT` | 8080 | Control-plane HTTP |
 | `FLUXOMNI_CONTROL_PLANE_RPC_PORT` | 50052 | Control-plane gRPC |
 | `FLUXOMNI_MEDIA_NODE_RTMP_PORT` | 1935 | RTMP ingest |
 | `FLUXOMNI_MEDIA_NODE_HLS_PORT` | 8000 | HLS and WebRTC |

@@ -1,15 +1,21 @@
 # Architecture
 
-Fluxomni Studio uses a split runtime with two cooperating services: the
-**control-plane** and one or more **media nodes**.
+Fluxomni Studio uses a split runtime with the **frontend**, the
+**control-plane**, and one or more **media nodes**.
 
 ## Components
+
+### Frontend
+
+The frontend serves the operator UI (Control Surface). In Docker Compose,
+it is the public HTTP entrypoint and proxies API/file requests back to the
+control-plane over Docker-internal networking.
 
 ### Control-plane
 
 The control-plane is the brain of the system. It:
 
-- Serves the operator UI (Control Surface) and the GraphQL API.
+- Serves the GraphQL API and backend HTTP endpoints used by the frontend.
 - Manages route definitions, playlist state, user accounts, and settings.
 - Assigns routes to media nodes and monitors their health.
 - Persists all state to an embedded SQLite database (`data/state.db`).
@@ -42,20 +48,22 @@ interact with SRS directly.
 ## Communication
 
 ```text
-┌─────────────────┐         gRPC (TCP 50052)         ┌─────────────────┐
-│  Control-plane  │◄────────────────────────────────► │   Media Node 1  │
-│                 │         gRPC (TCP 50051)          │                 │
-│  - UI + API     │◄────────────────────────────────► │  - RTMP :1935   │
-│  - State mgmt   │                                   │  - SRT  :10080  │
-│  - Scheduling   │         gRPC (TCP 50051)          │  - HLS  :8000   │
-│                 │◄──────────────────────────────┐   └─────────────────┘
-└─────────────────┘                               │
-                                                  │   ┌─────────────────┐
-                                                  └──►│   Media Node 2  │
-                                                      │  (remote host)  │
-                                                      └─────────────────┘
+┌──────────────┐    HTTP :80     ┌─────────────────┐    gRPC :50052    ┌─────────────────┐
+│   Frontend   │◄──────────────► │  Control-plane  │◄────────────────► │   Media Node 1  │
+│  - UI/API    │                 │  - API          │    gRPC :50051    │  - RTMP :1935   │
+│  proxy       │                 │  - State mgmt   │◄────────────────► │  - SRT  :10080  │
+└──────────────┘                 │  - Scheduling   │                   │  - HLS  :8000   │
+                                 │                 │    gRPC :50051    └─────────────────┘
+                                 │                 │◄──────────────┐
+                                 └─────────────────┘               │    ┌─────────────────┐
+                                                                   └──► │   Media Node 2  │
+                                                                        │  (remote host)  │
+                                                                        └─────────────────┘
 ```
 
+- **Frontend to control-plane**: The frontend serves the Control Surface
+  and proxies API/file requests to the control-plane over Docker-internal
+  HTTP.
 - **Control-plane to media node**: The control-plane pushes route
   manifests, playlist updates, and scheduling decisions to media nodes
   over gRPC.

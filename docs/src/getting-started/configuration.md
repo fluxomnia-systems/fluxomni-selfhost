@@ -4,11 +4,12 @@ Fluxomni Studio is configured through environment variables in `.env`.
 
 ## Core Variables
 
+- `FLUXOMNI_FRONTEND_IMAGE`: frontend image repository.
 - `FLUXOMNI_CONTROL_PLANE_IMAGE`: control-plane image repository.
 - `FLUXOMNI_MEDIA_NODE_IMAGE`: media-node image repository.
 - `FLUXOMNI_VERSION`: image tag to deploy.
 - `FLUXOMNI_PUBLIC_HOST`: public hostname/IP used for the control surface and generated control-plane URLs.
-- `FLUXOMNI_PUBLIC_URL`: full public base URL including scheme (e.g. `https://stream.example.com`). Required for HTTPS deployments behind a TLS-terminating reverse proxy. Takes precedence over `FLUXOMNI_PUBLIC_HOST` + `FLUXOMNI_CONTROL_PLANE_HTTP_PORT`.
+- `FLUXOMNI_PUBLIC_URL`: full public base URL including scheme (e.g. `https://stream.example.com`). Required for HTTPS deployments behind a TLS-terminating reverse proxy. Takes precedence over `FLUXOMNI_PUBLIC_HOST` + `FLUXOMNI_FRONTEND_HTTP_PORT`.
 - `FLUXOMNI_MEDIA_NODE_PUBLIC_HOST`: public hostname/IP shown in generated RTMP, HLS, SRT, and WebRTC media URLs.
 - `FLUXOMNI_MEDIA_NODE_ID`: stable media-node identifier shown in fleet views.
 - `FLUXOMNI_MEDIA_NODE_NAME`: human-readable media-node name shown in the control-plane.
@@ -27,6 +28,7 @@ Example:
 
 ```bash
 FLUXOMNI_CONTROL_PLANE_IMAGE=ghcr.io/fluxomnia-systems/fluxomni-control-plane
+FLUXOMNI_FRONTEND_IMAGE=ghcr.io/fluxomnia-systems/fluxomni-frontend
 FLUXOMNI_MEDIA_NODE_IMAGE=ghcr.io/fluxomnia-systems/fluxomni-media-node
 FLUXOMNI_VERSION=latest
 FLUXOMNI_PUBLIC_HOST=control.example.com
@@ -34,7 +36,7 @@ FLUXOMNI_MEDIA_NODE_PUBLIC_HOST=control.example.com
 ```
 
 `install.sh` also writes `FLUXOMNI_CONTROL_PLANE_INTERNAL_AUTH_TOKEN` automatically. Keep the same token on both services; rotate it only if you are restarting the whole stack together.
-Published self-host releases currently serve the operator UI from the `control-plane` container, so `FLUXOMNI_PUBLIC_HOST` and `FLUXOMNI_CONTROL_PLANE_HTTP_PORT` determine the browser URL you share with operators.
+Published self-host releases serve the operator UI from the `frontend` container, so `FLUXOMNI_PUBLIC_HOST` and `FLUXOMNI_FRONTEND_HTTP_PORT` determine the browser URL you share with operators.
 If you deploy behind a domain or reverse proxy, set `FLUXOMNI_PUBLIC_HOST`, `FLUXOMNI_MEDIA_NODE_PUBLIC_HOST`, and `FLUXOMNI_PUBLIC_URL` (with the `https://` scheme) so generated URLs use the correct hostnames and scheme. See [Reverse Proxy & TLS](reverse-proxy.md) for examples.
 
 ## Release Channels
@@ -48,7 +50,8 @@ The installer maps public date-style pins to the matching core image tag when na
 
 ## Optional Variables
 
-- `FLUXOMNI_CONTROL_PLANE_HTTP_PORT`: host HTTP port for the embedded UI and API.
+- `FLUXOMNI_FRONTEND_HTTP_PORT`: host HTTP port for the frontend UI and proxied API.
+- `FLUXOMNI_CONTROL_PLANE_HTTP_PORT`: host HTTP port for direct control-plane HTTP access.
 - `FLUXOMNI_CONTROL_PLANE_RPC_PORT`: host gRPC port for remote media-node registration and delivery.
 - `FLUXOMNI_MEDIA_NODE_RTMP_PORT`: host RTMP ingest port.
 - `FLUXOMNI_MEDIA_NODE_HLS_PORT`: host HLS/WebRTC port.
@@ -71,7 +74,7 @@ From your install directory:
 docker compose up -d
 ```
 
-The operator UI is served from the control-plane host:
+The operator UI is served from the frontend host:
 
 - `http://<FLUXOMNI_PUBLIC_HOST>` for the landing page
 - `/routes` for route management

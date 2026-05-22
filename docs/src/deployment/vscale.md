@@ -80,7 +80,7 @@ After the installation script is finished (it may take 5-15 minutes), you can ac
 
 ![Address Bar](../images/browser.jpg)
 
-Current releases serve the operator UI from the `control-plane` container directly.
+Current releases serve the operator UI from the `frontend` container.
 Use `/routes` for route management and `/fleet` to inspect attached media nodes.
 
 > **NOTE**: By default, Fluxomni Studio is served over `http://`. For production use, it is highly recommended to set up a domain name and configure a reverse proxy (e.g., Nginx or Caddy) to enable `https://` for secure access.

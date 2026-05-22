@@ -118,12 +118,12 @@ outputs support `rtmps://` destination URLs natively.
 
 ## Firewall considerations
 
-When using a reverse proxy, you can restrict the control-plane HTTP port
+When using a reverse proxy, you can restrict the frontend HTTP port
 to localhost so it is only reachable through the proxy:
 
 ```bash
 # In .env
-FLUXOMNI_CONTROL_PLANE_HTTP_PORT=127.0.0.1:80
+FLUXOMNI_FRONTEND_HTTP_PORT=127.0.0.1:80
 ```
 
 This binds port 80 to the loopback interface only. The reverse proxy
