@@ -79,8 +79,8 @@ Optional media-node overrides: `FLUXOMNI_MEDIA_NODE_ENDPOINT`, `FLUXOMNI_MEDIA_N
 ## Release Channels
 
 - `latest`: newest stable release
-- `vYYYY.MM.N`: public stable release tag, e.g. `v2026.05.1`
-- `vX.Y.Z`: core image tag, accepted for direct image pinning, e.g. `v0.12.0`
+- `vYYYY.MM.N`: public stable release tag, e.g. `v2026.05.2`
+- `vX.Y.Z`: core image tag, accepted for direct image pinning, e.g. `v0.13.0`
 - `edge`: latest successful publish from `main`
 
 When `FLUXOMNI_VERSION` is pinned, the installer first tries the same self-host ref, then its public/core alias when applicable, and falls back to `main` if no versioned self-host assets are published yet.

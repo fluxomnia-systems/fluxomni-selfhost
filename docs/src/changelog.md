@@ -4,6 +4,30 @@ Operator-facing highlights from recent Fluxomni Studio releases.
 
 The changelog is editorial release copy. Use `release-manifest.json` as the factual inventory for dates, module versions, images, and API client refs, but write the latest changelog entry by hand so it reads as operator-facing release notes instead of generated metadata.
 
+## 2026.05.2 (0.13.0) - 29 May 2026
+
+### Per-Output Origin Audio
+
+Each destination can now keep program audio, select a specific track or channel, or drop origin audio before mix-ins are applied. The output editor, GraphQL API, runtime manifest, and media-node FFmpeg planning now share one backend-owned selection contract.
+
+### Learnable Route Baselines
+
+Route media profiles are configurable from Settings and can be learned from observed sources or probed files. Playlist insertion can teach a fresh route from the first valid file, while existing baselines protect routes from incompatible playlist or live-source media.
+
+### Durable Media Library Policy
+
+Artifact storage, playlists, and route workspaces now share durable media-library policy for duplicate imports, private object fetches, derived artifacts, file-operation concurrency, and safe catalog cleanup after backend configuration changes.
+
+### More Compact Operations UI
+
+Route workspace panels, playlist controls, diagnostics, route cards, and sidebar telemetry are tighter and less repetitive. Completed one-shot and sequential playlist items stay marked as played without blocking replay or playlist clearing.
+
+### Public Automation Metadata
+
+`@fluxomni/api-client@0.13.0` is the pinned API client for this release. The self-host docs carry the matching GraphQL schema hash, automation recipes, LLM metadata, and installer version aliases for `v2026.05.2` and `v0.13.0`.
+
+---
+
 ## 2026.05.1 (0.12.0) - 20 May 2026
 
 ### Stable Automation Surface

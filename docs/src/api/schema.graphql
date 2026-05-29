@@ -57,6 +57,10 @@ type AdminSettingsInfo {
 	"""
 	artifactLibraryPolicy: ArtifactLibraryPolicy!
 	"""
+	Server-owned route baseline presets used for compatibility gates.
+	"""
+	baselineProfilePresets: [BaselineProfilePreset!]!
+	"""
 	Host that this server is reachable via in public.
 	"""
 	publicHost: String!
@@ -412,8 +416,39 @@ type BaselineProfile {
 	audioSampleRate: Int!
 }
 
+input BaselineProfileInput {
+	"""
+	Required video codec name.
+	"""
+	videoCodec: String!
+	"""
+	Required video width in pixels.
+	"""
+	width: Int!
+	"""
+	Required video height in pixels.
+	"""
+	height: Int!
+	"""
+	Required frame rate as a rational string.
+	"""
+	framerate: String!
+	"""
+	Required audio codec name.
+	"""
+	audioCodec: String!
+	"""
+	Required audio channel count.
+	"""
+	audioChannels: Int!
+	"""
+	Required audio sample rate in hertz.
+	"""
+	audioSampleRate: Int!
+}
+
 """
-Fixed baseline preset exposed to operator clients.
+Baseline preset exposed to operator clients.
 """
 type BaselineProfilePreset {
 	"""
@@ -428,6 +463,21 @@ type BaselineProfilePreset {
 	Full media profile represented by this preset.
 	"""
 	profile: BaselineProfile!
+}
+
+input BaselineProfilePresetInput {
+	"""
+	Stable preset identifier.
+	"""
+	id: String!
+	"""
+	Operator-facing preset label.
+	"""
+	label: String!
+	"""
+	Full media profile represented by this preset.
+	"""
+	profile: BaselineProfileInput!
 }
 
 """
@@ -1756,6 +1806,10 @@ type Output {
 	"""
 	volume: Volume!
 	"""
+	Origin audio selection applied before mix-ins.
+	"""
+	audioSelection: OutputAudioSelection!
+	"""
 	Mixins to mix this output with before streaming.
 	"""
 	mixins: [Mixin!]!
@@ -1767,6 +1821,56 @@ type Output {
 	Operator-facing presentation of this output's current runtime state.
 	"""
 	presentation: OutputPresentation!
+}
+
+"""
+Origin-audio selection applied before output mix-ins.
+"""
+type OutputAudioSelection {
+	"""
+	Selection mode.
+	"""
+	mode: OutputAudioSelectionMode!
+	"""
+	Zero-based track or channel index for indexed modes.
+	"""
+	index: Int
+}
+
+"""
+Origin-audio selection payload for output create/update.
+"""
+input OutputAudioSelectionInput {
+	"""
+	Selection mode.
+	"""
+	mode: OutputAudioSelectionMode! = DEFAULT
+	"""
+	Zero-based track or channel index for indexed modes.
+	"""
+	index: Int
+}
+
+"""
+Origin-audio selection mode for an output.
+"""
+enum OutputAudioSelectionMode {
+	"""
+	Preserve source audio without explicit selection.
+	"""
+	DEFAULT
+	"""
+	Select one audio stream by track index.
+	"""
+	TRACK
+	"""
+	Select one audio channel by channel index.
+	"""
+	CHANNEL
+	"""
+	Keep an audio stream but replace origin samples with silence before mix-ins.
+	"""
+	MUTED
 }
 
 """
@@ -2007,7 +2111,7 @@ type PlaylistFileInfo {
 	"""
 	name: String!
 	"""
-	Whether the file was already played during the active sequential pass.
+	Whether the file has completed playback in the current queue history.
 	"""
 	wasPlayed: Boolean!
 	"""
@@ -2609,6 +2713,23 @@ type RouteMutation {
 		policy: RouteSourceFailoverPolicyInput!
 	): RouteSourceMutationResult!
 	"""
+	Updates the configured source topology for a Route without changing other Route settings.
+	
+	This is the source-management counterpart to `setRoute`: it replaces the route-source
+	list and failover policy while preserving route identity, label, outputs, playlist,
+	baseline, ownership, and source preference when the preferred source still exists.
+	"""
+	updateRouteSources(
+		"""
+		ID of the Route to update the route-source topology for
+		"""
+		routeId: RouteId!,
+		"""
+		Replacement source topology for the Route
+		"""
+		routeSources: RouteSourcesInput!
+	): RouteSourceMutationResult!
+	"""
 	Sets a new Route or updates an existing one (if `id` is specified).
 	
 	Idempotent if `id` is specified. Otherwise is non-idempotent, always creates a new Route.
@@ -2638,7 +2759,7 @@ type RouteMutation {
 		ownerId: ID
 	): RouteMutationResult!
 	"""
-	Sets or clears the route baseline profile used to gate playlist files.
+	Sets, clears, or adopts the route baseline profile used to gate route media inputs.
 	
 	Returns a `RouteMutationResult` with `status` set to `UPDATED` or `NOT_FOUND`.
 	"""
@@ -2648,9 +2769,17 @@ type RouteMutation {
 		"""
 		routeId: RouteId!,
 		"""
-		Preset id to set, or null to clear when the playlist is empty
+		Preset id to set, or null to clear when sourceId and fileId are also null
 		"""
-		presetId: String
+		presetId: String,
+		"""
+		ID of the RouteSource whose observed stream should become the baseline
+		"""
+		sourceId: RouteSourceId,
+		"""
+		ID of the artifact file whose probed stream should become the baseline
+		"""
+		fileId: FileId
 	): RouteMutationResult!
 	"""
 	Regenerate the publish token for a given route source.
@@ -2967,7 +3096,7 @@ type RouteQuery {
 	"""
 	statusSummary: RouteStatusSummary!
 	"""
-	Fixed route baseline profiles available for playlist compatibility gating.
+	Server route baseline profiles available for route media compatibility gating.
 	"""
 	baselineProfilePresets: [BaselineProfilePreset!]!
 }
@@ -3411,6 +3540,13 @@ type RtmpPushSource {
 	hasPublishCredential: Boolean!
 }
 
+input SetBaselineProfilePresetsInput {
+	"""
+	Complete server-owned route baseline profile preset catalog.
+	"""
+	baselineProfilePresets: [BaselineProfilePresetInput!]!
+}
+
 """
 Output create/update payload.
 """
@@ -3431,6 +3567,10 @@ input SetOutputInput {
 	Optional preview URL to preview the Output with.
 	"""
 	previewUrl: Url
+	"""
+	Origin audio selection applied before mix-ins.
+	"""
+	audioSelection: OutputAudioSelectionInput! = {mode: DEFAULT, index: null}
 	"""
 	Optional `MixinSrcUrl`s to mix into this Output.
 	"""
@@ -3500,6 +3640,10 @@ input SetSettingsInput {
 	"""
 	artifactLibraryPolicy: ArtifactLibraryPolicyInput
 	"""
+	Server-owned route baseline profile presets.
+	"""
+	baselineProfilePresets: [BaselineProfilePresetInput!]
+	"""
 	Browser session TTL in seconds (0 or null disables expiry).
 	"""
 	sessionTtlSeconds: Unumber
@@ -3547,6 +3691,10 @@ type SettingsInfo {
 	Owned artifact-library defaults for imports, probing, and picker behavior.
 	"""
 	artifactLibraryPolicy: ArtifactLibraryPolicy!
+	"""
+	Server-owned route baseline presets used for compatibility gates.
+	"""
+	baselineProfilePresets: [BaselineProfilePreset!]!
 	"""
 	Whether the control surface requires a browser sign-in password.
 	"""
@@ -3959,6 +4107,10 @@ type StreamStatistics {
 	"""
 	audioChannels: Unumber
 	"""
+	Count of audio streams/tracks. Example: 2
+	"""
+	audioTrackCount: Unumber
+	"""
 	Name of video codec. Example: "h264"
 	"""
 	videoCodecName: String
@@ -4058,6 +4210,15 @@ type SystemSettingsMutation {
 		Application settings update payload.
 		"""
 		input: SetSettingsInput!
+	): SettingsMutationResult!
+	"""
+	Replace the server-owned route baseline profile preset catalog.
+	"""
+	setBaselineProfilePresets(
+		"""
+		Baseline profile preset catalog update payload.
+		"""
+		input: SetBaselineProfilePresetsInput!
 	): SettingsMutationResult!
 	"""
 	Import routes configuration from JSON.

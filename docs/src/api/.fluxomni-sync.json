@@ -1,5 +1,5 @@
 {
-  "coreVersion": "v0.12.0",
+  "coreVersion": "v0.13.0",
   "files": {
     "api/clients/typescript/README.md": {
       "bytes": 7057,
@@ -27,9 +27,9 @@
       "sha256": "bf277ec1cefc99b06928e87786543828f2bc00aa4a243e5f7aeb2a00b4dec4fe"
     },
     "api/schema.graphql": {
-      "bytes": 87375,
+      "bytes": 90839,
       "present": true,
-      "sha256": "2633b6433ceee64aabff48bdc90b6a99f9a2128d7f23279457441842c5f04044"
+      "sha256": "5bc8f7d5c4843c08ecd41165ca6d767cee45977100f880e9988d32c57dfc51ad"
     },
     "docs/public-api/compatibility-policy.md": {
       "bytes": 2548,
@@ -52,8 +52,8 @@
       "sha256": "42c65a41a56c4e7bbcda998d183e4242167a4d4a03932c1c68bad20b816c99f4"
     }
   },
-  "release": "v2026.05.1",
-  "resolvedSha": "6c799101cc336b624832e18664be3ed404647b0c",
+  "release": "v2026.05.2",
+  "resolvedSha": "b4721f6972f1de02a477b98901e2ad89adde530d",
   "schemaVersion": 2,
-  "updatedAt": "2026-05-20T22:05:46+00:00"
+  "updatedAt": "2026-05-29T16:47:53+00:00"
 }
