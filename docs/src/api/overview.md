@@ -2,7 +2,7 @@
 
 Fluxomni Studio exposes a public API preview for operators who want to automate route, playlist, artifact, settings, and Fleet workflows.
 
-The supported automation surface is GraphQL over `/api`, subscriptions over `/api/subscriptions`, the generated SDL at `/api/schema.graphql`, and the `@fluxomni/api-client` TypeScript package.
+The supported automation surface is GraphQL over `/api`, subscriptions over `/api/subscriptions`, the generated SDL at `/api/schema.graphql`, the bundled [release schema](schema.graphql), [automation recipes](automation-recipes.json), [LLM metadata](llms.txt), and the `@fluxomni/api-client` TypeScript package.
 
 Use the API for control-plane automation:
 
@@ -23,11 +23,13 @@ curl -b "fluxomni_session=$SESSION" \
   http://<your-server>/api/schema.graphql
 ```
 
-For release-pinned automation, use the schema and client from the same release tag:
+For release-pinned automation, use the schema, release manifest, and client from the same self-host docs release tag:
 
-- `https://github.com/fluxomnia-systems/fluxomni/blob/vX.Y.Z/api/schema.graphql`
-- `https://github.com/fluxomnia-systems/fluxomni/tree/vX.Y.Z/api/clients/typescript`
-- `https://github.com/fluxomnia-systems/fluxomni/tree/vX.Y.Z/api/examples/typescript`
+- [Bundled GraphQL schema for this docs build](schema.graphql)
+- [Automation recipes JSON for this docs build](automation-recipes.json)
+- [LLM-readable API metadata for this docs build](llms.txt)
+- [Release manifest for matching schema and client versions](../release-manifest.json)
+- `https://github.com/fluxomnia-systems/fluxomni-selfhost/blob/vYYYY.MM.N/docs/src/api/schema.graphql`
 
 ## Supported Fields
 
