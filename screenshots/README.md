@@ -18,6 +18,9 @@ FLUXOMNI_URL=http://192.168.1.100 npm run capture
 # Capture against an auth-enabled instance
 FLUXOMNI_URL=http://192.168.1.100 FLUXOMNI_ADMIN_PASSWORD=secret npm run capture
 
+# Capture only the short landing/product overview video
+FLUXOMNI_URL=http://192.168.1.100 FLUXOMNI_ADMIN_PASSWORD=secret npm run capture:overview
+
 # Run headed to watch the browser
 npm run capture:headed
 ```
@@ -70,8 +73,11 @@ Set `FLUXOMNI_VIDEO_OUTPUT_DIR` to place the recordings somewhere else:
 
 - `create-route.webm`
 - `add-output.webm`
+- `flow-overview.webm`
 
 The videos start from the loaded Routes page, then use mouse movement, short pauses, and delayed typing for readable pacing. Each flow asserts the important intermediate UI state is visible, then returns to the Routes page before ending.
+
+`flow-overview.webm` is the landing-oriented overview. It creates an RTMP route through the UI, reads the generated publish URL, starts an FFmpeg publisher, waits for the route to become live, opens the HLS preview, adds a YouTube-style output, and saves the recorded browser interaction.
 
 ## From the repo root
 

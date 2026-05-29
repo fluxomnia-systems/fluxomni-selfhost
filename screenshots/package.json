@@ -4,6 +4,7 @@
   "type": "module",
   "scripts": {
     "capture": "playwright test",
+    "capture:overview": "playwright test captures/overview-flow.spec.ts",
     "capture:headed": "playwright test --headed",
     "install:browsers": "playwright install chromium"
   },

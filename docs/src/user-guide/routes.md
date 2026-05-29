@@ -2,6 +2,14 @@
 
 Routes are the core of Fluxomni Studio. Each route is an independent streaming pipeline with its own ingest input, one or more outputs, an optional playlist, and a live playback monitor.
 
+## Flow Overview
+
+This short overview shows the normal live path: create an RTMP route, copy its publish URL into an encoder, wait for the route to become live, verify HLS preview in the workspace, and add a YouTube-style output.
+
+<video controls muted playsinline width="100%">
+  <source src="../videos/user-guide/flow-overview.webm" type="video/webm">
+</video>
+
 ## Routes List
 
 Navigate to **Routes** in the sidebar (or visit `/routes`) to see all configured routes.
