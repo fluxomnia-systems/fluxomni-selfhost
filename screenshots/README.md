@@ -65,7 +65,8 @@ These step-by-step walkthrough images are written to `docs/src/images/user-guide
 - `add-output-2-dialog.jpg`
 - `add-output-3-added.jpg`
 
-The guided-flow suite also records short interaction videos in `docs/src/videos/user-guide/`:
+The guided-flow suite also records short interaction videos in `screenshots/recordings/user-guide/` by default.
+Set `FLUXOMNI_VIDEO_OUTPUT_DIR` to place the recordings somewhere else:
 
 - `create-route.webm`
 - `add-output.webm`

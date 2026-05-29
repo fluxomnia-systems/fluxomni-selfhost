@@ -16,48 +16,58 @@ const SET_RESTREAM = `
     $label: Label
     $routeSources: RouteSourcesInput!
   ) {
-    stream {
-      setRestream(label: $label, routeSources: $routeSources)
+    routes {
+      setRoute(input: { label: $label, routeSources: $routeSources }) {
+        routeId
+      }
     }
   }
 `;
 
 const SET_OUTPUT = `
   mutation SeedOutput(
-    $restreamId: RestreamId!
+    $routeId: RouteId!
     $dst: OutputDstUrl!
     $label: Label
     $previewUrl: Url
     $mixins: [MixinSrcUrl!]!
   ) {
-    stream {
+    routes {
       setOutput(
-        restreamId: $restreamId
-        dst: $dst
-        label: $label
-        previewUrl: $previewUrl
-        mixins: $mixins
-      )
+        input: {
+          routeId: $routeId
+          dst: $dst
+          label: $label
+          previewUrl: $previewUrl
+          mixins: $mixins
+        }
+      ) {
+        outputId
+      }
     }
   }
 `;
 
 const REMOVE_RESTREAM = `
-  mutation RemoveRoute($id: RestreamId!) {
-    stream { removeRestream(id: $id) }
+  mutation RemoveRoute($id: RouteId!) {
+    routes {
+      removeRoute(id: $id) {
+        routeId
+      }
+    }
   }
 `;
 
 const DELETE_LIBRARY_FILES = `
   mutation DeleteLibraryFiles($ids: [FileId!]!) {
-    files { forceDeleteLibraryFiles(ids: $ids) { deleted failed { id message } } }
+    artifacts { forceDeleteLibraryFiles(ids: $ids) { deleted failed { id message } } }
   }
 `;
 
 const LIST_RESTREAMS = `
   query ListRoutes {
-    stream {
-      allRestreams {
+    routes {
+      allRoutes {
         id
         label
         outputs { id label }
@@ -68,7 +78,7 @@ const LIST_RESTREAMS = `
 
 const LIST_LIBRARY_FILES = `
   query ListLibraryFiles {
-    files {
+    artifacts {
       libraryFiles {
         id
         name
@@ -131,7 +141,7 @@ export async function createRoute(
   api: APIRequestContext,
   opts: { key: string; label: string },
 ): Promise<SeededRoute> {
-  const data = await requestGraphql<{ stream: { setRestream: string } }>(
+  const data = await requestGraphql<{ routes: { setRoute: { routeId: string } } }>(
     api,
     SET_RESTREAM,
     {
@@ -139,7 +149,7 @@ export async function createRoute(
       routeSources: rtmpPushRouteSources(),
     },
   );
-  return { id: data.stream.setRestream, key: opts.key, label: opts.label };
+  return { id: data.routes.setRoute.routeId, key: opts.key, label: opts.label };
 }
 
 /**
@@ -149,17 +159,17 @@ export async function addOutput(
   api: APIRequestContext,
   opts: { restreamId: string; dst: string; label: string },
 ): Promise<string> {
-  const data = await requestGraphql<{ stream: { setOutput: string } }>(
+  const data = await requestGraphql<{ routes: { setOutput: { outputId: string } } }>(
     api,
     SET_OUTPUT,
     {
-      restreamId: opts.restreamId,
+      routeId: opts.restreamId,
       dst: opts.dst,
       label: opts.label,
       mixins: [],
     },
   );
-  return data.stream.setOutput;
+  return data.routes.setOutput.outputId;
 }
 
 /**
@@ -179,9 +189,9 @@ export async function listRoutes(
   api: APIRequestContext,
 ): Promise<ListedRestream[]> {
   const data = await requestGraphql<{
-    stream: { allRestreams: ListedRestream[] };
+    routes: { allRoutes: ListedRestream[] };
   }>(api, LIST_RESTREAMS);
-  return data.stream.allRestreams;
+  return data.routes.allRoutes;
 }
 
 /**
@@ -207,9 +217,9 @@ export async function cleanupSeededLibraryFiles(
   prefix: string,
 ): Promise<number> {
   const data = await requestGraphql<{
-    files: { libraryFiles: ListedLibraryFile[] };
+    artifacts: { libraryFiles: ListedLibraryFile[] };
   }>(api, LIST_LIBRARY_FILES);
-  const ids = data.files.libraryFiles
+  const ids = data.artifacts.libraryFiles
     .filter((file) => file.name.startsWith(prefix))
     .map((file) => file.id);
   if (ids.length === 0) return 0;

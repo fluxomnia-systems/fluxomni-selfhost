@@ -29,8 +29,8 @@ import { saveRecordedVideo } from '../helpers/video';
  *   add-output-3-added.jpg
  *
  * It also records short WebM walkthroughs:
- *   create-route.webm
- *   add-output.webm
+ *   screenshots/recordings/user-guide/create-route.webm
+ *   screenshots/recordings/user-guide/add-output.webm
  *
  * These are placed in `docs/src/images/user-guide/flows/` and can be
  * referenced from the mdBook user-guide with step-by-step instructions.
@@ -40,7 +40,9 @@ const FLOWS_DIR = resolve(
   __dirname,
   '../../docs/src/images/user-guide/flows',
 );
-const VIDEOS_DIR = resolve(__dirname, '../../docs/src/videos/user-guide');
+const VIDEOS_DIR = process.env.FLUXOMNI_VIDEO_OUTPUT_DIR
+  ? resolve(process.env.FLUXOMNI_VIDEO_OUTPUT_DIR)
+  : resolve(__dirname, '../recordings/user-guide');
 const SEED_PREFIX = 'docs-flow';
 
 // ---------------------------------------------------------------------------
