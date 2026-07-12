@@ -80,6 +80,15 @@ AUTH_TOKEN="$(openssl rand -hex 24)"
 IMAGE_TAG="${ASSET_REF}"
 if [ "${IMAGE_TAG}" = "main" ]; then
   IMAGE_TAG="latest"
+elif [[ "${IMAGE_TAG#v}" =~ ^[0-9]{2}\.[1-4]\.[0-9]+$ ]]; then
+  VERSION_MAP="$(mktemp)"
+  curl -fsSL "https://raw.githubusercontent.com/fluxomnia-systems/fluxomni-selfhost/${ASSET_REF}/scripts/generated-version-map.sh" -o "${VERSION_MAP}"
+  . "${VERSION_MAP}"
+  RESOLVED_IMAGE_TAG="$(generated_public_release_alias "${IMAGE_TAG}" 2>/dev/null || true)"
+  rm -f "${VERSION_MAP}"
+  if [ -n "${RESOLVED_IMAGE_TAG}" ]; then
+    IMAGE_TAG="${RESOLVED_IMAGE_TAG}"
+  fi
 fi
 cat > .env <<ENVVARS
 FLUXOMNI_VERSION=${IMAGE_TAG}

@@ -617,10 +617,16 @@ normalize_fluxomni_version() {
   requested_ref="$(canonical_version_ref "$requested")"
   requested_core="${requested_ref#v}"
 
-  # Public date releases map to the image tags published by the core release.
-  if [[ "$requested_core" =~ ^[0-9]{4}\.[0-9]{2}\.[0-9]+$ ]]; then
-    transition_version_alias "$requested_ref"
-    return
+  # Public calendar releases map to the image tags published by the core release.
+  # Keep retained v0.x.y core tags unchanged even though the alias map is bidirectional.
+  if [[ "$requested_core" =~ ^[0-9]{4}\.[0-9]{2}\.[0-9]+$ ]] ||
+    [[ "$requested_core" =~ ^[0-9]{2}\.[1-4]\.[0-9]+$ ]]; then
+    local resolved
+    resolved="$(transition_version_alias "$requested_ref" 2>/dev/null || true)"
+    if [ -n "$resolved" ]; then
+      printf '%s\n' "$resolved"
+      return
+    fi
   fi
 
   printf '%s\n' "$requested_ref"
@@ -683,7 +689,8 @@ resolve_repo_raw() {
   fi
 
   requested_core="${selfhost_ref#v}"
-  if [[ "$requested_core" =~ ^[0-9]{4}\.[0-9]{2}\.[0-9]+$ ]]; then
+  if [[ "$requested_core" =~ ^[0-9]{4}\.[0-9]{2}\.[0-9]+$ ]] ||
+    [[ "$requested_core" =~ ^[0-9]{2}\.[1-4]\.[0-9]+$ ]]; then
     echo "Error: stable self-host assets for '${selfhost_ref}' were not found." >&2
     echo "Publish the matching self-host release tag or set FLUXOMNI_SELFHOST_REF/FLUXOMNI_REPO_RAW explicitly." >&2
     exit 1
