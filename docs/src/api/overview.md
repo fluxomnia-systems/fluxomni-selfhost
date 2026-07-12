@@ -29,7 +29,7 @@ For release-pinned automation, use the schema, release manifest, and client from
 - [Automation recipes JSON for this docs build](automation-recipes.json)
 - [LLM-readable API metadata for this docs build](llms.txt)
 - [Release manifest for matching schema and client versions](../release-manifest.json)
-- `https://github.com/fluxomnia-systems/fluxomni-selfhost/blob/vYYYY.MM.N/docs/src/api/schema.graphql`
+- `https://github.com/fluxomnia-systems/fluxomni-selfhost/blob/vYY.Q.N/docs/src/api/schema.graphql`
 
 ## Supported Fields
 

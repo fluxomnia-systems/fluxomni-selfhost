@@ -42,11 +42,11 @@ If you deploy behind a domain or reverse proxy, set `FLUXOMNI_PUBLIC_HOST`, `FLU
 ## Release Channels
 
 - `latest`: newest stable release and the default in this repository
-- `vYYYY.MM.N`: public stable release tag, e.g. `v2026.05.2`
+- `vYY.Q.N`: canonical public stable release tag, e.g. `v26.2.4`
 - `vX.Y.Z`: core image tag, accepted for direct image pinning, e.g. `v0.13.0`
 - `edge`: latest successful publish from `main`
 
-The installer maps public date-style pins to the matching core image tag when native date image tags are not published.
+The installer maps canonical public pins to the matching core image tag when native date image tags are not published.
 
 ## Optional Variables
 
