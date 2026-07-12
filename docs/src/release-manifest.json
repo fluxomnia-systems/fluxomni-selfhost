@@ -6,6 +6,11 @@
   },
   "latestStable": "v26.2.4",
   "releases": {
+    "v26.1.0": {
+      "coreVersion": "v0.10.0",
+      "releasedAt": "2026-04-14",
+      "selfhostRef": "v26.1.0"
+    },
     "v26.2.0": {
       "coreVersion": "v0.10.1",
       "releasedAt": "2026-04-19",

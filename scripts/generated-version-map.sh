@@ -6,6 +6,9 @@ generated_latest_public_release() {
 
 generated_public_release_alias() {
   case "$1" in
+    v26.1.0|26.1.0)
+      printf '%s\n' 'v0.10.0'
+      ;;
     v26.2.0|26.2.0)
       printf '%s\n' 'v0.10.1'
       ;;
@@ -20,6 +23,9 @@ generated_public_release_alias() {
       ;;
     v26.2.4|26.2.4)
       printf '%s\n' 'v0.13.0'
+      ;;
+    v0.10.0|0.10.0)
+      printf '%s\n' 'v26.1.0'
       ;;
     v0.10.1|0.10.1)
       printf '%s\n' 'v26.2.0'
