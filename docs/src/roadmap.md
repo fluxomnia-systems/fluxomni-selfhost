@@ -19,7 +19,7 @@ The current self-host release covers the production workflows most teams need be
 - **Fleet and failover visibility.** Add regional media nodes, pin routes when needed, and see route, node, and failover health in the Control Surface and Attention feed.
 - **Recording catalog safety.** Recording rows participate in catalog-backed modals and runtime checks, while non-durable DVR files stay cache-like and object-storage rows reject unsafe overwrites.
 - **Controlled self-host access.** Run behind public DNS, a reverse proxy, Tailscale, WireGuard, NetBird, or Cloudflare Tunnel, with named operators and role-based access.
-- **Pinned, recoverable installs.** Use public date-style release pins such as `v2026.05.2`, rollback with known tags, or track `edge` only when you intentionally want main-branch builds.
+- **Pinned, recoverable installs.** Use canonical public release pins such as `v26.2.4`, rollback with known tags, or track `edge` only when you intentionally want main-branch builds.
 
 ## In focus
 

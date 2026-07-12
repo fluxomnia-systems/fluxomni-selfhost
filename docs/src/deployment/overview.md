@@ -53,7 +53,7 @@ curl -fsSL https://install.fluxomni.io | WITH_UFW=1 FLUXOMNI_VERSION=edge bash -
 ### Install target
 
 - `FLUXOMNI_DIR` — install path (default: `~/fluxomni`, or `~/fluxomni-media-node` for media-node installs)
-- `FLUXOMNI_VERSION` — image tag: `latest` (default), `edge`, public `vYYYY.MM.N`, or core-image `vX.Y.Z`
+- `FLUXOMNI_VERSION` — image tag: `latest` (default), `edge`, canonical public `vYY.Q.N`, or core-image `vX.Y.Z`
 - `FLUXOMNI_FRONTEND_IMAGE` — override frontend image repository
 - `FLUXOMNI_CONTROL_PLANE_IMAGE` — override control-plane image repository
 - `FLUXOMNI_MEDIA_NODE_IMAGE` — override media-node image repository
@@ -79,7 +79,7 @@ Optional media-node overrides: `FLUXOMNI_MEDIA_NODE_ENDPOINT`, `FLUXOMNI_MEDIA_N
 ## Release Channels
 
 - `latest`: newest stable release
-- `vYYYY.MM.N`: public stable release tag, e.g. `v2026.05.2`
+- `vYY.Q.N`: canonical public stable release tag, e.g. `v26.2.4`
 - `vX.Y.Z`: core image tag, accepted for direct image pinning, e.g. `v0.13.0`
 - `edge`: latest successful publish from `main`
 

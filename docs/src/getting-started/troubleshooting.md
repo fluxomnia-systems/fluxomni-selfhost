@@ -216,12 +216,12 @@ If an update causes issues, pin the previous version in `.env`:
 ```bash
 # From your install directory
 # Edit .env and change FLUXOMNI_VERSION to the previous release tag
-sed -i 's/FLUXOMNI_VERSION=.*/FLUXOMNI_VERSION=v2026.04.1/' .env
+sed -i 's/FLUXOMNI_VERSION=.*/FLUXOMNI_VERSION=v26.2.0/' .env
 docker compose pull
 docker compose up -d
 ```
 
-Available release tags are listed on the [GitHub Releases](https://github.com/fluxomnia-systems/fluxomni/releases) page. Prefer public date-style `vYYYY.MM.N` tags for new pins; core-image `vX.Y.Z` tags remain accepted for direct image pinning.
+Available release tags are listed on the [GitHub Releases](https://github.com/fluxomnia-systems/fluxomni/releases) page. Prefer canonical public `vYY.Q.N` tags for new pins; core-image `vX.Y.Z` tags remain accepted for direct image pinning.
 
 To return to tracking the latest stable release, from the same directory:
 

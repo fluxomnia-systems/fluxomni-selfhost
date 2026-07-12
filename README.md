@@ -8,7 +8,7 @@ Fluxomni Studio runs live streams on your own server. Send one stream in. Fluxom
 
 This repo is for self-host installs. Linux and macOS are supported on x64 and ARM64. Windows is supported through WSL2 with Ubuntu.
 
-## What's New in 2026.05.2
+## What's New in 26.2.4
 
 - **Stable public automation API** — GraphQL automation now uses Route and Artifacts vocabulary, release-pinned schema discovery at `/api/schema.graphql`, and a session-aware `@fluxomni/api-client`
 - **Per-output origin audio control** — each destination can keep program audio, select a track or channel, or drop origin audio before mix-ins are applied
@@ -65,7 +65,7 @@ FLUXOMNI_DIR=/opt/fluxomni \
   curl -fsSL https://install.fluxomni.io | bash
 
 # Pin a specific stable release
-FLUXOMNI_VERSION=v2026.05.2 \
+FLUXOMNI_VERSION=v26.2.4 \
   curl -fsSL https://install.fluxomni.io | bash
 
 # Use the newest main-branch build
@@ -108,11 +108,11 @@ The installer manages:
 | Channel | Description |
 | --- | --- |
 | `latest` | Newest stable release (default) |
-| `vYYYY.MM.N` | Public stable release tag |
+| `vYY.Q.N` | Canonical public stable release tag |
 | `vX.Y.Z` | Core image tag, accepted for direct image pinning |
 | `edge` | Latest successful publish from `main` |
 
-Use `latest` unless you need a pinned release or a test build. The current stable public release is `v2026.05.2`; it maps to core image tag `v0.13.0`.
+Use `latest` unless you need a pinned release or a test build. The current stable public release is `v26.2.4`; it maps to retained core image tag `v0.13.0`. Older `v0.x.y` core tags remain available for rollback.
 
 See the What's New section above for the latest highlights.
 

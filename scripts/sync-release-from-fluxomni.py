@@ -71,7 +71,16 @@ def require_paths(fluxomni_root: Path) -> None:
 
 def merge_manifest(existing: dict[str, Any] | None, incoming: dict[str, Any]) -> dict[str, Any]:
     releases = dict((existing or {}).get("releases", {}))
-    releases.update(incoming.get("releases", {}))
+    incoming_releases = incoming.get("releases", {})
+    # Canonical quarterly public identities replace the old date-style keys;
+    # retained core tags remain the rollback boundary for released artifacts.
+    if any(re.fullmatch(r"v\d{2}\.[1-4]\.\d+", key) for key in incoming_releases):
+        releases = {
+            key: release
+            for key, release in releases.items()
+            if not re.fullmatch(r"v\d{4}\.\d{2}\.\d+", key)
+        }
+    releases.update(incoming_releases)
     return {
         "schemaVersion": incoming.get("schemaVersion", 1),
         "latestStable": incoming["latestStable"],
@@ -129,8 +138,12 @@ def render_version_map(manifest: dict[str, Any]) -> str:
                 "      ;;",
             ]
         )
+    seen_core: set[str] = set()
     for public_version, release in sorted(manifest["releases"].items()):
         core = release["coreVersion"]
+        if core in seen_core:
+            continue
+        seen_core.add(core)
         lines.extend(
             [
                 f"    {core}|{core.removeprefix('v')})",

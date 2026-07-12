@@ -31,7 +31,7 @@ FLUXOMNI_VERSION=edge \
   curl -fsSL https://install.fluxomni.io | bash
 ```
 
-To pin a stable release, set `FLUXOMNI_VERSION=v2026.05.2` or another public `vYYYY.MM.N` tag.
+To pin a stable release, set `FLUXOMNI_VERSION=v26.2.4` or another public `vYY.Q.N` tag.
 
 Use `FLUXOMNI_SELFHOST_REF` only when the config files must come from a different ref.
 
@@ -71,7 +71,7 @@ Current releases use these primary operator surfaces:
 ## Manual Install
 
 ```bash
-ASSET_REF=main # or a published versioned self-host ref, for example v2026.05.2
+ASSET_REF=main # or a published versioned self-host ref, for example v26.2.4
 mkdir -p ~/fluxomni
 cd ~/fluxomni
 curl -fsSL "https://raw.githubusercontent.com/fluxomnia-systems/fluxomni-selfhost/${ASSET_REF}/docker-compose.yml" -o docker-compose.yml
@@ -80,6 +80,15 @@ AUTH_TOKEN="$(openssl rand -hex 24)"
 IMAGE_TAG="${ASSET_REF}"
 if [ "${IMAGE_TAG}" = "main" ]; then
   IMAGE_TAG="latest"
+elif [[ "${IMAGE_TAG#v}" =~ ^[0-9]{2}\.[1-4]\.[0-9]+$ ]]; then
+  VERSION_MAP="$(mktemp)"
+  curl -fsSL "https://raw.githubusercontent.com/fluxomnia-systems/fluxomni-selfhost/${ASSET_REF}/scripts/generated-version-map.sh" -o "${VERSION_MAP}"
+  . "${VERSION_MAP}"
+  RESOLVED_IMAGE_TAG="$(generated_public_release_alias "${IMAGE_TAG}" 2>/dev/null || true)"
+  rm -f "${VERSION_MAP}"
+  if [ -n "${RESOLVED_IMAGE_TAG}" ]; then
+    IMAGE_TAG="${RESOLVED_IMAGE_TAG}"
+  fi
 fi
 cat > .env <<ENVVARS
 FLUXOMNI_VERSION=${IMAGE_TAG}

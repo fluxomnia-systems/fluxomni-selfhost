@@ -37,26 +37,12 @@ jobs:
             echo "::error::stable must point at an exact vX.Y.Z core release tag."
             exit 1
           fi
+          if [[ ! "$core_tag" =~ ^v[0-9]{2}\.[1-4]\.[0-9]+$ ]]; then
+            echo "::error::stable release tag '${core_tag}' must use canonical vYY.Q.P format."
+            exit 1
+          fi
           release_date="$(date -u +%Y-%m-%d)"
-          release_month="$(date -u +%Y.%m)"
-          next_patch="$(
-            RELEASE_MONTH="$release_month" python3 - <<'PY'
-          import json
-          import os
-          from pathlib import Path
-
-          manifest = json.loads(Path("docs/src/release-manifest.json").read_text(encoding="utf-8"))
-          prefix = f"v{os.environ['RELEASE_MONTH']}."
-          patches = []
-          for version in manifest.get("releases", {}):
-              if version.startswith(prefix):
-                  suffix = version.removeprefix(prefix)
-                  if suffix.isdigit():
-                      patches.append(int(suffix))
-          print(max(patches, default=-1) + 1)
-          PY
-          )"
-          public_version="v${release_month}.${next_patch}"
+          public_version="$core_tag"
           {
             echo "core_tag=${core_tag}"
             echo "public_version=${public_version}"
