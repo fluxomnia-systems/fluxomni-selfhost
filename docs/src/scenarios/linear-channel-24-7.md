@@ -17,7 +17,7 @@ Files (local + Google Drive) → Playlist → Fluxomni Studio → { YouTube, Cus
 
 1. Install Fluxomni Studio: `curl -fsSL https://install.fluxomni.io | bash`.
 2. Upload your files to Google Drive, organized by channel or day-part.
-3. Link the Drive account in Settings. See [Configuration](../getting-started/configuration.md).
+3. Add a Google Drive API key in **Settings → Artifacts → Google Drive**, then make the files link-shareable. See [Settings](../user-guide/settings.md#google-drive).
 4. Create a route and add the playlist files in schedule order.
 5. Attach a [file-backup source](../user-guide/routes.md) as a safety net for the route.
 6. Configure outputs (RTMP/RTMPS, SRT, Icecast for the audio-only simulcast).

@@ -189,7 +189,7 @@ Each mix-in can define:
 
 ## Alerts
 
-Route-level and fleet-level issues surface on the **Attention** page.
+Route-level and fleet-level issues surface on the [Attention](attention.md) page.
 
 ![The Attention page showing the all-clear state when no active alerts exist](../images/user-guide/attention.jpg)
 

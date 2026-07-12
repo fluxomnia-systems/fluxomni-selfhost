@@ -88,6 +88,8 @@ Use `/routes` for route management and `/fleet` to inspect attached media nodes.
 
 > __NOTE__: By default, Fluxomni Studio is served over `http://`. For production use, it is highly recommended to set up a domain name and configure a reverse proxy (e.g., Nginx or Caddy) to enable `https://` for secure access.
 
+Next, complete [First Stream](../getting-started/first-stream.md) to create a protected operator account and verify one live route.
+
 [Hetzner Cloud]: https://hetzner.com/cloud
 [Project]: https://console.hetzner.cloud/projects
 [SSH]: https://en.wikipedia.org/wiki/SSH_(Secure_Shell)

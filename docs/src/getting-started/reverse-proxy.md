@@ -12,7 +12,7 @@ A reverse proxy sits in front of the HTTP surface while media ports
 ```text
 Internet
   |
-  +---> :443 (TLS) ---> reverse proxy ---> control-plane :80  (HTTP)
+  +---> :443 (TLS) ---> reverse proxy ---> frontend :80  (HTTP)
   +---> :1935 -----------------------------------------> media-node   (RTMP)
   +---> :10080/udp ------------------------------------> media-node   (SRT)
   +---> :8000 -----------------------------------------> media-node   (HLS/WebRTC)
