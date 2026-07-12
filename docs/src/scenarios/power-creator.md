@@ -16,7 +16,7 @@ OBS → Fluxomni Studio (single VM) → { YouTube, Twitch, Kick, Facebook, Custo
 
 1. Provision a small cloud VM. See [Deployment guides](../deployment/overview.md).
 2. Install: `curl -fsSL https://install.fluxomni.io | bash`.
-3. Open the control surface, create a single route, add platform outputs.
+3. Complete [First Stream](../getting-started/first-stream.md) to create a protected operator account, route, and first output.
 4. Point OBS at the route's publish URL — Fluxomni Studio fans it out to every platform.
 
 ## Cost and scale notes

@@ -173,8 +173,4 @@ Fluxomni Studio has three built-in roles:
 
 ## Export / Import
 
-Accessible from **Export / Import** in the sidebar, this page lets you bulk export or import route configurations. Use it to:
-
-- back up your routing configuration before major changes
-- migrate routes between Fluxomni Studio instances
-- share route templates with other operators
+Use the **Export / Import** action in the sidebar to open the route-definition transfer modal. See [Export & Import](export-import.md) for export scope, preview, replace-mode, owner mapping, and safe-apply guidance.

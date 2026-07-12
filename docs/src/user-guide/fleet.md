@@ -78,4 +78,4 @@ For library operations, use:
 
 ## Opening a Node
 
-Click **Open node →** on any media node card to view detailed node information, including full telemetry, route assignments, and cached file inventory.
+Click **Open node →** on any media node card to view detailed node information, including full telemetry, route assignments, and cached file inventory. Use [Attention](attention.md) to triage node conditions that need action before returning to node diagnostics.

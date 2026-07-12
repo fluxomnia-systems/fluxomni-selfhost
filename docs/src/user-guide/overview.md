@@ -47,7 +47,9 @@ The bottom of the sidebar shows real-time CPU, memory, and network utilization f
 
 ## Next Steps
 
+- [Attention](attention.md) — triage route, fleet, and storage alerts
 - [Routes](routes.md) — learn how to create and operate routes
 - [Artifacts](artifacts.md) — upload and reuse source files across routes
 - [Fleet](fleet.md) — understand media node management
 - [Settings](settings.md) — configure your Fluxomni Studio instance
+- [Export / Import](export-import.md) — move or restore route definitions

@@ -22,24 +22,27 @@ Use `FLUXOMNI_VERSION=edge` only when you want the newest main-branch build. Use
 
 To add a remote media server, run the same installer on that server with `bash -s -- media-node`.
 
-After installation:
+After installation, open `http://<your-server-ip>/routes` and follow [First Stream](getting-started/first-stream.md). It guides you through creating the first admin account, accepting an RTMP source, adding an output, verifying playback, and taking an initial backup.
 
-- Open Fluxomni Studio: `http://<your-server-ip>`
-- Manage streams: `http://<your-server-ip>/routes`
-- Check server health: `http://<your-server-ip>/fleet`
-- Publish RTMP: copy the publish address from the [route workspace](user-guide/routes.md#route-workspace)
+Choose the next path that matches your goal:
+
+- **Run one stream on one server** — [Quick Start](getting-started/quick-start.md), then [First Stream](getting-started/first-stream.md)
+- **Deploy on a cloud provider** — [Deployment](deployment/overview.md)
+- **Secure a browser-accessible deployment** — [Reverse Proxy & TLS](getting-started/reverse-proxy.md) or [Private Access & Tunnels](getting-started/private-access.md)
+- **Operate routes and media nodes** — [User Guide](user-guide/overview.md)
+- **Automate an installation** — [API Automation](api/overview.md)
 
 ## Documentation Sections
 
-- [Changelog](changelog.md) — what's new in each release
-- [Roadmap](roadmap.md) — current capabilities and product direction
-- [Quick Start](getting-started/quick-start.md)
-- [Configuration](getting-started/configuration.md)
-- [Private Access & Tunnels](getting-started/private-access.md) — Tailscale and Cloudflare Tunnel setup examples
-- [Troubleshooting](getting-started/troubleshooting.md)
-- [User Guide](user-guide/overview.md) — operating the Control Surface
-- [API Automation](api/overview.md) — session auth, raw GraphQL, TypeScript client, subscriptions, errors, and workflow recipes
+- [Quick Start](getting-started/quick-start.md) — install Fluxomni Studio
+- [First Stream](getting-started/first-stream.md) — create, publish, verify, and protect your first route
 - [Deployment](deployment/overview.md) — cloud provider guides and server provisioning
+- [User Guide](user-guide/overview.md) — operate the Control Surface, including Attention, Routes, Fleet, and settings
+- [Configuration](getting-started/configuration.md) — configure access, networking, and runtime variables
+- [Monitoring](getting-started/monitoring.md), [Backup & Restore](getting-started/backup.md), and [Troubleshooting](getting-started/troubleshooting.md) — maintain an installation
+- [Scenarios](scenarios/README.md) — choose a guided deployment pattern
+- [API Automation](api/overview.md) — session auth, raw GraphQL, TypeScript client, subscriptions, errors, and workflow recipes
+- [Changelog](changelog.md) and [Roadmap](roadmap.md) — product updates and direction
 
 ## Release Channels
 

@@ -1,7 +1,7 @@
 # Deployment
 
 Fluxomni Studio deploys to Docker hosts on Linux, macOS, or Windows (WSL2 Ubuntu).
-The installer handles Docker installation, firewall setup, and starting the stack from a single command.
+The installer downloads the stack, starts it, and can install Docker on Debian/Ubuntu. Firewall configuration is opt-in: enable it with `WITH_UFW=1` or `WITH_FIREWALLD=1` when running the installer.
 
 ## Quick Install
 

@@ -85,6 +85,8 @@ Use `/routes` for route management and `/fleet` to inspect attached media nodes.
 
 > **NOTE**: By default, Fluxomni Studio is served over `http://`. For production use, it is highly recommended to set up a domain name and configure a reverse proxy (e.g., Nginx or Caddy) to enable `https://` for secure access.
 
+Next, complete [First Stream](../getting-started/first-stream.md) to create a protected operator account and verify one live route.
+
 [Servers]: https://vscale.io/panel/scalets/
 [Create another instance]: https://vscale.io/panel/scalets/new/
 [VScale/Selectel Cloud]: https://vscale.io

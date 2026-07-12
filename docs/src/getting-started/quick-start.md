@@ -130,7 +130,8 @@ docker compose --profile auto-update stop watchtower
 
 ## Next Steps
 
-- Configure [authentication and settings](configuration.md)
+- Complete [First Stream](first-stream.md) to create an account, publish a route, add an output, and verify playback
+- Configure [authentication and settings](../user-guide/settings.md)
 - Use [private access and tunnels](private-access.md) for Tailscale or Cloudflare Tunnel deployments
 - Review [cloud deployment guides](../deployment/)
 - Use [troubleshooting](troubleshooting.md) if startup fails

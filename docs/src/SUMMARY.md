@@ -4,10 +4,37 @@
 
 ---
 
-- [Changelog](changelog.md)
-- [Roadmap](roadmap.md)
+## Start Here
 
-## Scenarios
+- [Quick Start](getting-started/quick-start.md)
+- [First Stream](getting-started/first-stream.md)
+- [Deployment](deployment/overview.md)
+  - [DigitalOcean](deployment/digitalocean.md)
+  - [Hetzner Cloud](deployment/hetzner.md)
+  - [Oracle Cloud](deployment/oracle.md)
+  - [VScale](deployment/vscale.md)
+
+## Operate Fluxomni Studio
+
+- [User Guide](user-guide/overview.md)
+  - [Attention](user-guide/attention.md)
+  - [Artifacts](user-guide/artifacts.md)
+  - [Routes](user-guide/routes.md)
+  - [Fleet](user-guide/fleet.md)
+  - [Settings](user-guide/settings.md)
+  - [Export / Import](user-guide/export-import.md)
+
+## Maintain Your Installation
+
+- [Configuration](getting-started/configuration.md)
+  - [Reverse Proxy & TLS](getting-started/reverse-proxy.md)
+  - [Private Access & Tunnels](getting-started/private-access.md)
+- [Monitoring](getting-started/monitoring.md)
+- [Backup & Restore](getting-started/backup.md)
+- [Troubleshooting](getting-started/troubleshooting.md)
+- [Architecture](getting-started/architecture.md)
+
+## Choose a Scenario
 
 - [Scenarios](scenarios/README.md)
   - [Multistream agency](scenarios/multistream-agency.md)
@@ -16,26 +43,7 @@
   - [Artifact library for playout assets](scenarios/artifact-library.md)
   - [Power creator beyond SaaS caps](scenarios/power-creator.md)
 
-## Getting Started
-
-- [Quick Start](getting-started/quick-start.md)
-- [Architecture](getting-started/architecture.md)
-- [Configuration](getting-started/configuration.md)
-  - [Reverse Proxy & TLS](getting-started/reverse-proxy.md)
-  - [Private Access & Tunnels](getting-started/private-access.md)
-  - [Monitoring](getting-started/monitoring.md)
-  - [Backup & Restore](getting-started/backup.md)
-- [Troubleshooting](getting-started/troubleshooting.md)
-
-## User Guide
-
-- [User Guide](user-guide/overview.md)
-  - [Routes](user-guide/routes.md)
-  - [Artifacts](user-guide/artifacts.md)
-  - [Fleet](user-guide/fleet.md)
-  - [Settings](user-guide/settings.md)
-
-## API Automation
+## Automate with the API
 
 - [API Automation](api/overview.md)
   - [Authentication](api/auth.md)
@@ -45,10 +53,7 @@
   - [Error Handling](api/errors.md)
   - [Workflows](api/workflows.md)
 
-## Deployment
+## Product Updates
 
-- [Deployment](deployment/overview.md)
-  - [DigitalOcean](deployment/digitalocean.md)
-  - [Hetzner Cloud](deployment/hetzner.md)
-  - [Oracle Cloud](deployment/oracle.md)
-  - [VScale](deployment/vscale.md)
+- [Changelog](changelog.md)
+- [Roadmap](roadmap.md)
