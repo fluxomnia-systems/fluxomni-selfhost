@@ -4,7 +4,7 @@
     "docsPath": "/edge/",
     "imageTag": "edge"
   },
-  "latestStable": "v26.2.4",
+  "latestStable": "v26.3.1",
   "releases": {
     "v26.1.0": {
       "coreVersion": "v0.10.0",
@@ -124,6 +124,63 @@
         "generatedFrom": "6c799101"
       },
       "summary": "Control planes expose their active GraphQL SDL at /api/schema.graphql, with /api/sdl kept as an alias, so operators and automation tooling can discover the live API contract outside debug mode. The schema, generated operations, TypeScript client, webapp callers, Playwright helpers, and repo-owned Python control..."
+    },
+    "v26.3.1": {
+      "api": {
+        "automationDocsPath": "/api/",
+        "contract": "stable",
+        "schemaPath": "api/schema.graphql",
+        "schemaSha256": "639539a18f7012f3cd7156d8d5690b5abc26dca0291af0d5c7977523c677bc08",
+        "typescriptClient": "@fluxomni/api-client@26.3.1"
+      },
+      "coreCommit": "688175a8e",
+      "coreVersion": "v26.3.1",
+      "docsStablePath": "/",
+      "docsVersionPath": "/v26.3.1/",
+      "highlights": [
+        {
+          "area": "Coordinated source-session contract upgrade",
+          "description": "Source sessions require canonical RouteSourceId, private node contract 4, and protobuf v2. Independent sessions preserve verified publishers across manifest refreshes and agent recovery.",
+          "title": "Coordinated source-session contract upgrade"
+        },
+        {
+          "area": "Recoverable live API connections",
+          "description": "WebSocket connections keep retrying recoverable failures and report healthy only after active queries refresh. Fatal closures remain visibly disconnected.",
+          "title": "Recoverable live API connections"
+        },
+        {
+          "area": "Program playback and relay controls",
+          "description": "Program supports low-latency WebRTC playback with automatic HLS fallback. Relay / Distribution workspaces expose safe endpoints, clearer viewer counts, and per-session controls with route ownership enforcement.",
+          "title": "Program playback and relay controls"
+        },
+        {
+          "area": "Media-node compatibility and crash recovery",
+          "description": "Fleet reports node contract compatibility and blocks mismatched execution. Crash recovery reaps orphan processes, restarts failed tasks, and recovers overloaded feedback.",
+          "title": "Media-node compatibility and crash recovery"
+        },
+        {
+          "area": "Hardened API and runtime boundaries",
+          "description": "Media-node RPCs require the shared bearer token outside loopback. GraphQL operations require explicit authorization guards, and CI detects unguarded resolvers.",
+          "title": "Hardened API and runtime boundaries"
+        },
+        {
+          "area": "Reliable live takeover and state persistence",
+          "description": "Catalog sync preserves live statistics for takeover eligibility. State changes commit atomically before becoming visible in memory, and ordinary updates write only changed rows.",
+          "title": "Reliable live takeover and state persistence"
+        }
+      ],
+      "images": {
+        "controlPlane": "ghcr.io/fluxomnia-systems/fluxomni-control-plane:v26.3.1",
+        "frontend": "ghcr.io/fluxomnia-systems/fluxomni-frontend:v26.3.1",
+        "mediaNode": "ghcr.io/fluxomnia-systems/fluxomni-media-node:v26.3.1"
+      },
+      "releasedAt": "2026-09-14",
+      "selfhostRef": "v26.3.1",
+      "source": {
+        "coreTag": "v26.3.1",
+        "generatedFrom": "688175a8e"
+      },
+      "summary": "Source-session contract upgrade, recoverable WebSocket connections, WebRTC program playback with route authorization, media-node compatibility versioning, hardened API boundaries, reliable live takeover, and atomic state persistence."
     },
     "v26.2.4": {
       "api": {

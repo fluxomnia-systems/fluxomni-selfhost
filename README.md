@@ -8,12 +8,12 @@ Fluxomni Studio runs live streams on your own server. Send one stream in. Fluxom
 
 This repo is for self-host installs. Linux and macOS are supported on x64 and ARM64. Windows is supported through WSL2 with Ubuntu.
 
-## What's New in 26.2.4
+## What's New in 26.3.1
 
-- **Stable public automation API** — GraphQL automation now uses Route and Artifacts vocabulary, release-pinned schema discovery at `/api/schema.graphql`, and a session-aware `@fluxomni/api-client`
-- **Per-output origin audio control** — each destination can keep program audio, select a track or channel, or drop origin audio before mix-ins are applied
-- **Configurable media baselines** — route workspaces can learn media profiles from real sources and reuse those baselines for playlist and source compatibility checks
-- **More compact operator flows** — route workspaces, playlist controls, diagnostics, and route cards have tighter controls and clearer live-operation states
+- **Source-session contract upgrade** — independent source sessions preserve verified publishers across manifest refreshes and agent recovery; upgrade control plane and media nodes together
+- **Program playback and relay** — play Program through low-latency WebRTC with HLS fallback; Relay / Distribution workspaces expose safe endpoints with route ownership enforcement
+- **Media-node compatibility versioning** — nodes advertise wire-contract versions during registration; Fleet shows compatibility status and blocks mismatched execution
+- **Reliable live takeover** — catalog sync preserves live statistics so eligible publishers don't fall back to files; preferred pulls recover automatically after primary failure
 
 For older versions, see the [Release Channels](#release-channels) section below.
 
@@ -65,7 +65,7 @@ FLUXOMNI_DIR=/opt/fluxomni \
   curl -fsSL https://install.fluxomni.io | bash
 
 # Pin a specific stable release
-FLUXOMNI_VERSION=v26.2.4 \
+FLUXOMNI_VERSION=v26.3.1 \
   curl -fsSL https://install.fluxomni.io | bash
 
 # Use the newest main-branch build
@@ -112,7 +112,7 @@ The installer manages:
 | `vX.Y.Z` | Core image tag, accepted for direct image pinning |
 | `edge` | Latest successful publish from `main` |
 
-Use `latest` unless you need a pinned release or a test build. The current stable public release is `v26.2.4`; it maps to retained core image tag `v0.13.0`. Older `v0.x.y` core tags remain available for rollback.
+Use `latest` unless you need a pinned release or a test build. The current stable public release is `v26.3.1`. Older `vYY.Q.P` and `v0.x.y` core tags remain available for rollback.
 
 See the What's New section above for the latest highlights.
 

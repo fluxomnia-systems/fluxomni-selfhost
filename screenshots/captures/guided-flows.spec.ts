@@ -577,7 +577,7 @@ test.describe('Guided videos', () => {
     await holdCallout(page, addOutputButton, 'Add an output', 'left');
     await smoothClick(page, addOutputButton);
     const outputModalHeading = page.getByRole('heading', {
-      name: /add new output destination/i,
+      name: /add.*output destination/i,
     });
     await expect(outputModalHeading).toBeVisible({ timeout: 10_000 });
     await expect(page.getByTestId('add-output-modal:rtmp-input')).toBeVisible({

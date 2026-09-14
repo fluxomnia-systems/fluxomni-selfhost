@@ -4,6 +4,58 @@ Operator-facing highlights from recent Fluxomni Studio releases.
 
 The changelog is editorial release copy. Use `release-manifest.json` as the factual inventory for dates, module versions, images, and API client refs, but write the latest changelog entry by hand so it reads as operator-facing release notes instead of generated metadata.
 
+## v26.3.1 - 14 September 2026
+
+### Source-Session Contract Upgrade
+
+Upgrade the control plane and media nodes together: source sessions now require canonical RouteSourceId, private node contract 4, and protobuf v2. Independent source sessions preserve verified publishers across manifest refreshes and agent recovery, reject obsolete feedback, and prevent stopped sessions from reviving.
+
+### Recoverable Live Connections
+
+WebSocket connections keep retrying recoverable failures and report healthy only after active queries refresh. Unexpected subscription completion reconnects without discarding stale data; fatal closures remain visibly disconnected.
+
+### Program Playback and Relay Controls
+
+Program supports low-latency WebRTC playback with automatic HLS fallback and a standalone player. Relay / Distribution workspaces expose safe playback and ingest endpoints, clearer viewer counts, grouped sessions, and per-session controls. Program playback enforces route ownership — named users cannot play another user's private route.
+
+### Quarterly Release Versions
+
+Packages, runtime images, releases, and public manifests share canonical `vYY.Q.P` versions. Historical releases remain discoverable through their original core versions.
+
+### Media-Node Compatibility and Crash Recovery
+
+Fleet reports unknown, outdated, and ahead node contracts and blocks incompatible execution. Crash recovery reaps orphan processes, exposes exhausted restart budgets, restarts failed background tasks, and recovers overloaded feedback through heartbeats. Cache cleanup protects live artifacts and reports manifest health.
+
+### Safer Settings Import and Export
+
+Exports include route-owner metadata without creating accounts on import. Preview validates owner references, supports explicit username remapping to local users, and provides clearer summaries and reliable copying on HTTP LAN deployments.
+
+### Clearer Operator Workspaces
+
+Routes, Settings, and Fleet use compact layouts, consistent access rules, and clearer keyboard and touch controls. Recording actions stay accessible beside long URLs, while diagnostics show backend-reported startup, stopping, HLS preparation, and live or playlist source details.
+
+### Hardened API and Runtime Boundaries
+
+Media-node RPCs now require the shared bearer token outside loopback. GraphQL operations require explicit authorization guards, internal errors return safe client messages, and CI detects unguarded resolvers.
+
+### Reliable State Persistence
+
+Related state changes commit atomically before becoming visible in memory. Ordinary updates write only changed rows within one guarded operation, reducing contention and preventing detached writes.
+
+### Runtime Tracing and Metrics
+
+OpenTelemetry traces follow requests from the control plane to media nodes. The OTLP pipeline also reports API latency, manifest sync, FFmpeg restarts, artifact jobs, heartbeats, and background-task health with bounded metric labels.
+
+### Reliable Live Takeover
+
+Catalog synchronization preserves accepted live-stream statistics, preventing eligible publishers from falling back to files or stalling at baseline checks. Eligible preferred pulls retry while fallback keeps playing and regain selection only after verified readiness.
+
+### Public Automation Metadata
+
+`@fluxomni/api-client@26.3.1` is the pinned API client for this release. The self-host docs carry the matching GraphQL schema hash, automation recipes, LLM metadata, and installer version aliases for `v26.3.1`.
+
+---
+
 ## v26.2.4 (0.13.0) - 29 May 2026
 
 ### Per-Output Origin Audio

@@ -113,8 +113,10 @@ test.describe('Overview video', () => {
 
       await waitForAppReady(page);
       const publishUrl = await waitForPublishUrlFromApi(ROUTE_LABEL);
-      const publishTarget = page.locator('main').getByText(/rtmp:\/\//i).first();
-      await holdCallout(page, publishTarget, 'Copy publish URL', 'left', 900);
+      // Publish URL is available via the API; the workspace shows it
+      // inside a dropdown, so highlight the source chip instead.
+      const sourceBanner = page.getByTestId('route-active-source-banner').first();
+      await holdCallout(page, sourceBanner, 'Awaiting publish', 'left', 900);
 
       publisher = startRtmpPublisher(publishUrl);
       await waitForRouteLive(ROUTE_LABEL);
@@ -135,7 +137,7 @@ test.describe('Overview video', () => {
       await smoothClick(page, addOutputButton);
 
       const outputModal = page.getByRole('heading', {
-        name: /add new output destination/i,
+        name: /add.*output destination/i,
       });
       await expect(outputModal).toBeVisible({ timeout: 10_000 });
       await smoothFill(
