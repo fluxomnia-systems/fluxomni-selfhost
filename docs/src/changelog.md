@@ -74,7 +74,7 @@ Artifact storage, playlists, and route workspaces now share durable media-librar
 
 Route workspace panels, playlist controls, diagnostics, route cards, and sidebar telemetry are tighter and less repetitive. Completed one-shot and sequential playlist items stay marked as played without blocking replay or playlist clearing.
 
-### Public Automation Metadata
+### Public Automation Metadata (v0.13.0)
 
 `@fluxomni/api-client@0.13.0` is the pinned API client for this release. The self-host docs carry the matching GraphQL schema hash, automation recipes, LLM metadata, and installer version aliases for `v26.2.4` and `v0.13.0`.
 
