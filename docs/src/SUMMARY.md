@@ -29,6 +29,8 @@
 - [Configuration](getting-started/configuration.md)
   - [Reverse Proxy & TLS](getting-started/reverse-proxy.md)
   - [Private Access & Tunnels](getting-started/private-access.md)
+- [Upgrade to 26.3.2](getting-started/upgrade-26.3.2.md)
+- [Server Sizing](getting-started/sizing.md)
 - [Monitoring](getting-started/monitoring.md)
 - [Backup & Restore](getting-started/backup.md)
 - [Troubleshooting](getting-started/troubleshooting.md)

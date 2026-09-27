@@ -4,6 +4,32 @@ Operator-facing highlights from recent Fluxomni Studio releases.
 
 The changelog is editorial release copy. Use `release-manifest.json` as the factual inventory for dates, module versions, images, and API client refs, but write the latest changelog entry by hand so it reads as operator-facing release notes instead of generated metadata.
 
+## v26.3.2 - 27 September 2026
+
+This release reduces repeated control-plane and idle media-node work, bounds artifact catalog requests, and makes output startup status reflect media progress. See the [upgrade guide](getting-started/upgrade-26.3.2.md) for deployment and API changes.
+
+### Control-Plane Responsiveness
+
+SQLite persistence runs behind bounded work queues, and slow node delivery is isolated from other nodes. Route updates copy less unrelated state, while artifact metadata probes have concurrency and time limits. Delivery receipts remain attached to work already in flight so a newer update does not misreport an earlier operation's result.
+
+### Quieter Idle Routes
+
+Media nodes share immutable manifests and reuse unchanged source scans. A push route waiting for a publisher starts no FFmpeg worker. Background service activity remains, so an idle stack does not use zero CPU. The [sizing guide](getting-started/sizing.md) explains the measured costs for 1, 2, and 10 empty routes and the follow-up CPU investigation.
+
+### Bounded Artifact Libraries
+
+Library browsing now uses filtered, sorted pages, and file subscriptions target transfers, one route, or one file. Playlist metadata and route projections avoid repeated full-catalog work. **API change:** `artifacts.libraryFiles` returns a page object, and the full-catalog `artifacts` subscription is removed. Update custom queries and subscription consumers before upgrading.
+
+### Media Startup and Recovery
+
+Outputs become LIVE after FFmpeg reports positive media progress; stalled startup is bounded by a deadline. SRS is pinned to 7.0.165 to include the upstream admission-race fix. This is an upstream SRS 7 alpha build; validate your RTMP, SRT, and WebRTC workflows when upgrading.
+
+### Workload-Specific Sizing Evidence
+
+A pre-release, single-host ARM64 experiment sustained 48 RTMP copy outputs across four routes for one hour with a one-CPU/2-GiB media-container limit. This is a measured workload, not a whole-server specification or a maximum output count. See the [method, results, and limitations](getting-started/sizing.md).
+
+---
+
 ## v26.3.1 - 14 September 2026
 
 ### Source-Session Contract Upgrade

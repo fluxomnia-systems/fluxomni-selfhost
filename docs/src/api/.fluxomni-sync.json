@@ -1,5 +1,5 @@
 {
-  "coreVersion": "v0.13.0",
+  "coreVersion": "v26.3.2",
   "files": {
     "api/clients/typescript/README.md": {
       "bytes": 7057,
@@ -12,9 +12,9 @@
       "sha256": "4d9a1e15f2a4078ec8ac7c9e1ed72931bbf622647cf6866bb9709c0cd96ed282"
     },
     "api/examples/typescript/manage-playlist-artifacts-settings-fleet.ts": {
-      "bytes": 6270,
+      "bytes": 6641,
       "present": true,
-      "sha256": "60abb675027a101e6b21ee35e0368a0cb9500539e8587062c0397a7fd9fdbf92"
+      "sha256": "a3adee05febede8e5013b7c9992efe9a550cc2871d28f77487c70a093da3afa6"
     },
     "api/examples/typescript/manage-route-controls.ts": {
       "bytes": 7363,
@@ -27,9 +27,9 @@
       "sha256": "bf277ec1cefc99b06928e87786543828f2bc00aa4a243e5f7aeb2a00b4dec4fe"
     },
     "api/schema.graphql": {
-      "bytes": 90839,
+      "bytes": 105762,
       "present": true,
-      "sha256": "5bc8f7d5c4843c08ecd41165ca6d767cee45977100f880e9988d32c57dfc51ad"
+      "sha256": "0223ced103ecff840d87327eff086ae80aa0566163dce74da2eda27bcf671632"
     },
     "docs/public-api/compatibility-policy.md": {
       "bytes": 2548,
@@ -52,8 +52,8 @@
       "sha256": "42c65a41a56c4e7bbcda998d183e4242167a4d4a03932c1c68bad20b816c99f4"
     }
   },
-  "release": "v2026.05.2",
-  "resolvedSha": "b4721f6972f1de02a477b98901e2ad89adde530d",
+  "release": "v26.3.2",
+  "resolvedSha": "21ac644e7f59f98894acfbfda257c1b0c2e3f3c3",
   "schemaVersion": 2,
-  "updatedAt": "2026-05-29T16:47:53+00:00"
+  "updatedAt": "2026-09-27T15:48:21+00:00"
 }

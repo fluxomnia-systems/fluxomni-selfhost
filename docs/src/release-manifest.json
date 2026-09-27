@@ -4,7 +4,7 @@
     "docsPath": "/edge/",
     "imageTag": "edge"
   },
-  "latestStable": "v26.3.1",
+  "latestStable": "v26.3.2",
   "releases": {
     "v26.1.0": {
       "coreVersion": "v0.10.0",
@@ -125,6 +125,63 @@
       },
       "summary": "Control planes expose their active GraphQL SDL at /api/schema.graphql, with /api/sdl kept as an alias, so operators and automation tooling can discover the live API contract outside debug mode. The schema, generated operations, TypeScript client, webapp callers, Playwright helpers, and repo-owned Python control..."
     },
+    "v26.2.4": {
+      "api": {
+        "automationDocsPath": "/api/",
+        "contract": "stable",
+        "schemaPath": "api/schema.graphql",
+        "schemaSha256": "5bc8f7d5c4843c08ecd41165ca6d767cee45977100f880e9988d32c57dfc51ad",
+        "typescriptClient": "@fluxomni/api-client@0.13.0"
+      },
+      "coreCommit": "b4721f6972f1de02a477b98901e2ad89adde530d",
+      "coreVersion": "v0.13.0",
+      "docsStablePath": "/",
+      "docsVersionPath": "/v26.2.4/",
+      "highlights": [
+        {
+          "area": "Public GraphQL automation now uses Route and Artifacts vocabulary with a session-aware `@fluxomni/api-client` transport",
+          "description": "Control planes expose their active GraphQL SDL at /api/schema.graphql, with /api/sdl kept as an alias, so operators and automation tooling can discover the live API contract outside debug mode. The schema, generated operations, TypeScript client, webapp callers, Playwright helpers, and repo-owned Python control...",
+          "title": "Public GraphQL automation now uses Route and Artifacts vocabulary with a session-aware `@fluxomni/api-client` transport"
+        },
+        {
+          "area": "Adds output origin-audio selection so each destination can keep program audio, choose a track or channel, or drop origin audio before mix-ins are applied",
+          "description": "The GraphQL schema, runtime manifest transport, media-node FFmpeg planning, output editor, and output rows now share the same backend-owned selection contract, while audio metadata continues to come from the existing stream-statistics media profile.",
+          "title": "Adds output origin-audio selection so each destination can keep program audio, choose a track or channel, or drop origin audio before mix-ins are applied"
+        },
+        {
+          "area": "Artifact storage, playlists, and route workspaces now share durable media-library policy and baseline-aware playback",
+          "description": "Playlist routes can schedule one-shot sequential starts, teach or enforce route baseline media profiles, reject incompatible live or playlist sources before they reach the media node, and surface baseline mismatch details through Attention and route workspace issue affordances. Route workspaces now follow...",
+          "title": "Artifact storage, playlists, and route workspaces now share durable media-library policy and baseline-aware playback"
+        },
+        {
+          "area": "Route baseline media profiles are now configurable and can be learned from real media",
+          "description": "Settings exposes editable media-profile presets for route compatibility checks, while route workspaces can adopt observed source profiles, clear baselines only when route media is empty, and show compact baseline context in route headers and cards. Playlist insertion now teaches a fresh route from the first valid...",
+          "title": "Route baseline media profiles are now configurable and can be learned from real media"
+        },
+        {
+          "area": "Fluxomni now publishes a standalone frontend image and richer live-route diagnostics alongside the split runtime images",
+          "description": "ghcr.io/fluxomnia-systems/fluxomni-frontend is a first-class release artifact, with CI deciding whether backend images, frontend images, or all three need rebuilding. Dev and production deploy flows accept FLUXOMNIFRONTENDIMAGE, route /api and /files back to the compatible control plane, and keep the embedded...",
+          "title": "Fluxomni now publishes a standalone frontend image and richer live-route diagnostics alongside the split runtime images"
+        },
+        {
+          "area": "Route workspace panels now use tighter, more consistent operator UI: compact diagnostics, unified panel typography, a cleaner monitor waiting state, deduplicated routing/output headings, split input/output ownership for playlist-focused workspaces, and quieter sidebar route-host telemetry copy",
+          "description": "Playlist surfaces now use compact scheduled-start controls with locale-aware labels, clearer empty-state transport affordances, less repetitive player metadata, scheduled-route badges on home cards, replayable completed queue rows with a neutral Played chip, and a backend playback-history split so completed...",
+          "title": "Route workspace panels now use tighter, more consistent operator UI: compact diagnostics, unified panel typography, a cleaner monitor waiting state, deduplicated routing/output headings, split input/output ownership for playlist-focused workspaces, and quieter sidebar route-host telemetry copy"
+        }
+      ],
+      "images": {
+        "controlPlane": "ghcr.io/fluxomnia-systems/fluxomni-control-plane:v0.13.0",
+        "frontend": "ghcr.io/fluxomnia-systems/fluxomni-frontend:v0.13.0",
+        "mediaNode": "ghcr.io/fluxomnia-systems/fluxomni-media-node:v0.13.0"
+      },
+      "releasedAt": "2026-05-29",
+      "selfhostRef": "v26.2.4",
+      "source": {
+        "coreTag": "v0.13.0",
+        "generatedFrom": "b4721f697"
+      },
+      "summary": "Control planes expose their active GraphQL SDL at /api/schema.graphql, with /api/sdl kept as an alias, so operators and automation tooling can discover the live API contract outside debug mode. The schema, generated operations, TypeScript client, webapp callers, Playwright helpers, and repo-owned Python control..."
+    },
     "v26.3.1": {
       "api": {
         "automationDocsPath": "/api/",
@@ -182,62 +239,62 @@
       },
       "summary": "Source-session contract upgrade, recoverable WebSocket connections, WebRTC program playback with route authorization, media-node compatibility versioning, hardened API boundaries, reliable live takeover, and atomic state persistence."
     },
-    "v26.2.4": {
+    "v26.3.2": {
       "api": {
         "automationDocsPath": "/api/",
         "contract": "stable",
         "schemaPath": "api/schema.graphql",
-        "schemaSha256": "5bc8f7d5c4843c08ecd41165ca6d767cee45977100f880e9988d32c57dfc51ad",
-        "typescriptClient": "@fluxomni/api-client@0.13.0"
+        "schemaSha256": "0223ced103ecff840d87327eff086ae80aa0566163dce74da2eda27bcf671632",
+        "typescriptClient": "@fluxomni/api-client@26.3.2"
       },
-      "coreCommit": "b4721f6972f1de02a477b98901e2ad89adde530d",
-      "coreVersion": "v0.13.0",
+      "coreCommit": "21ac644e7f59f98894acfbfda257c1b0c2e3f3c3",
+      "coreVersion": "v26.3.2",
       "docsStablePath": "/",
-      "docsVersionPath": "/v26.2.4/",
+      "docsVersionPath": "/v26.3.2/",
       "highlights": [
         {
-          "area": "Public GraphQL automation now uses Route and Artifacts vocabulary with a session-aware `@fluxomni/api-client` transport",
-          "description": "Control planes expose their active GraphQL SDL at /api/schema.graphql, with /api/sdl kept as an alias, so operators and automation tooling can discover the live API contract outside debug mode. The schema, generated operations, TypeScript client, webapp callers, Playwright helpers, and repo-owned Python control...",
-          "title": "Public GraphQL automation now uses Route and Artifacts vocabulary with a session-aware `@fluxomni/api-client` transport"
+          "area": "Faster, paginated artifact libraries",
+          "description": "Browse large libraries, file pickers and recording lists in bounded pages. Search, tags, compatibility and sorting apply across the full catalog before paging; filtered queries and batched reference lookups avoid work for unrelated files.",
+          "title": "Faster, paginated artifact libraries"
         },
         {
-          "area": "Adds output origin-audio selection so each destination can keep program audio, choose a track or channel, or drop origin audio before mix-ins are applied",
-          "description": "The GraphQL schema, runtime manifest transport, media-node FFmpeg planning, output editor, and output rows now share the same backend-owned selection contract, while audio metadata continues to come from the existing stream-statistics media profile.",
-          "title": "Adds output origin-audio selection so each destination can keep program audio, choose a track or channel, or drop origin audio before mix-ins are applied"
+          "area": "Lower-cost live updates and navigation",
+          "description": "Stream active or failed transfers and files referenced by the open route instead of repeatedly broadcasting completed libraries. Batch playlist metadata and history, reuse route projections, and coalesce current-file updates. Navigation releases unused subscriptions, and hidden or closed workspaces stop progress...",
+          "title": "Lower-cost live updates and navigation"
         },
         {
-          "area": "Artifact storage, playlists, and route workspaces now share durable media-library policy and baseline-aware playback",
-          "description": "Playlist routes can schedule one-shot sequential starts, teach or enforce route baseline media profiles, reject incompatible live or playlist sources before they reach the media node, and surface baseline mismatch details through Attention and route workspace issue affordances. Route workspaces now follow...",
-          "title": "Artifact storage, playlists, and route workspaces now share durable media-library policy and baseline-aware playback"
+          "area": "Contributor checks and release reliability",
+          "description": "Validate repository GraphQL consumers against the checked-in schema, including scoped file subscriptions, and preserve the canonical Playwright ownership decision. GitHub Actions use native Node.js 24 actions; manual diagnostics use uv run and retain readable failure artifacts.",
+          "title": "Contributor checks and release reliability"
         },
         {
-          "area": "Route baseline media profiles are now configurable and can be learned from real media",
-          "description": "Settings exposes editable media-profile presets for route compatibility checks, while route workspaces can adopt observed source profiles, clear baselines only when route media is empty, and show compact baseline context in route headers and cards. Playlist insertion now teaches a fresh route from the first valid...",
-          "title": "Route baseline media profiles are now configurable and can be learned from real media"
+          "area": "Responsive control plane under persistence pressure",
+          "description": "Isolate SQLite operations behind bounded admission and restrict mutation copies to the affected domains. Heartbeat freshness and host telemetry remain responsive during database contention; pending work is bounded, overload is explicit, and durable changes still commit before publication. Required download and...",
+          "title": "Responsive control plane under persistence pressure"
         },
         {
-          "area": "Fluxomni now publishes a standalone frontend image and richer live-route diagnostics alongside the split runtime images",
-          "description": "ghcr.io/fluxomnia-systems/fluxomni-frontend is a first-class release artifact, with CI deciding whether backend images, frontend images, or all three need rebuilding. Dev and production deploy flows accept FLUXOMNIFRONTENDIMAGE, route /api and /files back to the compatible control plane, and keep the embedded...",
-          "title": "Fluxomni now publishes a standalone frontend image and richer live-route diagnostics alongside the split runtime images"
+          "area": "Preserve in-flight delivery outcomes",
+          "description": "Only pending execution plans are marked superseded when newer work arrives. Active requests retain their success or failure result, including when a newer plan replaces a failed attempt's retry, so batch callers cannot mistake hidden delivery failures for success.",
+          "title": "Preserve in-flight delivery outcomes"
         },
         {
-          "area": "Route workspace panels now use tighter, more consistent operator UI: compact diagnostics, unified panel typography, a cleaner monitor waiting state, deduplicated routing/output headings, split input/output ownership for playlist-focused workspaces, and quieter sidebar route-host telemetry copy",
-          "description": "Playlist surfaces now use compact scheduled-start controls with locale-aware labels, clearer empty-state transport affordances, less repetitive player metadata, scheduled-route badges on home cards, replayable completed queue rows with a neutral Played chip, and a backend playback-history split so completed...",
-          "title": "Route workspace panels now use tighter, more consistent operator UI: compact diagnostics, unified panel typography, a cleaner monitor waiting state, deduplicated routing/output headings, split input/output ownership for playlist-focused workspaces, and quieter sidebar route-host telemetry copy"
+          "area": "Verified deployment and recovery",
+          "description": "Verify GraphQL, fresh node heartbeats, disposable RTMP/HLS media flow and the public frontend before declaring rollout success. Restart media nodes sequentially with bounded readiness deadlines. Preserve exact previous images, host configuration, symlinked assets and a consistent SQLite snapshot; explicit recovery...",
+          "title": "Verified deployment and recovery"
         }
       ],
       "images": {
-        "controlPlane": "ghcr.io/fluxomnia-systems/fluxomni-control-plane:v0.13.0",
-        "frontend": "ghcr.io/fluxomnia-systems/fluxomni-frontend:v0.13.0",
-        "mediaNode": "ghcr.io/fluxomnia-systems/fluxomni-media-node:v0.13.0"
+        "controlPlane": "ghcr.io/fluxomnia-systems/fluxomni-control-plane:v26.3.2",
+        "frontend": "ghcr.io/fluxomnia-systems/fluxomni-frontend:v26.3.2",
+        "mediaNode": "ghcr.io/fluxomnia-systems/fluxomni-media-node:v26.3.2"
       },
-      "releasedAt": "2026-05-29",
-      "selfhostRef": "v26.2.4",
+      "releasedAt": "2026-09-27",
+      "selfhostRef": "v26.3.2",
       "source": {
-        "coreTag": "v0.13.0",
-        "generatedFrom": "b4721f697"
+        "coreTag": "v26.3.2",
+        "generatedFrom": "21ac644e"
       },
-      "summary": "Control planes expose their active GraphQL SDL at /api/schema.graphql, with /api/sdl kept as an alias, so operators and automation tooling can discover the live API contract outside debug mode. The schema, generated operations, TypeScript client, webapp callers, Playwright helpers, and repo-owned Python control..."
+      "summary": "Browse large libraries, file pickers and recording lists in bounded pages. Search, tags, compatibility and sorting apply across the full catalog before paging; filtered queries and batched reference lookups avoid work for unrelated files."
     }
   },
   "schemaVersion": 1

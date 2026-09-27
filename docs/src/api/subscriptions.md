@@ -42,8 +42,29 @@ Use subscriptions to observe the same workflow state documented by queries:
 - `allRoutes`
 - `routeWithParent`
 - `output`
+- `fileTransfers`
+- `routeFiles(routeId: ...)`
+- `file(fileId: ...)`
 - `currentlyPlayingFile`
 - `info`
 - `mediaNodes`
 
 Runtime or diagnostic subscriptions can help troubleshooting, but they are not the durable desired-state contract.
+
+## Scoped File Updates
+
+In 26.3.2, the full-catalog `artifacts` subscription is removed. Use a paginated query for library browsing, `fileTransfers` for active or failed downloads, or a route/file subscription for a focused consumer.
+
+```graphql
+subscription RouteFiles($routeId: RouteId!) {
+  routeFiles(routeId: $routeId) { fileId state }
+}
+```
+
+```graphql
+subscription FileState($fileId: FileId!) {
+  file(fileId: $fileId) { fileId state }
+}
+```
+
+A single-file result can be null. Route subscriptions require visibility of that route. Release subscriptions when leaving their scope; accumulated inactive consumers still cost server work. See the [upgrade guide](../getting-started/upgrade-26.3.2.md#api-changes) for pagination and migration details.

@@ -356,9 +356,22 @@ type ArtifactsMutation {
 
 type ArtifactsQuery {
 	"""
-	Returns reusable library files with derived route references and artifact metadata.
+	Returns a bounded page of library files; filters apply to the whole catalog.
 	"""
-	libraryFiles(filter: LibraryFileFilter): [LibraryFile!]!
+	libraryFiles(		filter: LibraryFileFilter,
+		"""
+		Page size, from 1 to 200; defaults to 50.
+		"""
+		first: Int! = 50,
+		"""
+		Opaque continuation token from endCursor; omit for the first page.
+		"""
+		after: String,
+		"""
+		Whole-catalog ordering; reset the cursor when changing it.
+		"""
+		sort: LibraryFileSort! = NAME
+	): LibraryFilePage!
 	"""
 	Returns one reusable library file by id with artifact metadata.
 	"""
@@ -866,6 +879,14 @@ type FleetMediaNode {
 	"""
 	version: String
 	"""
+	Monotonic media-node wire contract version advertised at registration.
+	"""
+	contractVersion: Int!
+	"""
+	Skew of the node's contract version relative to the control plane.
+	"""
+	contractVersionSkew: MediaNodeContractVersionSkew!
+	"""
 	File artifacts currently present in the node-local cache.
 	"""
 	cachedFileIds: [FileId!]!
@@ -1248,6 +1269,196 @@ enum HealthIssueSeverity {
 }
 
 """
+Operator-facing import preview action.
+"""
+enum ImportPreviewAction {
+	"""
+	Entity will be created.
+	"""
+	CREATE
+	"""
+	Entity will be updated.
+	"""
+	UPDATE
+	"""
+	Entity will remain unchanged.
+	"""
+	UNCHANGED
+	"""
+	Entity will be removed.
+	"""
+	REMOVE
+}
+
+"""
+Source or output change in an import preview.
+"""
+type ImportPreviewItemChange {
+	"""
+	Operation that would be applied to this item.
+	"""
+	action: ImportPreviewAction!
+	"""
+	Severity level assigned to this item change.
+	"""
+	severity: ImportPreviewSeverity!
+	"""
+	Operator-facing label for the changed item.
+	"""
+	label: String!
+	"""
+	Previous operator-facing value, when one exists.
+	"""
+	before: String
+	"""
+	New operator-facing value, when one exists.
+	"""
+	after: String
+}
+
+"""
+Import preview warning or error message.
+"""
+type ImportPreviewMessage {
+	"""
+	Severity level assigned to this preview message.
+	"""
+	severity: ImportPreviewSeverity!
+	"""
+	Operator-facing preview message text.
+	"""
+	message: String!
+}
+
+"""
+Playlist count change in an import preview.
+"""
+type ImportPreviewPlaylistChange {
+	"""
+	Operation that would be applied to playlist membership.
+	"""
+	action: ImportPreviewAction!
+	"""
+	Severity level assigned to the playlist change.
+	"""
+	severity: ImportPreviewSeverity!
+	"""
+	Number of playlist files before the import.
+	"""
+	beforeCount: Int!
+	"""
+	Number of playlist files after the import.
+	"""
+	afterCount: Int!
+}
+
+"""
+Route-level import preview change.
+"""
+type ImportPreviewRouteChange {
+	"""
+	Existing route identity when the preview item targets a persisted route.
+	"""
+	routeId: RouteId
+	"""
+	Operator-facing route label or key.
+	"""
+	label: String!
+	"""
+	Operation that would be applied to the route.
+	"""
+	action: ImportPreviewAction!
+	"""
+	Highest severity among changes for this route.
+	"""
+	severity: ImportPreviewSeverity!
+	"""
+	Route metadata changes, including owner, pinning, baseline, and enabled state.
+	"""
+	metadataChanges: [ImportPreviewItemChange!]!
+	"""
+	Route source changes.
+	"""
+	sourceChanges: [ImportPreviewItemChange!]!
+	"""
+	Route output changes.
+	"""
+	outputChanges: [ImportPreviewItemChange!]!
+	"""
+	Playlist file-count change, when playlist membership changes.
+	"""
+	playlistChange: ImportPreviewPlaylistChange
+	"""
+	Route-scoped warnings that should be reviewed before applying.
+	"""
+	warnings: [ImportPreviewMessage!]!
+}
+
+"""
+Operator-facing import preview severity.
+"""
+enum ImportPreviewSeverity {
+	"""
+	Safe change such as create, unchanged, or label-only update.
+	"""
+	SAFE
+	"""
+	Risky change that should be reviewed before applying.
+	"""
+	WARNING
+	"""
+	Destructive or invalid change that requires explicit confirmation.
+	"""
+	DANGER
+}
+
+"""
+Aggregate import preview counts.
+"""
+type ImportPreviewSummary {
+	"""
+	Routes that would be created by the import.
+	"""
+	routesCreated: Int!
+	"""
+	Existing routes that would be updated by the import.
+	"""
+	routesUpdated: Int!
+	"""
+	Existing routes that already match the import.
+	"""
+	routesUnchanged: Int!
+	"""
+	Existing routes that would be removed by the import.
+	"""
+	routesRemoved: Int!
+	"""
+	Outputs that would be created by the import.
+	"""
+	outputsCreated: Int!
+	"""
+	Outputs that would be updated by the import.
+	"""
+	outputsUpdated: Int!
+	"""
+	Outputs that would be removed by the import.
+	"""
+	outputsRemoved: Int!
+	"""
+	Number of warning-level preview messages.
+	"""
+	warnings: Int!
+	"""
+	Number of danger-level preview messages.
+	"""
+	errors: Int!
+	"""
+	Settings keys that would change outside route definitions.
+	"""
+	settingsChanged: [String!]!
+}
+
+"""
 Route-source health counts bucketed by `RouteSourcePresentationPhase` for a single route.
 """
 type InputHealthSummary {
@@ -1298,6 +1509,46 @@ input LibraryArtifactFilter {
 	outputId: String
 	windowStart: String
 	windowEnd: String
+	"""
+	Required artifact location.
+	"""
+	locationType: ArtifactLocationType
+	"""
+	Required lifecycle policy.
+	"""
+	lifecyclePolicy: ArtifactLifecyclePolicy
+}
+
+"""
+A whole-catalog media compatibility predicate.
+"""
+input LibraryCompatibilityFilter {
+	"""
+	Media profile against which each file is compared.
+	"""
+	profile: BaselineProfileInput!
+	"""
+	Required compatibility outcome; missing or failed probes are unknown.
+	"""
+	mode: LibraryCompatibilityMode!
+}
+
+"""
+Result of comparing file metadata with a baseline media profile.
+"""
+enum LibraryCompatibilityMode {
+	"""
+	All probed media parameters match the profile.
+	"""
+	MATCH
+	"""
+	Readable metadata differs from the profile.
+	"""
+	MISMATCH
+	"""
+	Metadata is absent or probing failed.
+	"""
+	UNKNOWN
 }
 
 type LibraryDeleteFailure {
@@ -1331,6 +1582,10 @@ input LibraryFileFilter {
 	hasReferences: Boolean
 	tagFilter: [String!]
 	artifact: LibraryArtifactFilter
+	"""
+	Filter by media compatibility with an explicit baseline profile.
+	"""
+	compatibility: LibraryCompatibilityFilter
 }
 
 """
@@ -1351,6 +1606,28 @@ type LibraryFileMutationResult {
 	libraryFile: LibraryFile
 }
 
+"""
+A bounded page of matching Library files.
+"""
+type LibraryFilePage {
+	"""
+	Rows in the requested order, limited to at most 200 files.
+	"""
+	nodes: [LibraryFile!]!
+	"""
+	Number of files matching the filters across the catalog.
+	"""
+	totalCount: Int!
+	"""
+	Whether another page exists after this page.
+	"""
+	hasNextPage: Boolean!
+	"""
+	Opaque continuation token; reset it when filters or ordering change.
+	"""
+	endCursor: String
+}
+
 type LibraryFileReference {
 	routeId: RouteId!
 	routeName: String!
@@ -1361,6 +1638,24 @@ type LibraryFileReference {
 enum LibraryFileReferenceKind {
 	PLAYLIST_ITEM
 	FILE_BACKUP_SOURCE
+}
+
+"""
+Stable ordering for Library pages, with file ID breaking equal keys.
+"""
+enum LibraryFileSort {
+	"""
+	Case-insensitive name ascending, using Unicode scalar order.
+	"""
+	NAME
+	"""
+	Creation time descending, then name ascending.
+	"""
+	DATE
+	"""
+	Source, render, transcript, recording, thumbnail, AI output, then name.
+	"""
+	KIND
 }
 
 input LibraryFileTagsInput {
@@ -1460,6 +1755,14 @@ type MediaNode {
 	"""
 	version: String
 	"""
+	Monotonic media-node wire contract version advertised at registration.
+	"""
+	contractVersion: Int!
+	"""
+	Skew of the node's contract version relative to the control plane.
+	"""
+	contractVersionSkew: MediaNodeContractVersionSkew!
+	"""
 	File artifacts currently present in the node-local cache.
 	"""
 	cachedFileIds: [FileId!]!
@@ -1505,6 +1808,28 @@ enum MediaNodeCapability {
 	Operator-usable public egress surfaces.
 	"""
 	PUBLIC_EGRESS
+}
+
+"""
+How a media node's advertised wire contract compares to the control plane.
+"""
+enum MediaNodeContractVersionSkew {
+	"""
+	Node advertises exactly the current control-plane contract version.
+	"""
+	CURRENT
+	"""
+	Node advertises an older positive contract version.
+	"""
+	OUTDATED
+	"""
+	Node advertises a newer contract version than this control plane.
+	"""
+	AHEAD
+	"""
+	Node never advertised a contract version (legacy pre-handshake).
+	"""
+	UNKNOWN
 }
 
 """
@@ -1987,6 +2312,11 @@ enum OutputPresentationPhase {
 	IDLE
 }
 
+enum OwnerResolutionMode {
+	EXACT_ID
+	USERNAME_FALLBACK
+}
+
 """
 Specific parameter difference between streams.
 """
@@ -2341,10 +2671,6 @@ type PreviewState {
 	"""
 	url: Url
 	"""
-	Backend-built RTMP playback URL for this route preview, if available.
-	"""
-	rtmpUrl: Url
-	"""
 	Current playback source for route-level previews.
 	"""
 	source: PreviewSource
@@ -2485,6 +2811,10 @@ type Route {
 	"""
 	presentation: RoutePresentation!
 	"""
+	Backend-owned route media surfaces for program and preview endpoints.
+	"""
+	mediaSurfaces: RouteMediaSurfaces!
+	"""
 	Backend-owned workspace profile and surface capabilities for this route.
 	"""
 	workspaceProfile: RouteWorkspaceProfile!
@@ -2508,6 +2838,140 @@ type Route {
 	Publish credentials (pk_ tokens) issued for this route's sources.
 	"""
 	publishCredentials: [PublishCredential!]!
+}
+
+"""
+Operator-facing consumer flow labels.
+"""
+type RouteConsumerFlow {
+	"""
+	Origin label.
+	"""
+	fromLabel: String!
+	"""
+	Destination label.
+	"""
+	toLabel: String!
+}
+
+"""
+Runtime media purpose for a consumer session.
+"""
+enum RouteConsumerPurpose {
+	"""
+	Client consuming the route program surface.
+	"""
+	PROGRAM_PLAYBACK
+	"""
+	Client consuming a source stream directly.
+	"""
+	SOURCE_PLAYBACK
+	"""
+	Client publishing a source stream.
+	"""
+	SOURCE_PUBLISH
+	"""
+	Runtime output/copy process consuming a stream.
+	"""
+	OUTPUT_COPY
+	"""
+	Purpose is unknown.
+	"""
+	UNKNOWN
+}
+
+"""
+Runtime ownership scope for a consumer session.
+"""
+enum RouteConsumerScope {
+	"""
+	Runtime-owned media plumbing.
+	"""
+	INTERNAL
+	"""
+	Operator or downstream client.
+	"""
+	EXTERNAL
+}
+
+"""
+Runtime session currently consuming a route source.
+"""
+type RouteConsumerSession {
+	"""
+	Stable runtime session identifier.
+	"""
+	id: String!
+	"""
+	Route source being consumed.
+	"""
+	sourceId: RouteSourceId!
+	"""
+	Operator-facing source label.
+	"""
+	sourceLabel: String!
+	"""
+	Source role label.
+	"""
+	sourceRole: String!
+	"""
+	Consumer access protocol label.
+	"""
+	protocol: String!
+	"""
+	Peer address reported by the runtime callback.
+	"""
+	peerIp: String
+	"""
+	Explicit runtime scope.
+	"""
+	scope: RouteConsumerScope!
+	"""
+	Explicit session purpose.
+	"""
+	purpose: RouteConsumerPurpose!
+	"""
+	Media surface represented by this row.
+	"""
+	surface: RouteConsumerSurface!
+	"""
+	Local process id associated with an internal consumer, when available.
+	"""
+	processId: String
+	"""
+	Operator-facing flow labels.
+	"""
+	flow: RouteConsumerFlow!
+	"""
+	Estimated per-session egress bitrate in kilobits per second.
+	"""
+	egressBitrateKbps: Int!
+	"""
+	Total source egress bitrate behind the estimate.
+	"""
+	sourceEgressBitrateKbps: Int!
+	"""
+	Whether this row represents estimated telemetry.
+	"""
+	estimated: Boolean!
+	"""
+	Whether the operator can disconnect this session.
+	"""
+	disconnectable: Boolean!
+}
+
+"""
+Media surface associated with a consumer session.
+"""
+enum RouteConsumerSurface {
+	"""
+	Route program/distribution surface.
+	"""
+	PROGRAM
+	"""
+	Source/direct-ingest surface.
+	"""
+	SOURCE
 }
 
 """
@@ -2576,6 +3040,124 @@ Unique identifier for a Route.
 scalar RouteId
 
 """
+One backend-owned media endpoint record.
+"""
+type RouteMediaEndpoint {
+	"""
+	Transport protocol represented by this endpoint.
+	"""
+	protocol: RouteMediaEndpointProtocol!
+	"""
+	Concrete URL when the backend can derive one.
+	"""
+	url: Url
+	"""
+	Whether this route supports the protocol in the current slice.
+	"""
+	supported: Boolean!
+	"""
+	Current readiness for playback or consumer copy actions.
+	"""
+	readiness: RouteMediaEndpointReadiness!
+	"""
+	Operator-safe reason for pending, unsupported, or error states.
+	"""
+	reason: String
+	"""
+	Whether the endpoint is valid for copy/open consumer actions.
+	"""
+	copyable: Boolean!
+	"""
+	Player strategy the client should use.
+	"""
+	playerKind: RouteMediaEndpointPlayerKind!
+}
+
+"""
+Browser/player strategy for an endpoint.
+"""
+enum RouteMediaEndpointPlayerKind {
+	"""
+	Browser playback through hls.js.
+	"""
+	HLS_JS
+	"""
+	Browser-native video playback.
+	"""
+	NATIVE_VIDEO
+	"""
+	External player required.
+	"""
+	EXTERNAL
+	"""
+	No player is available.
+	"""
+	NONE
+}
+
+"""
+Supported protocol slots for route media endpoints.
+"""
+enum RouteMediaEndpointProtocol {
+	"""
+	HLS media playlist playback.
+	"""
+	HLS
+	"""
+	RTMP playback.
+	"""
+	RTMP
+	"""
+	SRT caller playback.
+	"""
+	SRT
+	"""
+	`WebRTC` playback.
+	"""
+	WEBRTC
+}
+
+"""
+Runtime availability for one media endpoint.
+"""
+enum RouteMediaEndpointReadiness {
+	"""
+	Endpoint is currently expected to serve media.
+	"""
+	READY
+	"""
+	Endpoint is known, but runtime state is still converging.
+	"""
+	PENDING
+	"""
+	Protocol is not supported for this surface yet.
+	"""
+	UNSUPPORTED
+	"""
+	Endpoint construction or runtime state failed.
+	"""
+	ERROR
+}
+
+"""
+Top-level route media surface read model.
+"""
+type RouteMediaSurfaces {
+	"""
+	Program surface intended for Relay / Distribution.
+	"""
+	program: RouteProgramSurface!
+	"""
+	Operator monitor preview surface.
+	"""
+	preview: RoutePreviewSurface!
+	"""
+	Diagnostic source surfaces.
+	"""
+	sources: [RouteSourceMediaSurface!]!
+}
+
+"""
 Mutation operations for the public route domain.
 
 These operations require Admin or Operator role.
@@ -2601,6 +3183,21 @@ type RouteMutation {
 		ID of the Route to be disabled.
 		"""
 		id: RouteId!
+	): RouteMutationResult!
+	"""
+	Disconnects one active playback consumer from this route.
+	
+	Returns a `RouteMutationResult` with `status` set to `UPDATED`, `UNCHANGED`, or `NOT_FOUND`.
+	"""
+	disconnectRouteConsumer(
+		"""
+		ID of the Route containing the consumer session.
+		"""
+		routeId: RouteId!,
+		"""
+		Runtime session ID of the consumer to disconnect.
+		"""
+		consumerId: String!
 	): RouteMutationResult!
 	"""
 	Removes a Route by its ID.
@@ -3057,13 +3654,35 @@ enum RoutePresentationPhase {
 }
 
 """
+Operator preview surface for the route monitor.
+"""
+type RoutePreviewSurface {
+	"""
+	Whether preview playback is currently ready.
+	"""
+	ready: Boolean!
+	"""
+	Source currently backing preview playback.
+	"""
+	source: PreviewSource
+	"""
+	Monitor playback endpoint, if available.
+	"""
+	endpoint: RouteMediaEndpoint
+}
+
+"""
 Product-level program source classification for the workspace.
 """
 enum RouteProgramSourceKind {
 	"""
 	A live source feeds the route program.
 	"""
-	LIVE_INGRESS
+	LIVE_INGEST
+	"""
+	A live source feeds playback endpoints for pull consumers.
+	"""
+	RELAY_DISTRIBUTION
 	"""
 	Playlist media feeds the route program.
 	"""
@@ -3076,6 +3695,28 @@ enum RouteProgramSourceKind {
 	No narrower program source can be identified yet.
 	"""
 	UNKNOWN
+}
+
+"""
+Route program surface for Relay / Distribution.
+"""
+type RouteProgramSurface {
+	"""
+	Existing backend-owned route presentation.
+	"""
+	presentation: RoutePresentation!
+	"""
+	Program endpoints for consumer playback or copy actions.
+	"""
+	endpoints: [RouteMediaEndpoint!]!
+	"""
+	Typed Program `WebRTC` play config for the confidence player.
+	"""
+	webrtcPlay: RouteWebRtcPlayConfig!
+	"""
+	Runtime playback sessions currently consuming the route program.
+	"""
+	consumers: [RouteConsumerSession!]!
 }
 
 type RouteQuery {
@@ -3130,6 +3771,14 @@ type RouteSource {
 	Kind of this route source based on its input.
 	"""
 	kind: SourceInputKind!
+	"""
+	Fully resolved operator-facing endpoint URL for this source.
+	"""
+	endpointUrl: String
+	"""
+	Operator-safe reason why the endpoint URL is unavailable.
+	"""
+	endpointUnavailableReason: String
 	"""
 	Stream statistics for this route source.
 	"""
@@ -3238,7 +3887,7 @@ type RouteSourceLiveStream {
 	"""
 	Recent inbound source bitrate in kilobits per second.
 	"""
-	ingressBitrateKbps: Int!
+	ingestBitrateKbps: Int!
 	"""
 	Recent outbound playback bitrate in kilobits per second.
 	"""
@@ -3269,6 +3918,24 @@ enum RouteSourceLiveStreamTelemetryStatus {
 	The latest reported sample is too old to trust.
 	"""
 	STALE
+}
+
+"""
+Diagnostic media surface for one route source.
+"""
+type RouteSourceMediaSurface {
+	"""
+	Source row identity.
+	"""
+	sourceId: RouteSourceId!
+	"""
+	Source role.
+	"""
+	role: SourceRole!
+	"""
+	Diagnostic/direct source endpoints.
+	"""
+	endpoints: [RouteMediaEndpoint!]!
 }
 
 """
@@ -3413,6 +4080,32 @@ type RouteStatusSummary {
 }
 
 """
+Typed Program `WebRTC` play configuration for browser confidence playback.
+"""
+type RouteWebRtcPlayConfig {
+	"""
+	Program stream identity for SRS (`webrtc://{host}/{namespace}/playback`).
+	"""
+	streamUrl: Url
+	"""
+	Same-origin control-plane signaling path for the browser offer POST.
+	"""
+	signalingUrl: String
+	"""
+	Whether Program `WebRTC` play is supported by the current runtime contract.
+	"""
+	supported: Boolean!
+	"""
+	Current readiness for confidence playback.
+	"""
+	readiness: RouteMediaEndpointReadiness!
+	"""
+	Operator-safe reason when play is pending, unsupported, or failed.
+	"""
+	reason: String
+}
+
+"""
 Route with parent information (for nested outputs).
 """
 type RouteWithParent {
@@ -3433,7 +4126,15 @@ type RouteWorkspaceCapabilities {
 	"""
 	Live source setup and readiness surface.
 	"""
-	liveIngress: WorkspaceSurfacePolicy!
+	liveIngest: WorkspaceSurfacePolicy!
+	"""
+	Pullable playback endpoints for route distribution.
+	"""
+	playbackEndpoints: WorkspaceSurfacePolicy!
+	"""
+	Runtime consumer activity surface.
+	"""
+	consumers: WorkspaceSurfacePolicy!
 	"""
 	Playlist queue, schedule, and playout surface.
 	"""
@@ -3490,6 +4191,10 @@ enum RouteWorkspaceProfileId {
 	Published live inputs are the primary program source.
 	"""
 	LIVE_INGEST
+	"""
+	Pull-first route distribution through playback endpoints.
+	"""
+	RELAY_DISTRIBUTION
 	"""
 	Playlist media is the primary program source.
 	"""
@@ -3661,6 +4366,36 @@ type SettingsImportMutationResult {
 	Route identity targeted by a route-scoped import, when provided.
 	"""
 	routeId: RouteId
+}
+
+"""
+Dry-run import result produced without persisting state.
+"""
+type SettingsImportPreviewResult {
+	"""
+	Whether the spec can be applied without danger-level errors.
+	"""
+	valid: Boolean!
+	"""
+	Highest severity found in the preview.
+	"""
+	severity: ImportPreviewSeverity!
+	"""
+	Aggregate counts for the simulated import.
+	"""
+	summary: ImportPreviewSummary!
+	"""
+	Per-route changes found by the simulated import.
+	"""
+	routeChanges: [ImportPreviewRouteChange!]!
+	"""
+	Global warning-level messages for the preview.
+	"""
+	warnings: [ImportPreviewMessage!]!
+	"""
+	Global danger-level messages that block applying without correction.
+	"""
+	errors: [ImportPreviewMessage!]!
 }
 
 """
@@ -4231,6 +4966,7 @@ type SystemSettingsMutation {
 	* `spec` - JSON string containing the routes configuration
 	* `replace` - Indicator whether the spec should replace existing definitions
 	* `routeId` - Optional ID of a concrete Route to apply the spec to without touching other Routes
+	* `ownerResolutionMode` - How imported route owners should resolve on this instance
 	
 	Returns a `SettingsImportMutationResult` with `status` set to `UPDATED`, `UNCHANGED`, or `NOT_FOUND`.
 	"""
@@ -4246,8 +4982,36 @@ type SystemSettingsMutation {
 		"""
 		Optional ID of a concrete Route to apply the spec to without touching other Routes
 		"""
-		routeId: RouteId
+		routeId: RouteId,
+		"""
+		How imported route owners should resolve on this instance
+		"""
+		ownerResolutionMode: OwnerResolutionMode! = EXACT_ID
 	): SettingsImportMutationResult!
+	"""
+	Preview routes configuration import without persisting state.
+	
+	The preview parses the spec, applies it to an in-memory simulation using
+	the same service path as import, and returns a domain diff for review.
+	"""
+	previewImport(
+		"""
+		JSON spec to preview
+		"""
+		spec: String!,
+		"""
+		Indicator whether the spec should replace existing definitions
+		"""
+		replace: Boolean! = false,
+		"""
+		Optional ID of a concrete Route to preview without touching other Routes
+		"""
+		routeId: RouteId,
+		"""
+		How imported route owners should resolve during preview
+		"""
+		ownerResolutionMode: OwnerResolutionMode! = EXACT_ID
+	): SettingsImportPreviewResult!
 }
 
 type SystemSettingsQuery {
@@ -4411,9 +5175,13 @@ type UnifiedSubscription {
 		outputId: OutputId!
 	): Output
 	"""
-	Subscribe to artifact list changes.
+	Active and failed downloads; completed catalog rows are excluded.
 	"""
-	artifacts: [LocalFileInfo!]!
+	fileTransfers: [LocalFileInfo!]!
+	"""
+	Files referenced by one visible route's playlist and file sources.
+	"""
+	routeFiles(routeId: RouteId!): [LocalFileInfo!]!
 	"""
 	Subscribe to a specific file's state changes.
 	"""

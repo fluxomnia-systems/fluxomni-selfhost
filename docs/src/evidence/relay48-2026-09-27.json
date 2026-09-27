@@ -1,0 +1,330 @@
+{
+  "description": "Selected measurements from the September 27 pre-release ARM64 relay experiment; not a benchmark of the published v26.3.2 image digests or a production limit.",
+  "sourceCommit": "232e1bb2bd7b6513d6e7744b3e77f83ba684a596",
+  "sourceEvidenceSha256": "67eaf8cbfe953096cd989f53afb85d72586b4fbe29f9156cb763b43e5550a583",
+  "date": "2026-09-27",
+  "host": {
+    "architecture": "arm64",
+    "environment": "OrbStack Linux VM",
+    "visibleCpus": 10,
+    "approximateRamGiB": 8,
+    "sharedWithOtherContainers": true
+  },
+  "workload": {
+    "routes": 4,
+    "outputs_per_route": 12,
+    "subscribers": 2,
+    "duration_seconds": 3600,
+    "sample_seconds": 5,
+    "media_cpus": 1,
+    "media_memory_mib": 2048,
+    "topology": "single-host-containers"
+  },
+  "fixture": "looping 720p30 H.264/AAC; copy mode; RTMP; approximately 2.646 Mbit/s per output; Docker-local media traffic",
+  "images": [
+    {
+      "dockerImageId": "sha256:958b66edbf3072bef59e5fb2c509b085784f64ca65b98076e1a77d3296db063c",
+      "architecture": "arm64"
+    },
+    {
+      "dockerImageId": "sha256:793938ca47a15a9af489b307881cf282ced5ea3d2bf3dfd1041a4bacb2b7d2c7",
+      "architecture": "arm64"
+    }
+  ],
+  "mediaResourceMetrics": {
+    "sample_count": 720,
+    "memory_bytes": {
+      "count": 720,
+      "p50": 945815552.0,
+      "p95": 1046898278.4,
+      "p99": 1109175304.192,
+      "max": 1113470271.488
+    },
+    "cpu_percent": {
+      "count": 720,
+      "p50": 29.22,
+      "p95": 57.27,
+      "p99": 70.4,
+      "max": 81.99
+    }
+  },
+  "latencyMs": {
+    "read": {
+      "attempts": 720,
+      "errors": 0,
+      "timeouts": 0,
+      "censored": 0,
+      "count": 720,
+      "p50": 7.654416025616229,
+      "p95": 12.300363974645734,
+      "p99": 16.575718065723777,
+      "max": 21.280536078847945
+    },
+    "snapshot": {
+      "attempts": 720,
+      "errors": 0,
+      "timeouts": 0,
+      "censored": 0,
+      "count": 720,
+      "p50": 8.244129945524037,
+      "p95": 12.756655924022198,
+      "p99": 16.013632994145155,
+      "max": 20.767324953339994
+    },
+    "mutation": {
+      "attempts": 0,
+      "errors": 0,
+      "timeouts": 0,
+      "censored": 0,
+      "count": 0,
+      "p50": null,
+      "p95": null,
+      "p99": null,
+      "max": null
+    },
+    "convergence": {
+      "attempts": 0,
+      "errors": 0,
+      "timeouts": 0,
+      "censored": 0,
+      "count": 0,
+      "p50": null,
+      "p95": null,
+      "p99": null,
+      "max": null
+    },
+    "hls": {
+      "attempts": 720,
+      "errors": 0,
+      "timeouts": 0,
+      "censored": 0,
+      "count": 720,
+      "p50": 18.830729997716844,
+      "p95": 63.16822802182287,
+      "p99": 83.81070906762034,
+      "max": 174.57110399845988
+    }
+  },
+  "capacityContract": {
+    "status": "passed",
+    "configured_outputs": 48,
+    "progress_deadline_seconds": 10,
+    "checks": [
+      {
+        "name": "all output receivers advance without reconnects",
+        "phase": "steady",
+        "passed": true,
+        "samples": 719,
+        "minimum_samples": 5,
+        "errors_and_timeouts": 0
+      },
+      {
+        "name": "receiver sampling covers the measurement window",
+        "phase": "steady",
+        "passed": true,
+        "samples": 719,
+        "minimum_samples": 5,
+        "errors_and_timeouts": 0,
+        "max_gap_seconds": 5.600699999999961,
+        "gap_limit_seconds": 15
+      },
+      {
+        "name": "read availability and p95 <=250 ms",
+        "phase": "steady",
+        "passed": true,
+        "samples": 720,
+        "minimum_samples": 5,
+        "errors_and_timeouts": 0
+      },
+      {
+        "name": "snapshot availability and p95 <=250 ms",
+        "phase": "steady",
+        "passed": true,
+        "samples": 720,
+        "minimum_samples": 5,
+        "errors_and_timeouts": 0
+      },
+      {
+        "name": "hls availability",
+        "phase": "steady",
+        "passed": true,
+        "samples": 720,
+        "minimum_samples": 5,
+        "errors_and_timeouts": 0
+      },
+      {
+        "name": "resource_errors",
+        "phase": "steady",
+        "passed": true,
+        "samples": 719,
+        "minimum_samples": 5,
+        "errors_and_timeouts": 0
+      },
+      {
+        "name": "subscription_errors",
+        "phase": "steady",
+        "passed": true,
+        "samples": 719,
+        "minimum_samples": 5,
+        "errors_and_timeouts": 0
+      },
+      {
+        "name": "hls_unavailable_samples",
+        "phase": "steady",
+        "passed": true,
+        "samples": 719,
+        "minimum_samples": 5,
+        "errors_and_timeouts": 0
+      },
+      {
+        "name": "output_state_errors",
+        "phase": "steady",
+        "passed": true,
+        "samples": 719,
+        "minimum_samples": 5,
+        "errors_and_timeouts": 0
+      },
+      {
+        "name": "all configured routes and outputs stay live",
+        "phase": "steady",
+        "passed": true,
+        "samples": 720,
+        "minimum_samples": 5,
+        "errors_and_timeouts": 0
+      },
+      {
+        "name": "media-node-1 resource evidence",
+        "phase": "steady",
+        "passed": true,
+        "samples": 720,
+        "minimum_samples": 3,
+        "errors_and_timeouts": 0
+      },
+      {
+        "name": "control-plane resource evidence",
+        "phase": "steady",
+        "passed": true,
+        "samples": 720,
+        "minimum_samples": 3,
+        "errors_and_timeouts": 0
+      },
+      {
+        "name": "origin resource evidence",
+        "phase": "steady",
+        "passed": true,
+        "samples": 720,
+        "minimum_samples": 3,
+        "errors_and_timeouts": 0
+      },
+      {
+        "name": "sink resource evidence",
+        "phase": "steady",
+        "passed": true,
+        "samples": 720,
+        "minimum_samples": 3,
+        "errors_and_timeouts": 0
+      },
+      {
+        "name": "generator resource evidence",
+        "phase": "steady",
+        "passed": true,
+        "samples": 720,
+        "minimum_samples": 3,
+        "errors_and_timeouts": 0
+      },
+      {
+        "name": "collector resource evidence",
+        "phase": "steady",
+        "passed": true,
+        "samples": 720,
+        "minimum_samples": 3,
+        "errors_and_timeouts": 0
+      },
+      {
+        "name": "media-node-1 heartbeat freshness",
+        "phase": "steady",
+        "passed": true,
+        "samples": 720,
+        "minimum_samples": 5,
+        "errors_and_timeouts": 0
+      }
+    ],
+    "failures": [],
+    "scope": "single-host-containers; sampled RTMP receiver A/V progress, not decoded playback or a server maximum"
+  },
+  "quarterMemoryMedianMiB": [
+    997.673828125,
+    996.345703125,
+    998.4765625,
+    998.708984375
+  ],
+  "mediaContainer": {
+    "sameContainer": true,
+    "restartCountBefore": 0,
+    "restartCountAfter": 0,
+    "cgroupBefore": {
+      "memory.current": 25210880,
+      "memory.peak": 25210880,
+      "memory.max": 2147483648,
+      "memory.events": {
+        "low": 0,
+        "high": 0,
+        "max": 0,
+        "oom": 0,
+        "oom_kill": 0,
+        "oom_group_kill": 0,
+        "sock_throttled": 0
+      },
+      "cpu.max": {
+        "quota": 100000,
+        "period": 100000
+      },
+      "cpu.stat": {
+        "usage_usec": 56821,
+        "user_usec": 40586,
+        "system_usec": 16234,
+        "nice_usec": 0,
+        "nr_periods": 2,
+        "nr_throttled": 0,
+        "throttled_usec": 0,
+        "nr_bursts": 0,
+        "burst_usec": 0
+      }
+    },
+    "cgroupAfter": {
+      "memory.current": 1048498176,
+      "memory.peak": 1126096896,
+      "memory.max": 2147483648,
+      "memory.events": {
+        "low": 0,
+        "high": 0,
+        "max": 0,
+        "oom": 0,
+        "oom_kill": 0,
+        "oom_group_kill": 0,
+        "sock_throttled": 0
+      },
+      "cpu.max": {
+        "quota": 100000,
+        "period": 100000
+      },
+      "cpu.stat": {
+        "usage_usec": 1115524957,
+        "user_usec": 672916260,
+        "system_usec": 442608696,
+        "nice_usec": 0,
+        "nr_periods": 35823,
+        "nr_throttled": 4539,
+        "throttled_usec": 706979294,
+        "nr_bursts": 0,
+        "burst_usec": 0
+      }
+    }
+  },
+  "limitations": [
+    "Receiver counters do not verify decoded playback.",
+    "Physical network egress, failover, reconnect bursts, transcoding and audio mixing were not qualified.",
+    "A media-container ceiling is not a whole-host recommendation.",
+    "CPU quota throttling occurred; one steady hour does not prove recovery reserve."
+  ]
+}

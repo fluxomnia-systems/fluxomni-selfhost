@@ -1,8 +1,8 @@
 # Fluxomni Self-Host API
 
-Stable public release: v26.2.4
-Core runtime: v0.13.0
-Core API client: @fluxomni/api-client@0.13.0
+Stable public release: v26.3.2
+Core runtime: v26.3.2
+Core API client: @fluxomni/api-client@26.3.2
 GraphQL SDL: /api/schema.graphql
 Automation recipes: /api/automation-recipes.json
 

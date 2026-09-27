@@ -26,12 +26,13 @@ The web UI is included in the default install.
 This example uses the newest main-branch build and installs into `/opt/fluxomni`:
 
 ```bash
+curl -fsSL https://install.fluxomni.io | \
 FLUXOMNI_DIR=/opt/fluxomni \
 FLUXOMNI_VERSION=edge \
-  curl -fsSL https://install.fluxomni.io | bash
+  bash
 ```
 
-To pin a stable release, set `FLUXOMNI_VERSION=v26.2.4` or another public `vYY.Q.N` tag.
+To pin a stable release, set `FLUXOMNI_VERSION=v26.3.2` or another public `vYY.Q.N` tag.
 
 Use `FLUXOMNI_SELFHOST_REF` only when the config files must come from a different ref.
 
@@ -45,11 +46,12 @@ restart the stack, and restrict access with a firewall.
 Run this on the remote media server:
 
 ```bash
+curl -fsSL https://install.fluxomni.io | \
 FLUXOMNI_VERSION=edge \
 FLUXOMNI_CONTROL_PLANE_RPC_ENDPOINT=http://control.example.com:50052 \
 FLUXOMNI_CONTROL_PLANE_INTERNAL_AUTH_TOKEN=replace-with-shared-token \
 FLUXOMNI_MEDIA_NODE_PUBLIC_HOST=media2.example.com \
-  curl -fsSL https://install.fluxomni.io | bash -s -- media-node
+  bash -s -- media-node
 ```
 
 The installer writes files to `~/fluxomni-media-node`. It checks that it can reach the main Fluxomni Studio server before it starts.
@@ -71,7 +73,7 @@ Current releases use these primary operator surfaces:
 ## Manual Install
 
 ```bash
-ASSET_REF=main # or a published versioned self-host ref, for example v26.2.4
+ASSET_REF=main # or a published versioned self-host ref, for example v26.3.2
 mkdir -p ~/fluxomni
 cd ~/fluxomni
 curl -fsSL "https://raw.githubusercontent.com/fluxomnia-systems/fluxomni-selfhost/${ASSET_REF}/docker-compose.yml" -o docker-compose.yml
