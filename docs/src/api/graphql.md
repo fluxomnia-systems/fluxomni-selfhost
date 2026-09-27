@@ -48,3 +48,7 @@ curl -b "fluxomni_session=$SESSION" \
 ```
 
 Use the release-tagged `api/schema.graphql` from GitHub when pinning automation to a specific Fluxomni Studio release.
+
+## Library Pagination
+
+In 26.3.2, `artifacts.libraryFiles` returns a page object. Select its `nodes` and follow `endCursor` while `hasNextPage` is true. The default page size is 50, with a maximum of 200. See the [upgrade guide's executable query](../getting-started/upgrade-26.3.2.md#api-changes).

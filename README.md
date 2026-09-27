@@ -8,14 +8,14 @@ Fluxomni Studio runs live streams on your own server. Send one stream in. Fluxom
 
 This repo is for self-host installs. Linux and macOS are supported on x64 and ARM64. Windows is supported through WSL2 with Ubuntu.
 
-## What's New in 26.3.1
+## What's New in 26.3.2
 
-- **Source-session contract upgrade** — independent source sessions preserve verified publishers across manifest refreshes and agent recovery; upgrade control plane and media nodes together
-- **Program playback and relay** — play Program through low-latency WebRTC with HLS fallback; Relay / Distribution workspaces expose safe endpoints with route ownership enforcement
-- **Media-node compatibility versioning** — nodes advertise wire-contract versions during registration; Fleet shows compatibility status and blocks mismatched execution
-- **Reliable live takeover** — catalog sync preserves live statistics so eligible publishers don't fall back to files; preferred pulls recover automatically after primary failure
+- **More responsive control plane** — bounded persistence and independent node delivery reduce the impact of slow storage and slow media nodes
+- **Less idle route work** — unused push routes start no FFmpeg workers; media nodes reuse unchanged source state instead of repeatedly copying and scanning the catalog
+- **Larger artifact libraries** — paginated queries and scoped file subscriptions keep catalog work bounded; custom API clients need an update
+- **Clearer output readiness** — an output becomes LIVE after FFmpeg reports media progress, with a deadline for stalled startup
 
-For older versions, see the [Release Channels](#release-channels) section below.
+Read the [26.3.2 upgrade guide](docs/src/getting-started/upgrade-26.3.2.md), [release notes](docs/src/changelog.md), and [measured sizing guidance](docs/src/getting-started/sizing.md).
 
 ## Quick Install
 
@@ -48,11 +48,12 @@ curl -fsSL https://install.fluxomni.io | bash
 Use this when Fluxomni Studio already runs somewhere else and this server should only move video.
 
 ```bash
+curl -fsSL https://install.fluxomni.io | \
 FLUXOMNI_VERSION=edge \
 FLUXOMNI_CONTROL_PLANE_RPC_ENDPOINT=http://control.example.com:50052 \
 FLUXOMNI_CONTROL_PLANE_INTERNAL_AUTH_TOKEN=replace-with-shared-token \
 FLUXOMNI_MEDIA_NODE_PUBLIC_HOST=media2.example.com \
-  curl -fsSL https://install.fluxomni.io | bash -s -- media-node
+  bash -s -- media-node
 ```
 
 Set `FLUXOMNI_MEDIA_NODE_PUBLIC_HOST` to the real hostname or IP for this media server. Fluxomni Studio uses it for ingest and playback URLs.
@@ -61,20 +62,24 @@ Set `FLUXOMNI_MEDIA_NODE_PUBLIC_HOST` to the real hostname or IP for this media 
 
 ```bash
 # Install into a custom directory
+curl -fsSL https://install.fluxomni.io | \
 FLUXOMNI_DIR=/opt/fluxomni \
-  curl -fsSL https://install.fluxomni.io | bash
+  bash
 
 # Pin a specific stable release
-FLUXOMNI_VERSION=v26.3.1 \
-  curl -fsSL https://install.fluxomni.io | bash
+curl -fsSL https://install.fluxomni.io | \
+FLUXOMNI_VERSION=v26.3.2 \
+  bash
 
 # Use the newest main-branch build
+curl -fsSL https://install.fluxomni.io | \
 FLUXOMNI_VERSION=edge \
-  curl -fsSL https://install.fluxomni.io | bash
+  bash
 
 # Use a custom self-host config ref
+curl -fsSL https://install.fluxomni.io | \
 FLUXOMNI_SELFHOST_REF=my-ref \
-  curl -fsSL https://install.fluxomni.io | bash
+  bash
 ```
 
 ## What the Installer Does
@@ -112,7 +117,7 @@ The installer manages:
 | `vX.Y.Z` | Core image tag, accepted for direct image pinning |
 | `edge` | Latest successful publish from `main` |
 
-Use `latest` unless you need a pinned release or a test build. The current stable public release is `v26.3.1`. Older `vYY.Q.P` and `v0.x.y` core tags remain available for rollback.
+Use `latest` unless you need a pinned release or a test build. The current stable public release is `v26.3.2`. Older `vYY.Q.P` and `v0.x.y` core tags remain available for rollback.
 
 See the What's New section above for the latest highlights.
 

@@ -5,7 +5,7 @@
 Install it in your automation project:
 
 ```bash
-npm install @fluxomni/api-client
+npm install @fluxomni/api-client@26.3.2
 ```
 
 ## Login And Query

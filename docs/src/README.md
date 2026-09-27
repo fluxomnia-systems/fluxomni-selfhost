@@ -18,7 +18,7 @@ curl -fsSL https://install.fluxomni.io | bash
 
 By default, the installer uses the newest stable release and installs Fluxomni Studio on one server.
 
-Use `FLUXOMNI_VERSION=edge` only when you want the newest main-branch build. Use a canonical public tag like `v26.2.4` when you need a pinned stable release. Retained `v0.x.y` core tags remain available for rollback.
+Use `FLUXOMNI_VERSION=edge` only when you want the newest main-branch build. Use a canonical public tag like `v26.3.2` when you need a pinned stable release. Retained `v0.x.y` core tags remain available for rollback.
 
 To add a remote media server, run the same installer on that server with `bash -s -- media-node`.
 
@@ -31,6 +31,10 @@ Choose the next path that matches your goal:
 - **Secure a browser-accessible deployment** — [Reverse Proxy & TLS](getting-started/reverse-proxy.md) or [Private Access & Tunnels](getting-started/private-access.md)
 - **Operate routes and media nodes** — [User Guide](user-guide/overview.md)
 - **Automate an installation** — [API Automation](api/overview.md)
+
+## New in 26.3.2
+
+Read the [release notes](changelog.md) and [upgrade guide](getting-started/upgrade-26.3.2.md) before updating custom API clients. The [sizing guide](getting-started/sizing.md) separates empty routes, live inputs, and output fan-out using measured workloads.
 
 ## Documentation Sections
 

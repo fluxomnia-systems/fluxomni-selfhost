@@ -11,9 +11,9 @@
       "sha256": "4d9a1e15f2a4078ec8ac7c9e1ed72931bbf622647cf6866bb9709c0cd96ed282"
     },
     "api/examples/typescript/manage-playlist-artifacts-settings-fleet.ts": {
-      "bytes": 6270,
+      "bytes": 6641,
       "present": true,
-      "sha256": "60abb675027a101e6b21ee35e0368a0cb9500539e8587062c0397a7fd9fdbf92"
+      "sha256": "a3adee05febede8e5013b7c9992efe9a550cc2871d28f77487c70a093da3afa6"
     },
     "api/examples/typescript/manage-route-controls.ts": {
       "bytes": 7363,
@@ -26,9 +26,9 @@
       "sha256": "bf277ec1cefc99b06928e87786543828f2bc00aa4a243e5f7aeb2a00b4dec4fe"
     },
     "api/schema.graphql": {
-      "bytes": 87375,
+      "bytes": 105762,
       "present": true,
-      "sha256": "2633b6433ceee64aabff48bdc90b6a99f9a2128d7f23279457441842c5f04044"
+      "sha256": "0223ced103ecff840d87327eff086ae80aa0566163dce74da2eda27bcf671632"
     },
     "docs/public-api/compatibility-policy.md": {
       "bytes": 2548,
@@ -56,14 +56,14 @@
       "sha256": "7a80dfef4f4151a00c92f96e7a13a8f36fe28e12319783de7611b53b38b15bdd"
     },
     "lat.md/public-api.md": {
-      "bytes": 17561,
+      "bytes": 18080,
       "present": true,
-      "sha256": "8f28f3ec34a4e3eb78fa8a3605e53e7b036f6d3265e0e4580752c7a0284bd6f2"
+      "sha256": "9dc524a92257a5fa229c5d5bcfd47e0776936d8b95eb58b8609e74abd23fca01"
     }
   },
-  "repo": "https://github.com/fluxomnia-systems/fluxomni",
-  "requestedRef": "stable",
-  "resolvedSha": "6c799101cc336b624832e18664be3ed404647b0c",
+  "repo": "https://github.com/fluxomnia-systems/fluxomni.git",
+  "requestedRef": "HEAD",
+  "resolvedSha": "21ac644e7f59f98894acfbfda257c1b0c2e3f3c3",
   "schemaVersion": 1,
-  "updatedAt": "2026-05-20T21:37:45+00:00"
+  "updatedAt": "2026-09-27T15:48:21+00:00"
 }

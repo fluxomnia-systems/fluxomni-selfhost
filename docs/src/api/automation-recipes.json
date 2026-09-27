@@ -1,5 +1,5 @@
 {
-  "apiClient": "@fluxomni/api-client@0.13.0",
+  "apiClient": "@fluxomni/api-client@26.3.2",
   "recipes": [
     {
       "id": "session-raw-subscription",
@@ -22,6 +22,6 @@
       "title": "Manage playlist artifacts settings fleet"
     }
   ],
-  "release": "v26.2.4",
+  "release": "v26.3.2",
   "schemaVersion": 1
 }
