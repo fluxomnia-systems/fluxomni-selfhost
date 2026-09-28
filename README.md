@@ -146,7 +146,7 @@ If you used a custom directory or installed only a media node, run these command
 
 You can run `install.sh` again on the same install. It keeps your data and updates known `.env` keys.
 
-The current installer supplies missing media-node open-file limits even for pinned release assets and verifies the effective limit after startup. Re-download the installer to apply this fix to an existing installation; see [SRS troubleshooting](docs/src/getting-started/troubleshooting.md#srs-reports-too-few-open-files).
+For SRS open-file errors, rerun the latest installer; see [troubleshooting](docs/src/getting-started/troubleshooting.md#srs-reports-too-few-open-files).
 
 ## Advanced Installer Notes
 

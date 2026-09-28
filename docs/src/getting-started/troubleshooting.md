@@ -63,11 +63,11 @@ If it never appears, verify:
 
 ## SRS Reports Too Few Open Files
 
-An error such as `1128 exceed max open files=1024` means the media-node container's open-file limit is too low. SRS needs 1,000 connection descriptors plus 128 reserved descriptors, even before any streams connect.
+`1128 exceed max open files=1024` means the container's file limit is below SRS's startup requirement.
 
-The current installer sets missing soft and hard `nofile` limits to 65,536, including when downloading the original v26.3.2 assets. Download and rerun the current installer with your existing installation directory and mode as shown in the [upgrade guide](upgrade-26.3.2.md). This recreates containers whose configuration changed and interrupts their active streams; mounted data is retained.
+Rerun the latest installer with your existing directory and mode ([upgrade guide](upgrade-26.3.2.md)). It supplies limits of 65,536, including for v26.3.2 assets. Container recreation interrupts active streams but retains mounted data.
 
-For manual installations, add the following under the existing `media-node` service in your Compose file. Check custom overrides for conflicting limits:
+For manual installs, add this under `media-node` and check for conflicting overrides:
 
 ```yaml
     ulimits:
@@ -76,14 +76,14 @@ For manual installations, add the following under the existing `media-node` serv
         hard: 65536
 ```
 
-From the installation directory, using your usual Compose file flags, recreate and check the media node:
+From the installation directory, using your usual Compose flags:
 
 ```bash
 docker compose up -d --no-deps --force-recreate media-node
 docker compose exec media-node sh -c 'ulimit -Sn; ulimit -Hn'
 ```
 
-Both values should be `65536`. A plain container restart or changing `ulimit` in the host shell does not apply the new Compose setting to an existing container.
+Both values should be `65536`. Applying the change requires container recreation, not a restart.
 
 ## Generated URLs Use the Wrong Hostname or IP
 
