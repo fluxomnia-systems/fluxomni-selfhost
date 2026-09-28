@@ -41,6 +41,10 @@ elif name == "hostname":
 elif name == "nc":
     pass
 elif name == "docker":
+    version_fixture = Path(os.environ["TEST_ASSETS"]) / "compose-version.txt"
+    if args == ["compose", "version", "--short"] and version_fixture.exists():
+        print(version_fixture.read_text())
+        sys.exit(0)
     if args[:2] in (["compose", "config"], ["compose", "version"]):
         sys.exit(subprocess.run([os.environ["REAL_DOCKER"], *args]).returncode)
     if args == ["info"] or args[:2] == ["compose", "pull"]:
@@ -95,7 +99,8 @@ else:
 # @lat: [[installation#Installer regression coverage]]
 @pytest.mark.parametrize("target,asset", [("full", "docker-compose.yml"), ("media-node", "docker-compose.media-node.yml")])
 @pytest.mark.parametrize("limits", [None, {"nproc": 2048}, {"nofile": {"soft": 131072, "hard": 131072}}])
-def test_installs_and_reruns_preserve_data_and_supply_file_limits(installation, target, asset, limits):
+@pytest.mark.parametrize("mapping_style", ["block", "flow", "alias"])
+def test_installs_and_reruns_preserve_data_and_supply_file_limits(installation, target, asset, limits, mapping_style):
     assets, destination, run = installation
     source = assets / asset
     config = yaml.safe_load(source.read_text())
@@ -104,13 +109,22 @@ def test_installs_and_reruns_preserve_data_and_supply_file_limits(installation, 
         media.pop("ulimits")  # Shape of the published v26.3.2 assets.
     else:
         media["ulimits"] = limits
-    source.write_text(yaml.safe_dump(config, sort_keys=False))
+    if mapping_style == "alias" and limits is not None:
+        config = {"x-limits": limits, **config}
+    source.write_text(yaml.safe_dump(config, sort_keys=False, default_flow_style=None if mapping_style == "flow" else False))
+    original_assets = source.read_bytes()
     first = run(target)
     assert first.returncode == 0, first.stdout + first.stderr
     started = json.loads((destination / "started.json").read_text())
     expected = {"nofile": {"soft": 65536, "hard": 65536}, **(limits or {})}
     assert started["services"]["media-node"]["ulimits"] == expected
     assert ("control-plane" in started["services"]) == (target == "full")
+    assert (destination / "compose.release.yml").read_bytes() == original_assets
+    media_service = started["services"]["media-node"]
+    assert media_service["image"].endswith(":v26.3.2")
+    assert any(volume["type"] == "bind" and volume["source"] == str(destination / "data") for volume in media_service["volumes"])
+    with (destination / ".env").open("a") as env_file:
+        env_file.write("ENV_FILE_SENTINEL=loaded\n")
     env_before = (destination / ".env").read_text()
     (destination / "data/state.db").write_bytes(b"existing database sentinel")
     override = destination / "docker-compose.override.yml"
@@ -124,6 +138,7 @@ def test_installs_and_reruns_preserve_data_and_supply_file_limits(installation, 
     started = json.loads((destination / "started.json").read_text())
     assert started["services"]["media-node"]["ulimits"] == expected
     assert started["services"]["media-node"]["environment"]["OPERATOR_SETTING"] == "retained"
+    assert started["services"]["media-node"]["environment"]["ENV_FILE_SENTINEL"] == "loaded"
 
 
 # @lat: [[installation#Effective limit verification]]
@@ -144,3 +159,17 @@ def test_operator_override_with_insufficient_limit_fails_installation(installati
 def test_manual_deployment_assets_include_file_limits(asset):
     config = yaml.safe_load((ROOT / asset).read_text())
     assert config["services"]["media-node"]["ulimits"]["nofile"] == {"soft": 65536, "hard": 65536}
+
+
+# @lat: [[installation#Compose version requirement]]
+def test_unsupported_compose_leaves_existing_installation_untouched(installation):
+    assets, destination, run = installation
+    (assets / "compose-version.txt").write_text("v2.19.1")
+    destination.mkdir()
+    compose = destination / "docker-compose.yml"
+    compose.write_text("existing compose sentinel")
+    result = run("full")
+    assert result.returncode != 0
+    assert "Docker Compose 2.20.0 or newer" in result.stdout
+    assert compose.read_text() == "existing compose sentinel"
+    assert not (destination / "started.json").exists()

@@ -766,39 +766,26 @@ assert_install_assets_match_target() {
 # @lat: [[installation#Media-node file limits]]
 ensure_media_node_file_limits() {
   local compose_file="$1"
-  local updated_file
-  updated_file="$(mktemp "${compose_file}.XXXXXX")"
+  local install_dir
+  install_dir="$(dirname "$compose_file")"
 
-  # Published assets use two-space service indentation. Fill missing defaults
-  # even when installing an immutable release tag; retain explicit asset limits.
-  # Compose overrides are separate files and are never rewritten here.
-  if ! awk '
-    FNR == 1 { in_media = 0 }
-    /^  [^[:space:]]/ { in_media = ($0 ~ /^  media-node:/) }
-    FNR == NR {
-      if (in_media && /^    ulimits:/) has_limits = 1
-      if (in_media && /^      nofile:/) has_nofile = 1
-      next
-    }
-    {
-      print
-      if (in_media && !has_limits && /^  media-node:/) {
-        print "    ulimits:"
-        print "      nofile:"
-        print "        soft: 65536"
-        print "        hard: 65536"
-      } else if (in_media && !has_nofile && /^    ulimits:[[:space:]]*$/) {
-        print "      nofile:"
-        print "        soft: 65536"
-        print "        hard: 65536"
-      }
-    }
-  ' "$compose_file" "$compose_file" > "$updated_file"; then
-    rm -f "$updated_file"
-    return 1
-  fi
-  cat "$updated_file" > "$compose_file"
-  rm -f "$updated_file"
+  # Let Compose merge defaults beneath the original YAML, including flow maps
+  # and aliases. Keep interpolation and relative paths intact for future runs.
+  mv "$compose_file" "${install_dir}/compose.release.yml"
+  cat > "${install_dir}/compose.defaults.yml" <<'YAML'
+services:
+  media-node:
+    ulimits:
+      nofile:
+        soft: 65536
+        hard: 65536
+YAML
+  cat > "$compose_file" <<'YAML'
+include:
+  - path:
+      - compose.defaults.yml
+      - compose.release.yml
+YAML
 }
 
 verify_media_node_file_limit() {
@@ -1002,8 +989,9 @@ fi
 REPO_RAW="$(resolve_repo_raw)"
 COMPOSE_ASSET="$(compose_asset_name)"
 
-if ! "${DOCKER_CMD[@]}" compose version >/dev/null 2>&1; then
-  echo "Error: Docker Compose v2 is required."
+if ! "${DOCKER_CMD[@]}" compose version --short 2>/dev/null |
+  awk -F. '{ sub(/^v/, "", $1); if ($1 > 2 || ($1 == 2 && $2 >= 20)) supported = 1 } END { exit !supported }'; then
+  echo "Error: Docker Compose 2.20.0 or newer is required."
   echo "Install instructions: https://docs.docker.com/compose/install/"
   exit 1
 fi

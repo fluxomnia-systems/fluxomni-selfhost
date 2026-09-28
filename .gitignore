@@ -7,6 +7,7 @@
 .pi/tasks/
 __pycache__
 .pytest_cache/
+lat.md/.cache/
 
 # Local runtime data
 data/
