@@ -763,6 +763,54 @@ assert_install_assets_match_target() {
   fi
 }
 
+# @lat: [[installation#Media-node file limits]]
+ensure_media_node_file_limits() {
+  local compose_file="$1"
+  local updated_file
+  updated_file="$(mktemp "${compose_file}.XXXXXX")"
+
+  # Published assets use two-space service indentation. Fill missing defaults
+  # even when installing an immutable release tag; retain explicit asset limits.
+  # Compose overrides are separate files and are never rewritten here.
+  if ! awk '
+    FNR == 1 { in_media = 0 }
+    /^  [^[:space:]]/ { in_media = ($0 ~ /^  media-node:/) }
+    FNR == NR {
+      if (in_media && /^    ulimits:/) has_limits = 1
+      if (in_media && /^      nofile:/) has_nofile = 1
+      next
+    }
+    {
+      print
+      if (in_media && !has_limits && /^  media-node:/) {
+        print "    ulimits:"
+        print "      nofile:"
+        print "        soft: 65536"
+        print "        hard: 65536"
+      } else if (in_media && !has_nofile && /^    ulimits:[[:space:]]*$/) {
+        print "      nofile:"
+        print "        soft: 65536"
+        print "        hard: 65536"
+      }
+    }
+  ' "$compose_file" "$compose_file" > "$updated_file"; then
+    rm -f "$updated_file"
+    return 1
+  fi
+  cat "$updated_file" > "$compose_file"
+  rm -f "$updated_file"
+}
+
+verify_media_node_file_limit() {
+  # SRS reserves 128 descriptors in addition to max_connections=1000.
+  # shellcheck disable=SC2016 # Evaluate ulimit inside the container.
+  if ! "${DOCKER_CMD[@]}" compose exec -T media-node sh -c 'limit=$(ulimit -Sn); [ "$limit" = unlimited ] || [ "$limit" -ge 1128 ]'; then
+    echo "Error: media-node requires at least 1128 open files for SRS." >&2
+    echo "Set media-node ulimits.nofile soft/hard to 65536 in Compose, check overrides, and recreate the container." >&2
+    return 1
+  fi
+}
+
 compose_services() {
   "${DOCKER_CMD[@]}" compose config --services
 }
@@ -925,6 +973,7 @@ echo "Installing Fluxomni Studio (${FLUXOMNI_INSTALL_TARGET}) to ${FLUXOMNI_DIR}
 
 validate_install_target
 require_cmd curl
+require_cmd awk
 
 if [ "$WITH_INITIAL_UPGRADE" = "1" ]; then
   echo "Running initial system upgrade..."
@@ -967,6 +1016,7 @@ download_asset ".env.example" "${FLUXOMNI_DIR}/.env.example"
 download_asset "doctor.sh" "${FLUXOMNI_DIR}/doctor.sh"
 chmod +x "${FLUXOMNI_DIR}/doctor.sh"
 assert_install_assets_match_target "${FLUXOMNI_DIR}/docker-compose.yml" "${FLUXOMNI_DIR}/.env.example"
+ensure_media_node_file_limits "${FLUXOMNI_DIR}/docker-compose.yml"
 
 ENV_FILE="${CANDIDATE_ENV_FILE}"
 HOST_IP="$(detect_host_ip)"
@@ -1176,6 +1226,7 @@ fi
 echo "Pulling images and starting containers..."
 "${DOCKER_CMD[@]}" compose pull
 "${DOCKER_CMD[@]}" compose up -d --remove-orphans
+verify_media_node_file_limit
 
 CONTROL_PLANE_CONTAINER_NAME="${REQUESTED_CONTROL_PLANE_CONTAINER_NAME:-$(read_env_file_value "FLUXOMNI_CONTROL_PLANE_CONTAINER_NAME" .env)}"
 MEDIA_NODE_CONTAINER_NAME="${REQUESTED_MEDIA_NODE_CONTAINER_NAME:-$(read_env_file_value "FLUXOMNI_MEDIA_NODE_CONTAINER_NAME" .env)}"

@@ -146,6 +146,8 @@ If you used a custom directory or installed only a media node, run these command
 
 You can run `install.sh` again on the same install. It keeps your data and updates known `.env` keys.
 
+The current installer supplies missing media-node open-file limits even for pinned release assets and verifies the effective limit after startup. Re-download the installer to apply this fix to an existing installation; see [SRS troubleshooting](docs/src/getting-started/troubleshooting.md#srs-reports-too-few-open-files).
+
 ## Advanced Installer Notes
 
 - If `FLUXOMNI_VERSION` is pinned, the installer tries the matching self-host files first. Stable public pins fail loudly when matching assets are missing after release sync.

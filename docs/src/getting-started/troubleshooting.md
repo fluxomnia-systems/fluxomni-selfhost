@@ -61,6 +61,30 @@ If it never appears, verify:
 - `FLUXOMNI_MEDIA_NODE_PUBLIC_HOST` and `FLUXOMNI_MEDIA_NODE_ENDPOINT` point back to the actual media-node host and published gRPC port.
 - Any firewall between hosts allows TCP `50052` to the control-plane and the published media-node gRPC port back to the node when remote operators or services need it.
 
+## SRS Reports Too Few Open Files
+
+An error such as `1128 exceed max open files=1024` means the media-node container's open-file limit is too low. SRS needs 1,000 connection descriptors plus 128 reserved descriptors, even before any streams connect.
+
+The current installer sets missing soft and hard `nofile` limits to 65,536, including when downloading the original v26.3.2 assets. Download and rerun the current installer with your existing installation directory and mode as shown in the [upgrade guide](upgrade-26.3.2.md). This recreates containers whose configuration changed and interrupts their active streams; mounted data is retained.
+
+For manual installations, add the following under the existing `media-node` service in your Compose file. Check custom overrides for conflicting limits:
+
+```yaml
+    ulimits:
+      nofile:
+        soft: 65536
+        hard: 65536
+```
+
+From the installation directory, using your usual Compose file flags, recreate and check the media node:
+
+```bash
+docker compose up -d --no-deps --force-recreate media-node
+docker compose exec media-node sh -c 'ulimit -Sn; ulimit -Hn'
+```
+
+Both values should be `65536`. A plain container restart or changing `ulimit` in the host shell does not apply the new Compose setting to an existing container.
+
 ## Generated URLs Use the Wrong Hostname or IP
 
 If the UI shows RTMP, HLS, SRT, or WebRTC URLs with a private IP, Docker hostname, or old domain, update these values in `.env` and restart the stack:

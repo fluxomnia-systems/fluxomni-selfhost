@@ -6,6 +6,7 @@
 # Pi local task state
 .pi/tasks/
 __pycache__
+.pytest_cache/
 
 # Local runtime data
 data/

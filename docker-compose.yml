@@ -35,6 +35,10 @@ services:
       - com.centurylinklabs.watchtower.enable=true
 
   media-node:
+    ulimits:
+      nofile:
+        soft: 65536
+        hard: 65536
     image: ${FLUXOMNI_MEDIA_NODE_IMAGE:-ghcr.io/fluxomnia-systems/fluxomni-media-node}:${FLUXOMNI_VERSION:-latest}
     container_name: ${FLUXOMNI_MEDIA_NODE_CONTAINER_NAME:-fluxomni-media-node}
     depends_on:
