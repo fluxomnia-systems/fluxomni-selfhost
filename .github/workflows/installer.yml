@@ -1,0 +1,38 @@
+name: Installer
+
+on:
+  workflow_dispatch:
+  pull_request:
+    paths:
+      - install.sh
+      - docker-compose*.yml
+      - .env.example
+      - tests/**
+      - scripts/requirements-test.txt
+      - .github/workflows/installer.yml
+  push:
+    branches: [main]
+    paths:
+      - install.sh
+      - docker-compose*.yml
+      - .env.example
+      - tests/**
+      - scripts/requirements-test.txt
+      - .github/workflows/installer.yml
+
+permissions:
+  contents: read
+
+jobs:
+  installer:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v6
+      - uses: astral-sh/setup-uv@v7
+      - name: Check installer syntax
+        run: |
+          bash -n install.sh
+          shellcheck --severity=warning install.sh
+      - name: Test fresh installs and upgrades
+        run: uv run --no-project --with-requirements scripts/requirements-test.txt pytest -q tests

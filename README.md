@@ -146,11 +146,14 @@ If you used a custom directory or installed only a media node, run these command
 
 You can run `install.sh` again on the same install. It keeps your data and updates known `.env` keys.
 
+For SRS open-file errors, rerun the latest installer; see [troubleshooting](docs/src/getting-started/troubleshooting.md#srs-reports-too-few-open-files).
+
 ## Advanced Installer Notes
 
 - If `FLUXOMNI_VERSION` is pinned, the installer tries the matching self-host files first. Stable public pins fail loudly when matching assets are missing after release sync.
 - Use `FLUXOMNI_SELFHOST_REF` to force a self-host asset ref.
 - Use `FLUXOMNI_REPO_RAW` to use a custom raw asset base.
+- The installer requires Compose 2.20+ and writes `docker-compose.yml`, `compose.defaults.yml`, and `compose.release.yml`. Keep them together; put customizations in `docker-compose.override.yml`.
 - Use `FLUXOMNI_FRONTEND_IMAGE`, `FLUXOMNI_CONTROL_PLANE_IMAGE`, and `FLUXOMNI_MEDIA_NODE_IMAGE` only when you publish your own images.
 
 Useful standalone media-node overrides:

@@ -9,7 +9,7 @@ Get Fluxomni Studio running in minutes. Fluxomni Studio runs live streams on you
 - `curl`
 - `root` or `sudo` access on Debian/Ubuntu if Docker is not already installed
 
-If Docker is already installed, the installer uses it. Manual installs and non-Debian hosts need Docker Engine with Docker Compose v2.
+If Docker is already installed, the installer uses it. Installer deployments require Docker Compose 2.20 or newer; manual installs need Docker Engine with Compose v2.
 
 ## One-line Install
 

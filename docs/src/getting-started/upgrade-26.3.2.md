@@ -29,6 +29,8 @@ FLUXOMNI_DIR="$HOME/fluxomni-media-node" FLUXOMNI_VERSION=v26.3.2 \
 
 Keep the existing control-plane endpoint, internal authentication token, node identity, and public host settings. Review custom Compose overrides before restarting. The installer preserves data and updates its managed files; it is not a zero-downtime rolling-upgrade guarantee. Manual deployments should update all three image tags to `v26.3.2`, pull them, and recreate the services using their existing configuration.
 
+The latest installer fixes missing SRS file limits in v26.3.2 assets; updating images alone does not. For manual installs, see [troubleshooting](troubleshooting.md#srs-reports-too-few-open-files).
+
 ## API changes
 
 `artifacts.libraryFiles` now returns `nodes`, `totalCount`, `hasNextPage`, and `endCursor`. The default page contains up to 50 files; `first` accepts 1–200. Filters and sorting apply across the catalog, not only the current page.

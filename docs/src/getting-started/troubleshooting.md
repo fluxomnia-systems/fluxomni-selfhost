@@ -61,6 +61,30 @@ If it never appears, verify:
 - `FLUXOMNI_MEDIA_NODE_PUBLIC_HOST` and `FLUXOMNI_MEDIA_NODE_ENDPOINT` point back to the actual media-node host and published gRPC port.
 - Any firewall between hosts allows TCP `50052` to the control-plane and the published media-node gRPC port back to the node when remote operators or services need it.
 
+## SRS Reports Too Few Open Files
+
+`1128 exceed max open files=1024` means the container's file limit is below SRS's startup requirement.
+
+Rerun the latest installer with your existing directory and mode ([upgrade guide](upgrade-26.3.2.md)). It supplies limits of 65,536, including for v26.3.2 assets. Container recreation interrupts active streams but retains mounted data.
+
+For manual installs, add this under `media-node` and check for conflicting overrides:
+
+```yaml
+    ulimits:
+      nofile:
+        soft: 65536
+        hard: 65536
+```
+
+From the installation directory, using your usual Compose flags:
+
+```bash
+docker compose up -d --no-deps --force-recreate media-node
+docker compose exec media-node sh -c 'ulimit -Sn; ulimit -Hn'
+```
+
+Both values should be `65536`. Applying the change requires container recreation, not a restart.
+
 ## Generated URLs Use the Wrong Hostname or IP
 
 If the UI shows RTMP, HLS, SRT, or WebRTC URLs with a private IP, Docker hostname, or old domain, update these values in `.env` and restart the stack:
