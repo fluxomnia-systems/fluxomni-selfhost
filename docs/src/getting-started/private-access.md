@@ -112,9 +112,10 @@ Tailscale Serve can also forward the plain HTTP UI and TCP media ports when dire
 # UI over plain HTTP, useful when http://<tailnet-name>/routes times out.
 sudo tailscale serve --bg --http=80 http://127.0.0.1:80
 
-# RTMP and HLS/WebRTC TCP over the tailnet.
+# RTMP and HLS and WHIP signaling TCP over the tailnet.
 sudo tailscale serve --bg --tcp=1935 tcp://127.0.0.1:1935
 sudo tailscale serve --bg --tcp=8000 tcp://127.0.0.1:8000
+sudo tailscale serve --bg --tcp=8003 tcp://127.0.0.1:8003
 
 # Control-plane gRPC for standalone media-node registration.
 sudo tailscale serve --bg --tcp=50052 tcp://127.0.0.1:50052
@@ -124,7 +125,7 @@ tailscale serve status
 # sudo tailscale serve reset
 ```
 
-This is a Tailscale/Docker forwarding workaround, not a Fluxomni Studio setting. Tailscale Serve does not forward SRT UDP (`10080/udp`), so use RTMP for private tailnet ingest/testing when you rely on Serve forwarding.
+This is a Tailscale/Docker forwarding workaround, not a Fluxomni Studio setting. Tailscale Serve does not forward SRT UDP (`10080/udp`) or RTC media UDP (`8000/udp`), so use RTMP for private tailnet ingest/testing when you rely on Serve forwarding.
 
 If you use a Tailscale Service, pass its TailVIP to `--service` so the stable service name, not the physical node name, owns the forwarded ports:
 
@@ -134,6 +135,7 @@ SERVICE_TAILVIP=100.x.y.z # from Tailscale service settings
 sudo tailscale serve --bg --service="$SERVICE_TAILVIP" --http=80 http://127.0.0.1:80
 sudo tailscale serve --bg --service="$SERVICE_TAILVIP" --tcp=1935 tcp://127.0.0.1:1935
 sudo tailscale serve --bg --service="$SERVICE_TAILVIP" --tcp=8000 tcp://127.0.0.1:8000
+sudo tailscale serve --bg --service="$SERVICE_TAILVIP" --tcp=8003 tcp://127.0.0.1:8003
 sudo tailscale serve --bg --service="$SERVICE_TAILVIP" --tcp=50052 tcp://127.0.0.1:50052
 ```
 
@@ -155,6 +157,7 @@ Use Tailscale ACLs to restrict who can reach the Fluxomni Studio host. This exam
         "tag:fluxomni:443",
         "tag:fluxomni:1935",
         "tag:fluxomni:8000",
+        "tag:fluxomni:8003",
         "tag:fluxomni:10080"
       ]
     }
@@ -171,7 +174,7 @@ Then authenticate the server with the tag:
 sudo tailscale up --ssh --advertise-tags=tag:fluxomni
 ```
 
-If Tailscale SSH works but `http://<tailscale-host>/routes` times out, check the ACLs first. SSH can be allowed while HTTP, RTMP, HLS, and SRT are still blocked; permit at least ports `80`, `1935`, `8000`, and `10080` to the Fluxomni Studio host or tag. If grants already allow the traffic and the ports still time out, use the Tailscale Serve commands above to forward UI, RTMP, and HLS/WebRTC TCP from localhost.
+If Tailscale SSH works but `http://<tailscale-host>/routes` times out, check the ACLs first. SSH can be allowed while HTTP, RTMP, HLS, and SRT are still blocked; permit at least ports `80`, `1935`, `8000`, `8003`, and `10080` to the Fluxomni Studio host or tag. If grants already allow the traffic and the ports still time out, use the Tailscale Serve commands above to forward UI, RTMP, and HLS and WHIP signaling TCP from localhost.
 
 ## Remote Media Node over Tailscale
 
@@ -229,12 +232,14 @@ For distributed Fluxomni Studio over Tailscale, keep these TCP paths reachable:
 | Frontend host | `80/tcp` | Control Surface UI/API |
 | Control-plane host | `50052/tcp` | Control-plane gRPC for media-node registration |
 | Control-plane host with local media node | `1935/tcp` | RTMP ingest |
-| Control-plane host with local media node | `8000/tcp` | HLS/WebRTC TCP path |
+| Control-plane host with local media node | `8000/tcp` | HLS playback |
+| Control-plane host with local media node | `8003/tcp` | WHIP signaling |
 | Standalone media-node host | `50051/tcp` | Media-node gRPC called by the control plane |
 | Standalone media-node host | `1935/tcp` | RTMP ingest |
-| Standalone media-node host | `8000/tcp` | HLS/WebRTC TCP path |
+| Standalone media-node host | `8000/tcp` | HLS playback |
+| Standalone media-node host | `8003/tcp` | WHIP signaling |
 
-Tailscale Serve forwards TCP only. It does not cover SRT UDP (`10080/udp`).
+Tailscale Serve forwards TCP only. It does not cover SRT UDP (`10080/udp`) or RTC media UDP (`8000/udp`). WHIP signaling forwarding requires TCP `8003`, but WebRTC also needs direct UDP reachability to the advertised ICE candidate.
 
 ## Cloudflare Tunnel
 

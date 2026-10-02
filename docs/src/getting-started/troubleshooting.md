@@ -143,7 +143,7 @@ If Docker fails with an error like:
 failed to bind port 0.0.0.0:80/tcp: Error starting userland proxy: listen tcp4 0.0.0.0:80: bind: address already in use
 ```
 
-Another service on the host is already listening on that port. This is common on NAS devices (Synology, QNAP, Unraid) where the built-in web UI occupies port 80. Port 8000 (HLS/WebRTC) is another frequent conflict — Synology DSM uses it as an alternative HTTP port, and media apps like Plex or Jellyfin may also bind to it.
+Another service on the host is already listening on that port. This is common on NAS devices (Synology, QNAP, Unraid) where the built-in web UI occupies port 80. Port 8000 (HLS TCP / RTC UDP) is another frequent conflict — Synology DSM uses it as an alternative HTTP port, and media apps like Plex or Jellyfin may also bind to it.
 
 **Fix:** override the conflicting host ports in `.env` without editing `docker-compose.yml`:
 
