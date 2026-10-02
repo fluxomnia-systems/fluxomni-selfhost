@@ -29,11 +29,43 @@ The first persisted user becomes an Admin and enables named-user sign-in. Keep t
 
 After Fluxomni Studio assigns the route to its media node, open the route workspace. In **Routing**, use the copy control in the input lane to copy the generated RTMP publish address.
 
-## Configure your encoder
+## Publish from OBS
 
-Paste the generated publish address into your encoder's RTMP publishing setting. Do not share this address publicly: it lets a publisher send media to this route.
+Open the route workspace and copy the publish URL from **Sources → Live Sources**. For SRT or WebRTC, create the route with that protocol and **Accept publish** instead of RTMP. Use the copied URL, including any nonstandard port; an unavailable URL means the route or media node is not ready to accept that protocol.
 
-Start publishing from the encoder. The route header and the playback monitor use **LIVE** when the route is actively carrying media. If the publish address is unavailable, wait for the route to receive a media-node assignment. If the route does not become live after publishing, confirm that TCP port 1935 is reachable and use [Troubleshooting](troubleshooting.md).
+### RTMP
+
+In OBS, open **Settings → Stream** and select **Service: Custom**. Split the copied URL at the final `/`:
+
+- Copied URL: `rtmp://media.example.com:1935/live/pk_example`
+- **Server**: `rtmp://media.example.com:1935/live`
+- **Stream Key**: `pk_example`
+
+Use H.264 video and AAC audio, select **Apply**, then **Start Streaming**.
+
+### SRT
+
+In **Settings → Stream**, select **Service: Custom**, paste the **complete copied SRT URL** into **Server**, and leave **Stream Key** empty. Keep the `streamid` and any latency or passphrase parameters intact. OBS connects in caller mode by default.
+
+Use H.264 video and AAC audio, select **Apply**, then **Start Streaming**. See the official [OBS SRT streaming guide](https://obsproject.com/kb/srt-protocol-streaming-guide).
+
+### WebRTC / WHIP
+
+In **Settings → Stream**, select **Service: WHIP** and paste the **complete copied HTTP WHIP URL** into **Server**, for example:
+
+```text
+http://media.example.com:8003/rtc/v1/whip/?app=live&stream=pk_example
+```
+
+Leave **Bearer Token** empty: Fluxomni includes the publishing credential in the URL's `stream` parameter. Use H.264 video and Opus audio, select **Apply**, then **Start Streaming**.
+
+Choose **WHIP**, not **Custom**: pasting this HTTP URL into Custom leaves OBS using RTMP and causes a handshake failure. If WHIP is missing, use an OBS build that supports it. See the official [OBS WHIP streaming guide](https://obsproject.com/kb/whip-streaming-guide).
+
+WHIP requires a media node with public gateway support. Both signaling TCP (default `8003`) and RTC media UDP (default `8000`) must be reachable from OBS, and the node must advertise a reachable ICE candidate. Use your deployment's actual ports; reaching the web UI alone does not establish media connectivity.
+
+### Confirm publishing
+
+The source should become live and the route monitor should show your media. If OBS reports **Failed to connect to server**, check the selected service, copied address, and reachable protocol ports. Keep publish URLs private: they authorize publishing to the route. For other encoders, use the same copied endpoint with the matching publishing protocol. See [Troubleshooting](troubleshooting.md).
 
 ## Add one output
 
