@@ -40,6 +40,11 @@ elif name == "hostname":
     print("127.0.0.1")
 elif name == "nc":
     pass
+elif name == "sudo":
+    sys.exit(subprocess.run(args).returncode)
+elif name in ("apt-get", "ufw", "firewall-cmd", "systemctl"):
+    with open(Path(os.environ["TEST_ASSETS"]).parent / "firewall.jsonl", "a") as log:
+        log.write(json.dumps([name, *args]) + "\n")
 elif name == "docker":
     version_fixture = Path(os.environ["TEST_ASSETS"]) / "compose-version.txt"
     if args == ["compose", "version", "--short"] and version_fixture.exists():
@@ -69,7 +74,7 @@ else:
     raise AssertionError(name)
 ''')
     stub.chmod(0o755)
-    for name in ("docker", "curl", "hostname", "nc"):
+    for name in ("docker", "curl", "hostname", "nc", "sudo", "apt-get", "ufw", "firewall-cmd", "systemctl"):
         (commands / name).symlink_to(stub)
     destination = tmp_path / "installation"
     env = {
@@ -90,8 +95,8 @@ else:
         "WITH_FIREWALLD": "0",
     }
 
-    def run(target):
-        return subprocess.run(["bash", str(ROOT / "install.sh"), target], cwd=tmp_path, env=env, text=True, capture_output=True, timeout=30)
+    def run(target, overrides=None):
+        return subprocess.run(["bash", str(ROOT / "install.sh"), target], cwd=tmp_path, env={**env, **(overrides or {})}, text=True, capture_output=True, timeout=30)
 
     return assets, destination, run
 
@@ -173,3 +178,40 @@ def test_unsupported_compose_leaves_existing_installation_untouched(installation
     assert "Docker Compose 2.20.0 or newer" in result.stdout
     assert compose.read_text() == "existing compose sentinel"
     assert not (destination / "started.json").exists()
+
+
+# @lat: [[installation#Publisher Port Regression Coverage]]
+@pytest.mark.parametrize("target", ["full", "media-node"])
+@pytest.mark.parametrize("firewall", ["WITH_UFW", "WITH_FIREWALLD"])
+def test_publish_ports_preserve_mapping_advertisement_and_firewall(installation, target, firewall):
+    assets, destination, run = installation
+    result = run(target)
+    assert result.returncode == 0, result.stdout + result.stderr
+    media = json.loads((destination / "started.json").read_text())["services"]["media-node"]
+    assert media["environment"]["FLUXOMNI_MEDIA_NODE_WHIP_PORT"] == "8003"
+    assert media["environment"]["FLUXOMNI_SRS_RTC_PORT"] == "8000"
+    assert any(p["target"] == 8003 and p["published"] == "8003" and p["protocol"] == "tcp" for p in media["ports"])
+    custom = {
+        "FLUXOMNI_MEDIA_NODE_RTMP_PORT": "21387",
+        "FLUXOMNI_MEDIA_NODE_HLS_PORT": "22387",
+        "FLUXOMNI_MEDIA_NODE_SRT_PORT": "25387",
+        "FLUXOMNI_MEDIA_NODE_WHIP_PORT": "27387",
+        "FLUXOMNI_SRS_RTC_PORT": "26387",
+        "FLUXOMNI_SRS_CANDIDATE": "media.example.com",
+        firewall: "1",
+    }
+    result = run(target, custom)
+    assert result.returncode == 0, result.stdout + result.stderr
+    # No overrides: saved port and candidate choices must survive reinstall.
+    result = run(target, {firewall: "1"})
+    assert result.returncode == 0, result.stdout + result.stderr
+    media = json.loads((destination / "started.json").read_text())["services"]["media-node"]
+    for name, value in custom.items():
+        if name.startswith("FLUXOMNI_"):
+            assert media["environment"][name] == value
+    for host, container, protocol in [(21387, 1935, "tcp"), (22387, 8000, "tcp"), (25387, 10080, "udp"), (27387, 8003, "tcp"), (26387, 26387, "udp")]:
+        assert any(p["target"] == container and p["published"] == str(host) and p["protocol"] == protocol for p in media["ports"])
+    commands = [json.loads(line) for line in (assets.parent / "firewall.jsonl").read_text().splitlines()]
+    for port, protocol in [(21387, "tcp"), (22387, "tcp"), (27387, "tcp"), (25387, "udp"), (26387, "udp")]:
+        expected = ["ufw", "allow", f"{port}/{protocol}"] if firewall == "WITH_UFW" else ["firewall-cmd", "--zone=public", "--permanent", f"--add-port={port}/{protocol}"]
+        assert commands.count(expected) == 2

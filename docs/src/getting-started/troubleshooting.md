@@ -40,7 +40,7 @@ Common causes:
 - Docker daemon is not running.
 - The selected image tag does not exist.
 - `FLUXOMNI_CONTROL_PLANE_INTERNAL_AUTH_TOKEN` is missing from `.env` after a manual install.
-- The configured frontend HTTP port, 1935, 8000/tcp, 8000/udp, 8081/tcp (loopback), 10080/udp, 50051/tcp, or 50052/tcp is already in use.
+- The configured frontend HTTP port, 1935, 8000/tcp, 8003/tcp, 8000/udp, 8081/tcp (loopback), 10080/udp, 50051/tcp, or 50052/tcp is already in use.
 - For standalone media-node installs, the control-plane RPC endpoint in `.env` is unreachable from the media server.
 - For standalone media-node installs, the advertised `FLUXOMNI_MEDIA_NODE_ENDPOINT` does not point back to the media server.
 
@@ -143,7 +143,7 @@ If Docker fails with an error like:
 failed to bind port 0.0.0.0:80/tcp: Error starting userland proxy: listen tcp4 0.0.0.0:80: bind: address already in use
 ```
 
-Another service on the host is already listening on that port. This is common on NAS devices (Synology, QNAP, Unraid) where the built-in web UI occupies port 80. Port 8000 (HLS/WebRTC) is another frequent conflict — Synology DSM uses it as an alternative HTTP port, and media apps like Plex or Jellyfin may also bind to it.
+Another service on the host is already listening on that port. This is common on NAS devices (Synology, QNAP, Unraid) where the built-in web UI occupies port 80. Port 8000 (HLS TCP / RTC UDP) is another frequent conflict — Synology DSM uses it as an alternative HTTP port, and media apps like Plex or Jellyfin may also bind to it.
 
 **Fix:** override the conflicting host ports in `.env` without editing `docker-compose.yml`:
 
@@ -151,8 +151,12 @@ Another service on the host is already listening on that port. This is common on
 # Change the Control Surface port from 80 to 8080
 echo 'FLUXOMNI_FRONTEND_HTTP_PORT=8080' >> .env
 
-# Change HLS/WebRTC port from 8000 to 8800 (if 8000 is also taken)
+# Change HLS TCP port from 8000 to 8800 (if 8000 is also taken)
 echo 'FLUXOMNI_MEDIA_NODE_HLS_PORT=8800' >> .env
+
+# Change WebRTC media UDP and WHIP signaling TCP independently
+echo 'FLUXOMNI_SRS_RTC_PORT=8800' >> .env
+echo 'FLUXOMNI_MEDIA_NODE_WHIP_PORT=8803' >> .env
 ```
 
 Then restart the stack:
@@ -195,7 +199,9 @@ All port mappings in `docker-compose.yml` support the same pattern — override 
 | `FLUXOMNI_FRONTEND_HTTP_PORT` | 80 | Control Surface (HTTP) |
 | `FLUXOMNI_CONTROL_PLANE_RPC_PORT` | 127.0.0.1:50052 | Control-plane gRPC |
 | `FLUXOMNI_MEDIA_NODE_RTMP_PORT` | 1935 | RTMP ingest |
-| `FLUXOMNI_MEDIA_NODE_HLS_PORT` | 8000 | HLS and WebRTC |
+| `FLUXOMNI_MEDIA_NODE_HLS_PORT` | 8000 | HLS TCP |
+| `FLUXOMNI_MEDIA_NODE_WHIP_PORT` | 8003 | WHIP signaling TCP |
+| `FLUXOMNI_SRS_RTC_PORT` | 8000 | WebRTC media UDP |
 | `FLUXOMNI_MEDIA_NODE_SRT_PORT` | 10080 | SRT ingest |
 
 ## Firewall and Port Issues
@@ -206,7 +212,9 @@ Fluxomni Studio uses both TCP and UDP ports. A common mistake is only opening TC
 | ---- | -------- | ------- |
 | 80 | TCP | Control Surface (HTTP) |
 | 1935 | TCP | RTMP ingest |
-| 8000 | TCP + UDP | HLS and WebRTC |
+| 8000 | TCP | HLS playback |
+| 8003 | TCP | WHIP signaling |
+| 8000 | UDP | WebRTC media |
 | 8081 | TCP (localhost) | SRS callback (internal) |
 | 10080 | UDP | SRT ingest |
 | 50051 | TCP | Media-node gRPC |
@@ -214,7 +222,7 @@ Fluxomni Studio uses both TCP and UDP ports. A common mistake is only opening TC
 
 SRT (port 10080) is **UDP only**. If SRT publishers cannot connect, verify that UDP traffic is allowed through your firewall or cloud security group.
 
-HLS and WebRTC (port 8000) require **both TCP and UDP**. WebRTC uses UDP for media transport.
+WHIP needs **both signaling TCP and media UDP**: by default TCP 8003 and UDP 8000. HLS uses TCP 8000 separately. If you override ports, open the matching firewall/cloud rules; changing the HLS port does not change the RTC UDP listener.
 
 ## Stream Quality Issues
 

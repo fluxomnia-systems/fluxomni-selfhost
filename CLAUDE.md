@@ -83,6 +83,8 @@ Config is env-driven via `.env` (see `.env.example`). Never commit `.env`.
 | HTTP (UI/API) | 80    | TCP      |
 | gRPC (CP)     | 127.0.0.1:50052 | TCP |
 | RTMP          | 1935  | TCP      |
-| HLS           | 8000  | TCP+UDP  |
+| HLS           | 8000  | TCP      |
+| WHIP signaling | 8003  | TCP      |
+| RTC media     | 8000  | UDP      |
 | SRT           | 10080 | UDP      |
 | SRS Callback  | 8081  | TCP (localhost only) |

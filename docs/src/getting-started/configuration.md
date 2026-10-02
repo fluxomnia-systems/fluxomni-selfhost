@@ -53,7 +53,10 @@ The installer maps canonical public pins to the matching core image tag when nat
 - `FLUXOMNI_FRONTEND_HTTP_PORT`: host HTTP port for the frontend UI and proxied API.
 - `FLUXOMNI_CONTROL_PLANE_RPC_PORT`: host gRPC port for remote media-node registration and delivery. Defaults to localhost-only; expose it deliberately when attaching external media nodes.
 - `FLUXOMNI_MEDIA_NODE_RTMP_PORT`: host RTMP ingest port.
-- `FLUXOMNI_MEDIA_NODE_HLS_PORT`: host HLS/WebRTC port.
+- `FLUXOMNI_MEDIA_NODE_HLS_PORT`: host HLS TCP port.
+- `FLUXOMNI_MEDIA_NODE_WHIP_PORT`: host WHIP signaling TCP port (default `8003`).
+- `FLUXOMNI_SRS_RTC_PORT`: WebRTC media UDP listener and host port (default `8000`), independent of HLS.
+- `FLUXOMNI_SRS_CANDIDATE`: reachable ICE candidate hostname/IP; defaults to the media-node public host when empty.
 - `FLUXOMNI_MEDIA_NODE_SRS_CALLBACK_PORT`: host loopback port for the internal SRS callback listener.
 - `FLUXOMNI_MEDIA_NODE_SRT_PORT`: host SRT UDP port.
 - `FLUXOMNI_MEDIA_NODE_GRPC_PORT`: host gRPC port for a standalone media-node.
