@@ -1,3 +1,5 @@
+# Optional preparation limits: combine with docker-compose.preparation-cgroup.yml.
+# The installer provisions the owned Linux subtree and persists this include.
 services:
   media-node:
     ulimits:
