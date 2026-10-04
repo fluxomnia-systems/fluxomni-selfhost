@@ -96,6 +96,10 @@ LEGACY_FLUXOMNI_IMAGE="${FLUXOMNI_IMAGE:-}"
 FLUXOMNI_FRONTEND_IMAGE="${FLUXOMNI_FRONTEND_IMAGE:-}"
 FLUXOMNI_CONTROL_PLANE_IMAGE="${FLUXOMNI_CONTROL_PLANE_IMAGE:-}"
 FLUXOMNI_MEDIA_NODE_IMAGE="${FLUXOMNI_MEDIA_NODE_IMAGE:-}"
+REQUESTED_PREPARATION_ENABLED="${FLUXOMNI_PREPARATION_CGROUP_ENABLED:-}"
+REQUESTED_PREPARATION_CPU="${FLUXOMNI_PREPARATION_CPU_MILLICORES:-}"
+REQUESTED_PREPARATION_MEMORY="${FLUXOMNI_PREPARATION_MEMORY_MIB:-}"
+REQUESTED_PREPARATION_TASKS="${FLUXOMNI_PREPARATION_TASKS:-}"
 REQUESTED_PUBLIC_URL="${FLUXOMNI_PUBLIC_URL:-}"
 REQUESTED_PUBLIC_HOST="${FLUXOMNI_PUBLIC_HOST:-}"
 REQUESTED_FRONTEND_HTTP_PORT="${FLUXOMNI_FRONTEND_HTTP_PORT:-}"
@@ -769,6 +773,165 @@ assert_install_assets_match_target() {
   fi
 }
 
+# @lat: [[installation#Preparation installation configuration]]
+read_preparation_budget() {
+  local key="$1" value
+  value="$(read_env_file_value "$key" "$CANDIDATE_ENV_FILE")"
+  if [ -z "$value" ] && [ -f "$CANDIDATE_ENV_FILE" ]; then
+    value="$(sed -n "s/^# SAVED_${key}=//p" "$CANDIDATE_ENV_FILE" | tail -n1)"
+  fi
+  printf '%s' "$value"
+}
+
+resolve_preparation_config() {
+  PREPARATION_ENABLED="${REQUESTED_PREPARATION_ENABLED:-$(read_env_file_value FLUXOMNI_PREPARATION_CGROUP_ENABLED "$CANDIDATE_ENV_FILE")}"
+  PREPARATION_ENABLED="${PREPARATION_ENABLED:-0}"
+  PREPARATION_CPU="${REQUESTED_PREPARATION_CPU:-$(read_preparation_budget FLUXOMNI_PREPARATION_CPU_MILLICORES)}"
+  PREPARATION_MEMORY="${REQUESTED_PREPARATION_MEMORY:-$(read_preparation_budget FLUXOMNI_PREPARATION_MEMORY_MIB)}"
+  PREPARATION_TASKS="${REQUESTED_PREPARATION_TASKS:-$(read_preparation_budget FLUXOMNI_PREPARATION_TASKS)}"
+  case "$PREPARATION_ENABLED" in
+    0|1) ;;
+    *) echo 'Error: FLUXOMNI_PREPARATION_CGROUP_ENABLED must be 0 or 1.' >&2; exit 1 ;;
+  esac
+  local value maximum label
+  for label in CPU MEMORY TASKS; do
+    case "$label" in
+      CPU) value="$PREPARATION_CPU"; maximum=256000 ;;
+      MEMORY) value="$PREPARATION_MEMORY"; maximum=1048576 ;;
+      TASKS) value="$PREPARATION_TASKS"; maximum=4194304 ;;
+    esac
+    if [ -z "$value" ] && [ "$PREPARATION_ENABLED" = 0 ]; then continue; fi
+    # Bound length before arithmetic to reject overflow and shell expressions.
+    if [[ ! "$value" =~ ^[1-9][0-9]{0,6}$ ]] || [ "$value" -gt "$maximum" ]; then
+      echo "Error: preparation ${label} requires an explicit positive integer no greater than ${maximum}." >&2
+      exit 1
+    fi
+  done
+  if [ "$PREPARATION_ENABLED" = 1 ]; then
+    preflight_preparation_host
+  fi
+}
+
+preflight_preparation_host() {
+  local endpoint info context
+  [ "$(uname -s)" = Linux ] || { echo 'Error: preparation cgroups require a Linux host.' >&2; exit 1; }
+  for tool in python3 systemctl stat; do require_cmd "$tool"; done
+  [ -x /usr/bin/python3 ] || { echo 'Error: preparation boot provisioning requires /usr/bin/python3.' >&2; exit 1; }
+  if [ -n "${DOCKER_CONTEXT:-}" ]; then
+    context="$DOCKER_CONTEXT"
+    endpoint="$("${DOCKER_CMD[@]}" context inspect "$context" --format '{{.Endpoints.docker.Host}}')"
+  elif [ -n "${DOCKER_HOST:-}" ]; then
+    endpoint="$DOCKER_HOST"
+  else
+    context="$("${DOCKER_CMD[@]}" context show)"
+    endpoint="$("${DOCKER_CMD[@]}" context inspect "$context" --format '{{.Endpoints.docker.Host}}')"
+  fi
+  [[ "$endpoint" == unix://* ]] || { echo 'Error: preparation provisioning requires a local Unix Docker socket.' >&2; exit 1; }
+  info="$("${DOCKER_CMD[@]}" info --format '{{.CgroupVersion}} {{json .SecurityOptions}}')"
+  if [[ "$info" != 2\ * || "$info" == *rootless* || "$info" == *userns* ]]; then
+    echo 'Error: preparation isolation requires rootful cgroup-v2 Docker without user namespace remapping.' >&2
+    exit 1
+  fi
+  [ "$(stat -fc %T /sys/fs/cgroup)" = cgroup2fs ] || { echo 'Error: host cgroup v2 is required.' >&2; exit 1; }
+  run_privileged systemctl show-environment >/dev/null
+}
+
+# Roll back only installer-managed configuration if validation/provisioning fails.
+# Never restore/delete operator overrides or runtime data.
+begin_config_transaction() {
+  INSTALL_BACKUP="$(mktemp -d)"
+  INSTALL_CONFIG_COMMITTED=0
+  INSTALL_MANAGED_FILES=(docker-compose.yml compose.release.yml compose.defaults.yml .env .env.example doctor.sh docker-compose.preparation-cgroup.yml preparation-cgroup.py verify-preparation-compose.py)
+  local file
+  for file in "${INSTALL_MANAGED_FILES[@]}"; do
+    if [ -e "${FLUXOMNI_DIR}/$file" ]; then cp -p "${FLUXOMNI_DIR}/$file" "$INSTALL_BACKUP/$file"; fi
+  done
+  trap finish_config_transaction EXIT
+}
+
+finish_config_transaction() {
+  local status=$? file
+  if [ "$INSTALL_CONFIG_COMMITTED" = 0 ]; then
+    for file in "${INSTALL_MANAGED_FILES[@]}"; do
+      if [ -e "$INSTALL_BACKUP/$file" ]; then
+        cp -p "$INSTALL_BACKUP/$file" "${FLUXOMNI_DIR}/$file"
+      else
+        rm -f "${FLUXOMNI_DIR}/$file"
+      fi
+    done
+  fi
+  rm -rf "$INSTALL_BACKUP"
+  return "$status"
+}
+
+write_preparation_config() {
+  upsert_env_value "$ENV_FILE" FLUXOMNI_PREPARATION_CGROUP_ENABLED "$PREPARATION_ENABLED"
+  local tmp
+  tmp="$(mktemp)"
+  # Disabled budgets are comments: env_file must not inject partial runtime
+  # configuration. Retain values for an explicit later re-enable.
+  awk '!/^(# SAVED_)?FLUXOMNI_PREPARATION_(CPU_MILLICORES|MEMORY_MIB|TASKS|CGROUP_ROOT|HOST_ROOT)=/' "$ENV_FILE" > "$tmp"
+  mv "$tmp" "$ENV_FILE"
+  if [ "$PREPARATION_ENABLED" = 1 ]; then
+    download_asset docker-compose.preparation-cgroup.yml "${FLUXOMNI_DIR}/docker-compose.preparation-cgroup.yml"
+    download_asset scripts/preparation-cgroup.py "${FLUXOMNI_DIR}/preparation-cgroup.py"
+    download_asset scripts/verify-preparation-compose.py "${FLUXOMNI_DIR}/verify-preparation-compose.py"
+    # Downloaded code is syntax checked before any privileged invocation.
+    python3 -c 'import ast,sys; [ast.parse(open(p).read()) for p in sys.argv[1:]]' "${FLUXOMNI_DIR}/preparation-cgroup.py" "${FLUXOMNI_DIR}/verify-preparation-compose.py"
+    PREPARATION_HOST_ROOT="$(run_privileged python3 "${FLUXOMNI_DIR}/preparation-cgroup.py" install "$FLUXOMNI_DIR")"
+    export FLUXOMNI_PREPARATION_HOST_ROOT="$PREPARATION_HOST_ROOT"
+    export FLUXOMNI_PREPARATION_CPU_MILLICORES="$PREPARATION_CPU"
+    export FLUXOMNI_PREPARATION_MEMORY_MIB="$PREPARATION_MEMORY"
+    export FLUXOMNI_PREPARATION_TASKS="$PREPARATION_TASKS"
+    upsert_env_value "$ENV_FILE" FLUXOMNI_PREPARATION_HOST_ROOT "$PREPARATION_HOST_ROOT"
+    upsert_env_value "$ENV_FILE" FLUXOMNI_PREPARATION_CPU_MILLICORES "$PREPARATION_CPU"
+    upsert_env_value "$ENV_FILE" FLUXOMNI_PREPARATION_MEMORY_MIB "$PREPARATION_MEMORY"
+    upsert_env_value "$ENV_FILE" FLUXOMNI_PREPARATION_TASKS "$PREPARATION_TASKS"
+    cat >> "${FLUXOMNI_DIR}/docker-compose.yml" <<'YAML'
+      - docker-compose.preparation-cgroup.yml
+YAML
+  else
+    [ -z "$PREPARATION_CPU" ] || printf '# SAVED_FLUXOMNI_PREPARATION_CPU_MILLICORES=%s\n' "$PREPARATION_CPU" >> "$ENV_FILE"
+    [ -z "$PREPARATION_MEMORY" ] || printf '# SAVED_FLUXOMNI_PREPARATION_MEMORY_MIB=%s\n' "$PREPARATION_MEMORY" >> "$ENV_FILE"
+    [ -z "$PREPARATION_TASKS" ] || printf '# SAVED_FLUXOMNI_PREPARATION_TASKS=%s\n' "$PREPARATION_TASKS" >> "$ENV_FILE"
+    unset FLUXOMNI_PREPARATION_CPU_MILLICORES FLUXOMNI_PREPARATION_MEMORY_MIB FLUXOMNI_PREPARATION_TASKS FLUXOMNI_PREPARATION_CGROUP_ROOT FLUXOMNI_PREPARATION_HOST_ROOT
+  fi
+}
+
+# @lat: [[installation#Preparation Compose enforcement]]
+verify_preparation_compose() {
+  if [ "$PREPARATION_ENABLED" = 1 ]; then
+    "${DOCKER_CMD[@]}" compose config --format json | python3 "${FLUXOMNI_DIR}/verify-preparation-compose.py" "$PREPARATION_HOST_ROOT" "$PREPARATION_CPU" "$PREPARATION_MEMORY" "$PREPARATION_TASKS"
+  elif "${DOCKER_CMD[@]}" compose config | grep -Eq '^ +FLUXOMNI_PREPARATION_(CGROUP_ROOT|CPU_MILLICORES|MEMORY_MIB|TASKS):'; then
+    echo 'Error: preparation is disabled but Compose overrides inject runtime preparation settings.' >&2
+    return 1
+  fi
+}
+
+verify_preparation_runtime() {
+  [ "$PREPARATION_ENABLED" = 1 ] || return 0
+  # The runtime exclusively writes these limits after initialization. No helper
+  # writes them. Fail if the image lacks support or initialization was rejected.
+  # shellcheck disable=SC2016
+  "${DOCKER_CMD[@]}" compose exec -T media-node sh -c '
+    root=$FLUXOMNI_PREPARATION_CGROUP_ROOT
+    [ "$(stat -fc %T "$root")" = cgroup2fs ] &&
+    [ "$(cat "$root/cpu.max")" = "$((FLUXOMNI_PREPARATION_CPU_MILLICORES * 100)) 100000" ] &&
+    [ "$(cat "$root/memory.max")" = "$((FLUXOMNI_PREPARATION_MEMORY_MIB * 1024 * 1024))" ] &&
+    [ "$(cat "$root/memory.swap.max")" = 0 ] &&
+    [ "$(cat "$root/memory.oom.group")" = 1 ] &&
+    [ "$(cat "$root/pids.max")" = "$FLUXOMNI_PREPARATION_TASKS" ]
+  ' || { echo 'Error: preparation limits were not enforced; check image support and Fleet diagnostics.' >&2; return 1; }
+  local started logs
+  started="$("${DOCKER_CMD[@]}" inspect -f '{{.State.StartedAt}}' "$MEDIA_NODE_CONTAINER_NAME")"
+  logs="$("${DOCKER_CMD[@]}" logs --since "$started" "$MEDIA_NODE_CONTAINER_NAME" 2>&1)"
+  if [[ "$logs" != *'Preparation isolation enforced'* || "$logs" == *'Preparation isolation unavailable'* ]]; then
+    echo 'Error: current media-node startup did not confirm preparation enforcement; check image support and Fleet diagnostics.' >&2
+    return 1
+  fi
+  echo "Preparation budget: ${PREPARATION_CPU} millicores, ${PREPARATION_MEMORY} MiB, ${PREPARATION_TASKS} threads"
+}
+
 # @lat: [[installation#Media-node file limits]]
 ensure_media_node_file_limits() {
   local compose_file="$1"
@@ -980,6 +1143,7 @@ install_docker_if_missing
 configure_docker_access
 
 CANDIDATE_ENV_FILE="${FLUXOMNI_DIR}/.env"
+resolve_preparation_config
 EXISTING_FLUXOMNI_VERSION="$(read_env_file_value "FLUXOMNI_VERSION" "$CANDIDATE_ENV_FILE")"
 FLUXOMNI_VERSION_REQUESTED="${REQUESTED_FLUXOMNI_VERSION:-${EXISTING_FLUXOMNI_VERSION:-latest}}"
 FLUXOMNI_VERSION="$(normalize_fluxomni_version "$FLUXOMNI_VERSION_REQUESTED")"
@@ -999,6 +1163,8 @@ if ! "${DOCKER_CMD[@]}" compose version --short 2>/dev/null |
 fi
 
 mkdir -p "${FLUXOMNI_DIR}" "${FLUXOMNI_DIR}/data/videos" "${FLUXOMNI_DIR}/data/dvr" "${FLUXOMNI_DIR}/data/srs-http"
+
+begin_config_transaction
 
 echo "Downloading deployment files..."
 download_asset "$COMPOSE_ASSET" "${FLUXOMNI_DIR}/docker-compose.yml"
@@ -1221,6 +1387,8 @@ ENVVARS
   fi
 fi
 
+write_preparation_config
+
 if [ "$WITH_FIREWALLD" = "1" ] || [ "$WITH_UFW" = "1" ]; then
   echo "Configuring firewall..."
   configure_firewall
@@ -1231,10 +1399,16 @@ touch "${FLUXOMNI_DIR}/data/state.db"
 cd "${FLUXOMNI_DIR}"
 
 assert_compose_services_match_target
+verify_preparation_compose
 
 if [ "$FLUXOMNI_INSTALL_TARGET" = "media-node" ]; then
   preflight_media_node_connectivity "$(read_env_file_value "FLUXOMNI_CONTROL_PLANE_RPC_ENDPOINT" .env)"
 fi
+
+if [ "$PREPARATION_ENABLED" = 0 ] && [ "$(read_env_file_value FLUXOMNI_PREPARATION_CGROUP_ENABLED "$INSTALL_BACKUP/.env")" = 1 ]; then
+  run_privileged python3 "${FLUXOMNI_DIR}/preparation-cgroup.py" disable "$FLUXOMNI_DIR" >/dev/null
+fi
+INSTALL_CONFIG_COMMITTED=1
 
 echo "Pulling images and starting containers..."
 "${DOCKER_CMD[@]}" compose pull
@@ -1258,6 +1432,8 @@ if [ "$FLUXOMNI_INSTALL_TARGET" = "media-node" ]; then
     print_recent_service_logs "media-node"
     exit 1
   fi
+
+  verify_preparation_runtime
 
   MEDIA_HOST="$(read_env_file_value "FLUXOMNI_MEDIA_NODE_PUBLIC_HOST" .env)"
   MEDIA_NODE_ENDPOINT="$(read_env_file_value "FLUXOMNI_MEDIA_NODE_ENDPOINT" .env)"
@@ -1291,6 +1467,8 @@ if ! wait_for_container_ready "$MEDIA_NODE_CONTAINER_NAME" "media-node"; then
   print_recent_service_logs "media-node"
   exit 1
 fi
+
+verify_preparation_runtime
 
 HOST="$(read_env_file_value "FLUXOMNI_PUBLIC_HOST" .env)"
 MEDIA_HOST="$(read_env_file_value "FLUXOMNI_MEDIA_NODE_PUBLIC_HOST" .env)"

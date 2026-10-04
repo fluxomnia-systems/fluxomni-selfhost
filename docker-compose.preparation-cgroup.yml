@@ -1,0 +1,18 @@
+# Optional offline preparation budget, shared by full and standalone node installs.
+# Use a Linux rootful local Docker daemon and provision HOST_ROOT before Compose.
+services:
+  media-node:
+    user: "0:0"
+    cgroup: host
+    environment:
+      FLUXOMNI_PREPARATION_CGROUP_ROOT: /preparation-cgroup
+      FLUXOMNI_PREPARATION_CPU_MILLICORES: ${FLUXOMNI_PREPARATION_CPU_MILLICORES:?set preparation CPU millicores}
+      FLUXOMNI_PREPARATION_MEMORY_MIB: ${FLUXOMNI_PREPARATION_MEMORY_MIB:?set preparation memory MiB}
+      FLUXOMNI_PREPARATION_TASKS: ${FLUXOMNI_PREPARATION_TASKS:?set preparation thread limit}
+    volumes:
+      - type: bind
+        source: ${FLUXOMNI_PREPARATION_HOST_ROOT:?provision the owned preparation subtree}
+        target: /preparation-cgroup
+        read_only: false
+        bind:
+          create_host_path: false

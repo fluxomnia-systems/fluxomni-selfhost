@@ -221,3 +221,7 @@ FLUXOMNI_URL=http://192.168.1.100 FLUXOMNI_ADMIN_PASSWORD=secret make screenshot
 ```
 
 See `screenshots/README.md` for the full image list and capture details.
+
+Playlist normalization can use explicit per-node preparation CPU/memory/thread budgets.
+See [preparation resource limits](docs/src/getting-started/configuration.md#offline-preparation-resource-limits)
+for installer enablement, reboot provisioning and manual Compose deployment.

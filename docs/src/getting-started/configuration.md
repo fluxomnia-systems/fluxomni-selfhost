@@ -115,3 +115,69 @@ From your install directory:
 docker compose pull
 docker compose up -d
 ```
+
+## Offline Preparation Resource Limits
+
+Each media node can have its own shared budget for playlist normalization.
+Live FFmpeg and SRS remain outside that preparation group. The Fleet node's
+Diagnostics page shows the configured budget, current usage, throttling and
+active/waiting preparation jobs.
+
+This option requires a media-node build that supports preparation cgroups,
+Linux with cgroup v2, a local rootful Docker daemon without user namespace
+remapping, systemd, Python 3 at `/usr/bin/python3`, and root/sudo access. The host must already enable
+`cpu`, `memory` and `pids` in `/sys/fs/cgroup/cgroup.subtree_control`; the installer
+does not change the host-wide controller policy. Docker Desktop, remote Docker
+contexts and rootless Docker are not supported by this option.
+
+Choose budgets for your machine; the following values are examples:
+
+```bash
+curl -fsSL https://install.fluxomni.io -o install.sh
+FLUXOMNI_PREPARATION_CGROUP_ENABLED=1 \
+FLUXOMNI_PREPARATION_CPU_MILLICORES=500 \
+FLUXOMNI_PREPARATION_MEMORY_MIB=1024 \
+FLUXOMNI_PREPARATION_TASKS=64 \
+  bash install.sh full
+```
+
+Use `media-node` instead of `full` on a standalone node, alongside its usual
+control-plane connection settings. Repeat on other node hosts with different
+budgets. `500` millicores means half of one CPU core; memory is MiB and includes
+charged page cache; tasks count threads, not just processes. Swap is disabled
+for preparation. These limits do not predict how many additional live routes
+or outputs will fit.
+
+The installer saves the values in `.env`, downloads the common
+`docker-compose.preparation-cgroup.yml` overlay and includes it in the installed
+Compose bundle. Each installation directory gets a distinct hash-named group,
+root-owned helper and boot unit. Keep installation directories stable. The unit
+recreates the group before Docker starts after reboot, including socket
+activation. No privileged media-node container or full writable cgroup mount
+is added.
+
+Installer reruns preserve budgets; an explicit environment value overrides its
+saved value. To change just CPU, rerun with
+`FLUXOMNI_PREPARATION_CPU_MILLICORES=750`. Alternatively, edit the enabled
+installation's `.env` and run `docker compose up -d` to recreate the node.
+The installer requires the current media-node startup to confirm enforcement,
+so older images cannot pass using limits left by a previous version.
+Check that Fleet reports **enforced** after recreation. CPU throttling slows
+preparation; memory/task-limit events fail the preparation request. Shared
+storage, memory bandwidth and GPU contention still need workload testing.
+
+To disable, rerun the installer with
+`FLUXOMNI_PREPARATION_CGROUP_ENABLED=0`. This removes the active overlay, disables
+the boot unit and saves budgets as comments for a later explicit re-enable.
+Changing the flag alone followed by `docker compose up` does not rebuild the
+include: use the installer for enable/disable. Disabling never kills or deletes
+the old cgroup. After a killed node, re-enabling lets the runtime recover its
+owned attempts; live/runtime Docker limits cover a separate budget.
+
+For manual deployments, provision a dedicated subtree, set
+`FLUXOMNI_PREPARATION_HOST_ROOT` and all three budgets, then combine either base
+Compose template with `docker-compose.preparation-cgroup.yml`. Do not share a
+preparation root between nodes. Provide boot-time provisioning before Docker
+restores the container. Installer-managed roots can be drained after stopping
+the node with the root-owned helper's `cleanup <installation-hash>` command;
+cleanup disables that installation's boot unit and refuses a live owner.

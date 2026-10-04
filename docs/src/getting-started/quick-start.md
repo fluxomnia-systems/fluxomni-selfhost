@@ -137,3 +137,6 @@ docker compose --profile auto-update stop watchtower
 - Use [private access and tunnels](private-access.md) for Tailscale or Cloudflare Tunnel deployments
 - Review [cloud deployment guides](../deployment/)
 - Use [troubleshooting](troubleshooting.md) if startup fails
+
+For per-node playlist normalization CPU/memory/thread budgets, see
+[Offline Preparation Resource Limits](configuration.md#offline-preparation-resource-limits).

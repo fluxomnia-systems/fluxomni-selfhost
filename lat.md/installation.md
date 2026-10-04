@@ -35,3 +35,43 @@ WHIP defaults to TCP 8003 and RTC media to UDP 8000. The RTC host mapping equals
 Installer tests verify default and customized publish port bindings, advertised ports, ICE candidates, rerun preservation, explicit override precedence, and firewall rules in both install modes.
 
 The tests use local assets and simulated commands with real Compose rendering so no real deployment or firewall mutation is needed.
+
+## Preparation installation configuration
+
+Full and standalone installs support an opt-in preparation budget with explicit CPU, memory and thread limits, persisted per installation.
+
+`FLUXOMNI_PREPARATION_CGROUP_ENABLED=1` requires all three positive integer budgets. Requests override saved values; absent overrides preserve them. Disabled budgets become comments so `env_file` never injects partial runtime options. Enable/disable requires installer regeneration of the include. Validation/provisioning failures restore only installer-managed files, never operator overrides or runtime data.
+
+## Preparation host prerequisites
+
+Preparation provisioning requires a local rootful Linux cgroup-v2 Docker daemon, systemd, Python 3 and already enabled host controllers.
+
+Docker Desktop, remote contexts, rootless daemons and user namespace remapping fail before configuration changes. The helper never enables host-wide controllers. CPU, memory and pids limits remain exclusively owned by the runtime.
+
+## Preparation group lifecycle
+
+Each canonical install directory has a hash-named group, root-owned ownership marker, helper and boot unit, supporting safe reruns and reboot recreation.
+
+Preflight requires executable `/usr/bin/python3`, matching the installed boot helper interpreter.
+
+The marker binds schema, canonical directory and exact group path. A host lock serializes operations. Unmarked roots are refused. Busy runtime directory locks permit immutable read-only checks without enumerating changing attempts. Idle roots accept only UUID attempt leaves. Provisioning preserves all limits and descendants. The boot unit orders before Docker service/socket; disabling retains the group and saved budgets. Cleanup requires the runtime lock and validates every child before killing any.
+
+## Preparation Compose enforcement
+
+The effective rendered Compose must retain host UID 0, host cgroup namespace, complete budgets and one exact writable preparation bind without path creation.
+
+Compose v2 omits false booleans from rendered JSON; an existing bind-options object with an omitted `create_host_path` means false. An absent bind-options object or explicit true is rejected.
+
+Installer overrides that weaken these properties fail before container recreation. After startup, runtime-written CPU/memory/swap/thread limits, a positive enforcement signal from the current start and isolation warnings are checked before reporting success. Retained policy files cannot prove an older image supports isolation. Fleet's enforced state remains the operator confirmation of actual runtime attachment.
+
+## Preparation installer regression coverage
+
+Installer tests cover both targets, enable/update/disable/re-enable, persisted budgets, unsupported hosts, bad overrides, failed provisioning and runtime rejection.
+
+The tests use real Compose rendering and simulated host mutation. Invalid budgets and pre-start failures retain the existing configuration and data. [[tests/test_install.py#test_preparation_enable_preserve_update_disable_reenable]] exercises the complete lifecycle.
+
+## Preparation provisioning regression coverage
+
+Provisioning tests verify ownership, root separation, live-owner reruns, reboot recreation, malformed roots and missing controllers without touching real host groups.
+
+[[tests/test_preparation_cgroup.py#test_owned_rerun_and_reboot_recreation_preserve_runtime_limits]] verifies the ownership marker and unit ordering. Real Linux validation additionally exercises the helper on a dedicated disposable subtree and checks the generated unit with systemd tooling.
