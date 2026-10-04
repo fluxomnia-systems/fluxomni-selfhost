@@ -125,7 +125,7 @@ active/waiting preparation jobs.
 
 This option requires a media-node build that supports preparation cgroups,
 Linux with cgroup v2, a local rootful Docker daemon without user namespace
-remapping, systemd, Python 3, and root/sudo access. The host must already enable
+remapping, systemd, Python 3 at `/usr/bin/python3`, and root/sudo access. The host must already enable
 `cpu`, `memory` and `pids` in `/sys/fs/cgroup/cgroup.subtree_control`; the installer
 does not change the host-wide controller policy. Docker Desktop, remote Docker
 contexts and rootless Docker are not supported by this option.

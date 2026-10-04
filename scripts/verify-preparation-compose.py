@@ -33,7 +33,9 @@ def verify(config, root, cpu, memory, tasks):
         or volumes[0].get("type") != "bind"
         or volumes[0].get("source") != root
         or volumes[0].get("read_only", False)
-        or volumes[0].get("bind", {}).get("create_host_path", True)
+        or not isinstance(volumes[0].get("bind"), dict)
+        # Compose v2 omits false booleans in its rendered JSON.
+        or volumes[0]["bind"].get("create_host_path", False)
     ):
         raise ValueError(
             "media-node needs the exact owned writable cgroup bind with create_host_path=false"

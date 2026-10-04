@@ -816,6 +816,7 @@ preflight_preparation_host() {
   local endpoint info context
   [ "$(uname -s)" = Linux ] || { echo 'Error: preparation cgroups require a Linux host.' >&2; exit 1; }
   for tool in python3 systemctl stat; do require_cmd "$tool"; done
+  [ -x /usr/bin/python3 ] || { echo 'Error: preparation boot provisioning requires /usr/bin/python3.' >&2; exit 1; }
   if [ -n "${DOCKER_CONTEXT:-}" ]; then
     context="$DOCKER_CONTEXT"
     endpoint="$("${DOCKER_CMD[@]}" context inspect "$context" --format '{{.Endpoints.docker.Host}}')"

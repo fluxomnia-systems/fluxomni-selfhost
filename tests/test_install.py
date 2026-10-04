@@ -270,7 +270,8 @@ def test_preparation_enable_preserve_update_disable_reenable(installation, targe
     mount = next(v for v in node['volumes'] if v['target'] == '/preparation-cgroup')
     assert mount['source'].startswith('/sys/fs/cgroup/fluxomni-preparation-')
     assert mount['type'] == 'bind' and not mount.get('read_only')
-    assert mount['bind']['create_host_path'] is False
+    assert isinstance(mount.get('bind'), dict)
+    assert mount['bind'].get('create_host_path', False) is False
     assert node['environment']['FLUXOMNI_PREPARATION_CGROUP_ROOT'] == '/preparation-cgroup'
     for key, value in PREPARATION.items():
         assert node['environment'][key] == value
@@ -368,3 +369,17 @@ def test_preparation_supported_to_unsupported_image_rerun_cannot_reuse_old_limit
     assert 'did not confirm preparation enforcement' in unsupported.stderr
     assert 'is ready' not in unsupported.stdout
     assert started_node(destination)['environment']['FLUXOMNI_PREPARATION_CPU_MILLICORES'] == '500'
+
+
+@pytest.mark.parametrize('bind,accepted', [({}, True), ({'create_host_path': False}, True), ({'create_host_path': True}, False), (None, False)])
+def test_preparation_rendered_bind_creation_policy(bind, accepted):
+    root = '/sys/fs/cgroup/fluxomni-preparation-owned'
+    volume = {'type': 'bind', 'source': root, 'target': '/preparation-cgroup'}
+    if bind is not None:
+        volume['bind'] = bind
+    config = {'services': {'media-node': {
+        'user': '0:0', 'cgroup': 'host', 'volumes': [volume],
+        'environment': {**{key: value for key, value in PREPARATION.items() if key != 'FLUXOMNI_PREPARATION_CGROUP_ENABLED'}, 'FLUXOMNI_PREPARATION_CGROUP_ROOT': '/preparation-cgroup'},
+    }}}
+    result = subprocess.run([sys.executable, str(ROOT / 'scripts/verify-preparation-compose.py'), root, '500', '1024', '64'], input=json.dumps(config), text=True, capture_output=True)
+    assert (result.returncode == 0) is accepted, result.stderr
