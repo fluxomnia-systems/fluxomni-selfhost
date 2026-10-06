@@ -6,15 +6,15 @@ execution shutdown is an operator assertion, not inferred from liveness.
 """
 
 import argparse
-from contextlib import closing
 import json
 import os
-from pathlib import Path, PurePosixPath
 import sqlite3
 import subprocess
 import sys
 import tempfile
 import time
+from contextlib import closing
+from pathlib import Path, PurePosixPath
 
 
 class UpgradeError(Exception):
@@ -111,7 +111,7 @@ class Docker:
     def run(self, *args, timeout=60):
         try:
             result = subprocess.run(
-                [*self.prefix, *args], capture_output=True, text=True, timeout=timeout,
+                [*self.prefix, *args], capture_output=True, text=True, timeout=timeout, check=False,
             )
         except (OSError, subprocess.TimeoutExpired) as error:
             raise UpgradeError("Docker maintenance operation unavailable or timed out") from error
