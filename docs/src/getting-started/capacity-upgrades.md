@@ -30,7 +30,7 @@ Stop every external execution container before initializing the control-plane le
 
    `--confirm-execution-stopped` asserts that every external predecessor execution container and updater is stopped. The installer controls its local node; it cannot inspect other hosts. For a custom directory, also provide `FLUXOMNI_DIR`.
 
-3. The installer stops local execution and controllers, starts the upgraded control plane alone with a temporary acknowledgement, verifies its authenticated admission API, stops it and verifies persisted ledger initialization. It recreates the control plane without that acknowledgement and verifies again before starting local media and the frontend. Watchtower stays stopped.
+3. The installer stops the local updater before downloading deployment assets or pulling images. It then stops local execution and controllers, starts the upgraded control plane alone with a temporary acknowledgement, verifies its authenticated admission API, stops it and verifies persisted ledger initialization. It recreates the control plane without that acknowledgement and verifies again before starting local media and the frontend. Watchtower stays stopped.
 
 4. Update each already stopped standalone node only after the full-stack step succeeds:
 

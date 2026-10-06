@@ -90,7 +90,7 @@ The helper reads the actual control-plane bind-mounted SQLite through a WAL-awar
 
 ## Capacity upgrade service ordering
 
-Full-stack upgrades stop automatic controllers and verify control-plane initialization before restarting execution.
+Maintenance stops local automatic updates before replacing assets or pulling candidates. Full-stack upgrades verify control-plane initialization before restarting execution.
 
 [[scripts/capacity-upgrade.py#maintenance]] freezes writers and rechecks later drains before stopping nodes. Initial mode starts only the control plane with a private temporary Compose acknowledgement, verifies authenticated admission API readiness and persisted initialization, then recreates and verifies without acknowledgement. Watchtower stays stopped, including containers from an inactive profile. Failure stops the temporary acknowledged control plane and retains data and selected assets; no predecessor rollback occurs after state may have changed.
 

@@ -496,6 +496,7 @@ def test_initial_upgrade_and_drained_restart_use_the_same_saved_database(install
     watchtower = {'environment': {}, 'volumes': []}
     (destination / 'watchtower.json').write_text(json.dumps(watchtower))
     capacity_snapshot(destination, False)
+    (assets.parent / 'docker.jsonl').write_text('')
     initial = run('full', arguments=['--capacity-upgrade', 'initial', '--confirm-execution-stopped'])
     assert initial.returncode == 0, initial.stdout + initial.stderr
     config = json.loads((destination / 'control-plane.json').read_text())
@@ -505,6 +506,11 @@ def test_initial_upgrade_and_drained_restart_use_the_same_saved_database(install
     states = json.loads((destination / 'states.json').read_text())
     assert states['watchtower'] is False
     assert states['media-node'] is True
+    events = [json.loads(line) for line in (assets.parent / 'docker.jsonl').read_text().splitlines()]
+    early_stop = ['compose', '--profile', 'auto-update', 'stop', '--timeout', '30', 'watchtower']
+    stop_index = events.index(early_stop)
+    assert not any(e[:2] == ['compose', 'pull'] for e in events[:stop_index])
+    assert any(e[:2] == ['compose', 'pull'] for e in events[stop_index + 1:])
     assert run('full', arguments=['--capacity-upgrade', 'drained']).returncode == 0
     # Even a fully drained initialized ledger must not use initial mode again.
     log = assets.parent / 'docker.jsonl'
@@ -539,3 +545,20 @@ def test_standalone_node_cannot_initialize_the_remote_ledger(installation):
     result = run('media-node', arguments=['--capacity-upgrade', 'initial', '--confirm-execution-stopped'])
     assert result.returncode != 0
     assert not destination.exists()
+
+
+def test_standalone_maintenance_stops_updater_before_candidate_pull(installation):
+    assets, destination, run = installation
+    assert run('media-node').returncode == 0
+    states = json.loads((destination / 'states.json').read_text())
+    states['watchtower'] = True
+    (destination / 'states.json').write_text(json.dumps(states))
+    log = assets.parent / 'docker.jsonl'
+    log.write_text('')
+    result = run('media-node')
+    assert result.returncode == 0, result.stdout + result.stderr
+    events = [json.loads(line) for line in log.read_text().splitlines()]
+    stop = events.index(['compose', '--profile', 'auto-update', 'stop', '--timeout', '30', 'watchtower'])
+    assert stop < events.index(['compose', 'pull'])
+    states = json.loads((destination / 'states.json').read_text())
+    assert states['watchtower'] is False and states['media-node'] is True

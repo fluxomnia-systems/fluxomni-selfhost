@@ -1207,6 +1207,17 @@ prepare_capacity_maintenance() {
   fi
 }
 
+stop_capacity_updater() {
+  [ -n "$CAPACITY_UPGRADE_MODE" ] || return 0
+  # Read the existing bundle before replacing assets or pulling candidates.
+  # Explicit profile selection also sees updaters from older opt-in deployments.
+  local services
+  services=$(cd "$FLUXOMNI_DIR" && "${DOCKER_CMD[@]}" compose --profile auto-update config --services)
+  if printf '%s\n' "$services" | awk '$0 == "watchtower" { found = 1 } END { exit !found }'; then
+    (cd "$FLUXOMNI_DIR" && "${DOCKER_CMD[@]}" compose --profile auto-update stop --timeout 30 watchtower)
+  fi
+}
+
 echo "Installing Fluxomni Studio (${FLUXOMNI_INSTALL_TARGET}) to ${FLUXOMNI_DIR}"
 
 validate_install_target
@@ -1248,6 +1259,7 @@ fi
 mkdir -p "${FLUXOMNI_DIR}" "${FLUXOMNI_DIR}/data/videos" "${FLUXOMNI_DIR}/data/dvr" "${FLUXOMNI_DIR}/data/srs-http"
 
 prepare_capacity_maintenance
+stop_capacity_updater
 begin_config_transaction
 
 echo "Downloading deployment files..."
