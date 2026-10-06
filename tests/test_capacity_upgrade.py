@@ -55,7 +55,8 @@ def test_later_upgrade_refuses_every_unproven_drain(database, initialized, claim
         upgrade.require_mode(database, "drained")
 
 
-def test_wal_participates_in_capacity_classification(database):
+# @lat: [[installation#Capacity empty ledger serialization tests]]
+def test_initialized_empty_ledger_omits_claims_and_reads_committed_wal(database):
     with sqlite3.connect(database) as writer:
         writer.execute("PRAGMA journal_mode=WAL")
         writer.execute("UPDATE assignment_snapshots SET payload = ?", (json.dumps({"capacity_initialized": True}),))

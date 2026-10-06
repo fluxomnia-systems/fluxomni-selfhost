@@ -83,6 +83,9 @@ def read_ledger(path):
     initialized = snapshot.get("capacity_initialized", False)
     if not isinstance(initialized, bool):
         raise UpgradeError("Invalid capacity initialization marker")
+    # AssignmentSnapshot intentionally omits empty capacity_reservations via
+    # serde skip_serializing_if = "Vec::is_empty", including initialized ledgers.
+    # Missing means empty in this persisted schema; malformed values still fail.
     claims = snapshot.get("capacity_reservations", [])
     if not isinstance(claims, list) or any(not isinstance(claim, dict) for claim in claims):
         raise UpgradeError("Invalid capacity reservation ledger")

@@ -88,6 +88,8 @@ The helper reads the actual control-plane bind-mounted SQLite through a WAL-awar
 
 [[scripts/capacity-upgrade.py#read_ledger]] never edits SQLite. Initialized ledgers always reject initial mode. Drained mode requires disabled routes and no capacity reservations. Storage resolution compares candidate Compose and actual owner mounts; custom commands, ambiguous mounts, symlinks and remote Docker fail closed.
 
+The runtime serializer omits `capacity_reservations` when empty, even with `capacity_initialized: true`. The helper follows that persisted schema: an omitted field means empty; a present malformed value or any retained claim is rejected.
+
 ## Capacity upgrade service ordering
 
 Maintenance stops local automatic updates before replacing assets or pulling candidates. Full-stack upgrades verify control-plane initialization before restarting execution.
@@ -103,6 +105,10 @@ The tests also read uncheckpointed WAL changes and reject malformed ledger evide
 ## Capacity drain proof tests
 
 Later upgrades reject uninitialized state, reserved claims and enabled routes instead of treating desired absence or liveness as shutdown proof.
+
+## Capacity empty ledger serialization tests
+
+Initialized empty snapshots omit the reservation field under the runtime serialization contract; committed WAL evidence still accepts drained mode and rejects initial mode.
 
 ## Capacity storage binding tests
 
