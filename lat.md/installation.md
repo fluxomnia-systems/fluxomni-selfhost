@@ -131,3 +131,14 @@ An ambient or persisted runtime acknowledgement cannot bypass the explicit maint
 ## Capacity real Compose upgrade tests
 
 Real Compose-rendered initial upgrades remove temporary acknowledgement inputs, retain the selected database, keep Watchtower stopped and support later drained restart.
+
+
+## Incomplete fresh installation retries
+
+An installer-owned version/target marker permits retrying an incomplete bootstrap only with absent project containers and empty rendered runtime storage, without WAL or SHM sidecars.
+
+[[scripts/capacity-upgrade.py#fresh_preflight]] never treats the marker as shutdown proof or resets state. Runtime evidence requires explicit maintenance or manual recovery. The marker participates in configuration rollback and is removed only after complete readiness, including successful explicit maintenance.
+
+## Incomplete fresh installation retry tests
+
+Failed pulls and startup attempts before resource creation can retry; mismatched markers and runtime or durable-state evidence cannot bypass maintenance.

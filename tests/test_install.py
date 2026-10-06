@@ -74,13 +74,16 @@ elif name == "docker":
         print(version_fixture.read_text())
         sys.exit(0)
     if args[:2] == ["compose", "ps"]:
-        print(args[-1])
+        states = json.loads(Path("states.json").read_text()) if Path("states.json").exists() else {}
+        names = [args[-1]] if args[-1] in states else (list(states) if args[-1] == "--quiet" else [])
+        print("\n".join(names))
         sys.exit(0)
     if args[:2] == ["compose", "stop"]:
-        states = json.loads(Path("states.json").read_text())
+        states = json.loads(Path("states.json").read_text()) if Path("states.json").exists() else {}
         names = args[4:] or list(states)
         for service in names:
-            states[service] = False
+            if service in states:
+                states[service] = False
         Path("states.json").write_text(json.dumps(states))
         sys.exit(0)
     if args[:2] == ["compose", "start"]:
@@ -91,7 +94,8 @@ elif name == "docker":
     if args[:2] in (["compose", "config"], ["compose", "version"]):
         sys.exit(subprocess.run([os.environ["REAL_DOCKER"], *original_args]).returncode)
     if args == ["info"] or args[:2] == ["compose", "pull"]:
-        pass
+        if args[:2] == ["compose", "pull"] and os.environ.get("TEST_PULL_FAIL"):
+            sys.exit(1)
     elif args[:2] == ["info", "--format"]:
         print(os.environ.get("TEST_DOCKER_INFO", '2 ["name=seccomp"]'))
     elif args[:2] == ["context", "show"]:
@@ -99,6 +103,8 @@ elif name == "docker":
     elif args[:2] == ["context", "inspect"]:
         print(os.environ.get("TEST_DOCKER_ENDPOINT", "unix:///var/run/docker.sock"))
     elif args[:2] == ["compose", "up"] or args[:2] == ["compose", "-f"]:
+        if os.environ.get("TEST_START_FAIL"):
+            sys.exit(1)
         options = args[:3] if args[1] == "-f" else ["compose"]
         rendered = subprocess.check_output([os.environ["REAL_DOCKER"], *options, "config", "--format", "json"], text=True)
         config = json.loads(rendered)
@@ -404,11 +410,16 @@ def test_preparation_effective_override_rejected_and_configuration_restored(inst
     assert run('full').returncode == 0
     override = destination / 'docker-compose.override.yml'
     override.write_text(yaml.safe_dump({'services': {'media-node': change}}))
-    before = {p.name: p.read_bytes() for p in destination.iterdir() if p.is_file()}
+    before = {p.name: p.read_bytes() for p in destination.iterdir() if p.is_file() and p.name != 'states.json'}
     result = run('full', PREPARATION)
     assert result.returncode != 0
     assert 'unsafe preparation Compose' in result.stderr
-    assert {p.name: p.read_bytes() for p in destination.iterdir() if p.is_file()} == before
+    assert {p.name: p.read_bytes() for p in destination.iterdir() if p.is_file() and p.name != 'states.json'} == before
+    # Stopping the updater before candidate rendering is an intended service
+    # transition. Rejected configuration must keep execution and its owner alive.
+    states = json.loads((destination / 'states.json').read_text())
+    assert states.get('watchtower', False) is False
+    assert states['control-plane'] is True and states['media-node'] is True
 
 
 @pytest.mark.parametrize('failure', ['TEST_PROVISION_FAIL', 'TEST_ENFORCEMENT_FAIL', 'TEST_ISOLATION_UNAVAILABLE'])
@@ -510,6 +521,7 @@ def test_initial_upgrade_and_drained_restart_use_the_same_saved_database(install
     early_stop = ['compose', '--profile', 'auto-update', 'stop', '--timeout', '30', 'watchtower']
     stop_index = events.index(early_stop)
     assert not any(e[:2] == ['compose', 'pull'] for e in events[:stop_index])
+    assert not any(e[:2] == ['inspect', 'control-plane'] for e in events[:stop_index])
     assert any(e[:2] == ['compose', 'pull'] for e in events[stop_index + 1:])
     assert run('full', arguments=['--capacity-upgrade', 'drained']).returncode == 0
     # Even a fully drained initialized ledger must not use initial mode again.
@@ -562,3 +574,37 @@ def test_standalone_maintenance_stops_updater_before_candidate_pull(installation
     assert stop < events.index(['compose', 'pull'])
     states = json.loads((destination / 'states.json').read_text())
     assert states['watchtower'] is False and states['media-node'] is True
+
+
+# @lat: [[installation#Incomplete fresh installation retry tests]]
+@pytest.mark.parametrize('target', ['full', 'media-node'])
+@pytest.mark.parametrize('failure', ['TEST_PULL_FAIL', 'TEST_START_FAIL'])
+def test_unstarted_first_install_can_retry_without_maintenance(installation, target, failure):
+    _, destination, run = installation
+    first = run(target, {failure: '1'}, arguments=[])
+    assert first.returncode != 0
+    assert (destination / '.install-pending').read_text().strip() == 'v1:' + target
+    assert (destination / 'data/state.db').stat().st_size == 0
+    retry = run(target, arguments=[])
+    assert retry.returncode == 0, retry.stdout + retry.stderr
+    assert not (destination / '.install-pending').exists()
+    assert 'FLUXOMNI_CAPACITY_UPGRADE_STOPPED' not in (destination / '.env').read_text()
+
+
+@pytest.mark.parametrize('marker', ['v9:full', 'v1:media-node', 'v1:full'])
+def test_pending_marker_cannot_bypass_an_established_deployment(installation, marker):
+    assets, destination, run = installation
+    assert run('full').returncode == 0
+    pending = destination / '.install-pending'
+    pending.write_text(marker + '\n')
+    database_before = (destination / 'data/state.db').read_bytes()
+    log = assets.parent / 'docker.jsonl'
+    log.write_text('')
+    assert run('full', arguments=[]).returncode != 0
+    assert (destination / 'data/state.db').read_bytes() == database_before
+    events = [json.loads(line) for line in log.read_text().splitlines()]
+    assert not any(e[:2] == ['compose', 'pull'] or e[:2] == ['compose', 'up'] for e in events)
+    # Explicit drained maintenance uses normal ledger evidence and graduates
+    # the failed bootstrap marker only after successful verification.
+    assert run('full', arguments=['--capacity-upgrade', 'drained']).returncode == 0
+    assert not pending.exists()

@@ -190,3 +190,44 @@ def test_failed_candidate_mount_check_stops_acknowledged_control_plane(database,
         upgrade.maintenance(docker, "initial", str(database))
     assert docker.events[-2:] == [("stop", "--timeout", "30", "control-plane"), ("stopped", "control-plane")]
     assert not any(event[0] in ("up", "start") for event in docker.events)
+
+
+class FreshProbe:
+    def __init__(self, root, containers=''):
+        self.root = root
+        self.containers = containers
+
+    def run(self, *args):
+        return 'default' if args == ('context', 'show') else 'unix:///var/run/docker.sock'
+
+    def config(self):
+        service = {'environment': {'FLUXOMNI_APP_ROOT': '/data'}, 'volumes': [
+            {'type': 'bind', 'source': str(self.root), 'target': '/data'},
+        ]}
+        return {'services': {'control-plane': service, 'media-node': service}}
+
+    def compose(self, *args):
+        assert args == ('ps', '--all', '--quiet')
+        return self.containers
+
+
+def test_fresh_retry_requires_absent_containers_and_empty_storage(tmp_path):
+    docker = FreshProbe(tmp_path)
+    upgrade.fresh_preflight(docker, 'full')
+    path = tmp_path / 'state.db'
+    path.touch()
+    upgrade.fresh_preflight(docker, 'full')
+    for suffix in ['-wal', '-shm']:
+        sidecar = tmp_path / ('state.db' + suffix)
+        sidecar.touch()
+        with pytest.raises(upgrade.UpgradeError):
+            upgrade.fresh_preflight(docker, 'full')
+        sidecar.unlink()
+    for payload in [b'unknown database', b'{"capacity_initialized":true}']:
+        path.write_bytes(payload)
+        with pytest.raises(upgrade.UpgradeError):
+            upgrade.fresh_preflight(docker, 'full')
+    path.write_bytes(b'')
+    docker.containers = 'created-or-established-container'
+    with pytest.raises(upgrade.UpgradeError):
+        upgrade.fresh_preflight(docker, 'full')

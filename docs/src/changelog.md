@@ -8,7 +8,7 @@ The changelog is editorial release copy. Use `release-manifest.json` as the fact
 
 Existing installations now require an explicit capacity maintenance mode. The first ledger upgrade verifies global execution shutdown, persists initialization and removes its temporary acknowledgement before starting media; later upgrades require disabled routes and zero reservations.
 
-Automatic updates stay stopped. Candidate failures preserve runtime data and stop the temporary control plane. Follow [Capacity Ledger Upgrades](getting-started/capacity-upgrades.md) and select a tested admission-capable build; `v26.3.2` predates this runtime contract.
+Automatic updates stop before maintenance inspection and stay stopped. Candidate failures preserve runtime data and stop the temporary control plane. Incomplete first bootstraps can retry while project containers are absent and runtime storage remains empty. Follow [Capacity Ledger Upgrades](getting-started/capacity-upgrades.md) and select a tested admission-capable build; `v26.3.2` predates this runtime contract.
 
 ## v26.3.2 - 27 September 2026
 

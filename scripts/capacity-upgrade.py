@@ -253,14 +253,18 @@ def maintenance(docker, mode, expected_path):
         raise
 
 
-def preflight(docker, mode):
+def local_config(docker):
     if os.environ.get("DOCKER_HOST") or os.environ.get("COMPOSE_FILE") or os.environ.get("COMPOSE_PROFILES"):
         raise UpgradeError("Maintenance requires the local default Compose bundle")
     context = docker.run("context", "show").strip()
     endpoint = docker.run("context", "inspect", context, "--format", "{{.Endpoints.docker.Host}}").strip()
     if not endpoint.startswith("unix://"):
         raise UpgradeError("Maintenance requires a local Docker daemon")
-    config = docker.config()
+    return docker.config()
+
+
+def preflight(docker, mode):
+    config = local_config(docker)
     service = config.get("services", {}).get("control-plane", {})
     if "FLUXOMNI_CAPACITY_UPGRADE_STOPPED" in service.get("environment", {}):
         raise UpgradeError("Remove the raw runtime acknowledgement from .env/Compose")
@@ -272,10 +276,27 @@ def preflight(docker, mode):
     return path
 
 
+
+# @lat: [[installation#Incomplete fresh installation retries]]
+def fresh_preflight(docker, target):
+    config = local_config(docker)
+    if docker.compose("ps", "--all", "--quiet").split():
+        raise UpgradeError("Fresh retry has runtime containers; use maintenance or manual recovery")
+    services = config.get("services", {})
+    required = ["media-node"] if target == "media-node" else ["control-plane", "media-node"]
+    for name in required:
+        path = database_path(services.get(name, {}))
+        if (path.exists() and (not path.is_file() or path.stat().st_size)) or any(
+            Path(str(path) + suffix).exists() or Path(str(path) + suffix).is_symlink() for suffix in ("-wal", "-shm")
+        ):
+            raise UpgradeError("Fresh retry has durable state; use maintenance or manual recovery")
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("action", choices=["preflight", "run"])
-    parser.add_argument("--mode", choices=["initial", "drained"], required=True)
+    parser.add_argument("action", choices=["preflight", "run", "fresh-preflight"])
+    parser.add_argument("--mode", choices=["initial", "drained"])
+    parser.add_argument("--target", choices=["full", "media-node"])
     parser.add_argument("--database")
     parser.add_argument("--timeout", type=int, default=90)
     parser.add_argument("--docker", nargs="+", default=["docker"])
@@ -285,7 +306,13 @@ def main():
     prefix = args.docker
     docker = Docker(prefix or ["docker"], args.timeout)
     try:
-        if args.action == "preflight":
+        if args.action == "fresh-preflight":
+            if not args.target:
+                parser.error("fresh-preflight requires --target")
+            fresh_preflight(docker, args.target)
+        elif not args.mode:
+            parser.error("maintenance requires --mode")
+        elif args.action == "preflight":
             print(preflight(docker, args.mode))
         else:
             if not args.database:

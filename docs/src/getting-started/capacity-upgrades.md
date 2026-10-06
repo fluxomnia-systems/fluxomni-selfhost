@@ -61,7 +61,15 @@ Release existing reservations while the old reporters are still alive.
 4. Update standalone nodes using `--capacity-upgrade node --confirm-control-plane-ready`. For this path, the assertion means the remote control plane is ready and the affected node drained to zero reservations before it stopped.
 5. Restore the recorded enabled routes and verify playback, outputs, Fleet counts and preparation enforcement. The installer does not automatically disable or restore routes.
 
-Existing installations require an explicit maintenance mode on installer reruns, including budget/configuration changes that recreate nodes. Fresh installs retain `bash install.sh full` or `media-node`.
+Established installations require an explicit maintenance mode on installer reruns, including budget/configuration changes that recreate nodes. Fresh installs retain `bash install.sh full` or `media-node`.
+
+## Incomplete First Installation
+
+A failed first image pull or startup attempt before resource creation can be retried with the ordinary fresh command.
+
+The installer retains a version/target-bound `.install-pending` marker until complete readiness. Retry requires local default Compose, no project containers and absent or empty rendered runtime databases without WAL/SHM sidecars. The helper preserves every file. The marker alone never authorizes an ownership reset.
+
+If any container was created or runtime data exists, use explicit maintenance where the ledger is available, or a separately reviewed manual recovery for a startup failure before ledger creation. Never erase data or remove containers to force classification as fresh. Successful explicit maintenance also clears the marker.
 
 ## Failure and Retry
 

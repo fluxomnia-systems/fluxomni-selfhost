@@ -6,6 +6,7 @@ set -euo pipefail
 
 INSTALL_TARGET_ARG=""
 CAPACITY_UPGRADE_MODE=""
+FRESH_RETRY=0
 EXECUTION_STOPPED_CONFIRMED=0
 NODE_READY_CONFIRMED=0
 
@@ -860,7 +861,7 @@ preflight_preparation_host() {
 begin_config_transaction() {
   INSTALL_BACKUP="$(mktemp -d)"
   INSTALL_CONFIG_COMMITTED=0
-  INSTALL_MANAGED_FILES=(docker-compose.yml compose.release.yml compose.defaults.yml .env .env.example doctor.sh docker-compose.preparation-cgroup.yml preparation-cgroup.py verify-preparation-compose.py)
+  INSTALL_MANAGED_FILES=(.install-pending docker-compose.yml compose.release.yml compose.defaults.yml .env .env.example doctor.sh docker-compose.preparation-cgroup.yml preparation-cgroup.py verify-preparation-compose.py)
   local file
   for file in "${INSTALL_MANAGED_FILES[@]}"; do
     if [ -e "${FLUXOMNI_DIR}/$file" ]; then cp -p "${FLUXOMNI_DIR}/$file" "$INSTALL_BACKUP/$file"; fi
@@ -1159,8 +1160,13 @@ validate_capacity_maintenance() {
   case "$CAPACITY_UPGRADE_MODE" in
     '')
       if [ -f "${FLUXOMNI_DIR}/.env" ]; then
-        echo 'Error: existing installs require --capacity-upgrade initial, drained, or node. Read the capacity upgrade guide before stopping execution.' >&2
-        exit 1
+        if [ -f "${FLUXOMNI_DIR}/.install-pending" ] && [ ! -L "${FLUXOMNI_DIR}/.install-pending" ] &&
+           [ "$(cat "${FLUXOMNI_DIR}/.install-pending")" = "v1:${FLUXOMNI_INSTALL_TARGET}" ]; then
+          FRESH_RETRY=1
+        else
+          echo 'Error: existing installs require --capacity-upgrade initial, drained, or node. Read the capacity upgrade guide before stopping execution.' >&2
+          exit 1
+        fi
       fi
       [ "$EXECUTION_STOPPED_CONFIRMED" = 0 ] && [ "$NODE_READY_CONFIRMED" = 0 ] || { usage; exit 1; }
       ;;
@@ -1183,13 +1189,7 @@ validate_capacity_maintenance() {
   esac
 }
 
-prepare_capacity_maintenance() {
-  [ -n "$CAPACITY_UPGRADE_MODE" ] || return 0
-  [ -f "${FLUXOMNI_DIR}/.env" ] && [ -f "${FLUXOMNI_DIR}/docker-compose.yml" ] || {
-    echo 'Error: maintenance requires an existing installation.' >&2
-    exit 1
-  }
-  [ "$CAPACITY_UPGRADE_MODE" != node ] || return 0
+load_capacity_helper() {
   require_cmd python3
   CAPACITY_HELPER="$(mktemp)"
   # The helper belongs to this installer, independently of the selected runtime
@@ -1201,15 +1201,45 @@ prepare_capacity_maintenance() {
   else
     curl -fsSL "$(repo_raw_for_ref "${SELFHOST_REF_OVERRIDE:-main}")/scripts/capacity-upgrade.py" -o "$CAPACITY_HELPER"
   fi
+}
+
+prepare_capacity_maintenance() {
+  [ -n "$CAPACITY_UPGRADE_MODE" ] || return 0
+  [ "$CAPACITY_UPGRADE_MODE" != node ] || return 0
+  load_capacity_helper
   if ! CAPACITY_DATABASE=$(cd "$FLUXOMNI_DIR" && python3 "$CAPACITY_HELPER" preflight --mode "$CAPACITY_UPGRADE_MODE" --docker "${DOCKER_CMD[@]}"); then
     rm -f "$CAPACITY_HELPER"
     exit 1
   fi
 }
 
+verify_fresh_retry() {
+  [ "$FRESH_RETRY" = 1 ] || return 0
+  load_capacity_helper
+  if ! (cd "$FLUXOMNI_DIR" && python3 "$CAPACITY_HELPER" fresh-preflight --target "$FLUXOMNI_INSTALL_TARGET" --docker "${DOCKER_CMD[@]}"); then
+    rm -f "$CAPACITY_HELPER"
+    exit 1
+  fi
+}
+
 stop_capacity_updater() {
-  [ -n "$CAPACITY_UPGRADE_MODE" ] || return 0
-  # Read the existing bundle before replacing assets or pulling candidates.
+  [ -n "$CAPACITY_UPGRADE_MODE" ] || [ "$FRESH_RETRY" = 1 ] || return 0
+  if [ -n "${DOCKER_HOST:-}" ] || [ -n "${COMPOSE_FILE:-}" ] || [ -n "${COMPOSE_PROFILES:-}" ]; then
+    echo 'Error: maintenance requires the local default Compose bundle.' >&2
+    exit 1
+  fi
+  local current_context docker_endpoint
+  current_context=$("${DOCKER_CMD[@]}" context show)
+  docker_endpoint=$("${DOCKER_CMD[@]}" context inspect "$current_context" --format '{{.Endpoints.docker.Host}}')
+  case "$docker_endpoint" in
+    unix://*) ;;
+    *) echo 'Error: maintenance requires a local Docker daemon.' >&2; exit 1 ;;
+  esac
+  [ -f "${FLUXOMNI_DIR}/.env" ] && [ -f "${FLUXOMNI_DIR}/docker-compose.yml" ] || {
+    echo 'Error: maintenance requires an existing installation.' >&2
+    exit 1
+  }
+  # Read the existing bundle before helper download, ledger inspection or pull.
   # Explicit profile selection also sees updaters from older opt-in deployments.
   local services
   services=$(cd "$FLUXOMNI_DIR" && "${DOCKER_CMD[@]}" compose --profile auto-update config --services)
@@ -1258,9 +1288,15 @@ fi
 
 mkdir -p "${FLUXOMNI_DIR}" "${FLUXOMNI_DIR}/data/videos" "${FLUXOMNI_DIR}/data/dvr" "${FLUXOMNI_DIR}/data/srs-http"
 
-prepare_capacity_maintenance
 stop_capacity_updater
+verify_fresh_retry
+prepare_capacity_maintenance
 begin_config_transaction
+if [ -z "$CAPACITY_UPGRADE_MODE" ] && [ ! -f "$CANDIDATE_ENV_FILE" ]; then
+  pending_marker=$(mktemp "${FLUXOMNI_DIR}/.install-pending.XXXXXX")
+  printf 'v1:%s\n' "$FLUXOMNI_INSTALL_TARGET" > "$pending_marker"
+  mv "$pending_marker" "${FLUXOMNI_DIR}/.install-pending"
+fi
 
 echo "Downloading deployment files..."
 download_asset "$COMPOSE_ASSET" "${FLUXOMNI_DIR}/docker-compose.yml"
@@ -1550,6 +1586,7 @@ if [ "$FLUXOMNI_INSTALL_TARGET" = "media-node" ]; then
   MEDIA_NODE_ID="$(read_env_file_value "FLUXOMNI_MEDIA_NODE_ID" .env)"
 
   echo
+  rm -f "${FLUXOMNI_DIR}/.install-pending"
   echo "Media node is connected"
   echo "Node ID : ${MEDIA_NODE_ID}"
   echo "Node RPC: ${MEDIA_NODE_ENDPOINT}"
@@ -1559,7 +1596,7 @@ if [ "$FLUXOMNI_INSTALL_TARGET" = "media-node" ]; then
   echo "Common commands:"
   echo "  Update: follow the capacity upgrade guide and rerun install.sh with --capacity-upgrade node --confirm-control-plane-ready"
   echo "  Logs  : cd ${FLUXOMNI_DIR} && ${DOCKER_DISPLAY} compose logs -f media-node"
-  echo "  Stop  : cd ${FLUXOMNI_DIR} && ${DOCKER_DISPLAY} compose down"
+  echo "  Stop  : drain routes using the capacity upgrade guide before stopping containers"
   exit 0
 fi
 
@@ -1588,6 +1625,7 @@ MEDIA_HOST="${MEDIA_HOST:-$HOST}"
 HTTP_PORT="${HTTP_PORT:-80}"
 
 echo
+rm -f "${FLUXOMNI_DIR}/.install-pending"
 echo "Fluxomni Studio is ready"
 echo "Web UI: $(derive_browser_http_url "$HOST" "$HTTP_PORT")"
 echo "RTMP : rtmp://${MEDIA_HOST}:1935/app"
@@ -1596,4 +1634,4 @@ echo
 echo "Common commands:"
 echo "  Update: follow the capacity upgrade guide and rerun install.sh with --capacity-upgrade initial or drained"
 echo "  Logs  : cd ${FLUXOMNI_DIR} && ${DOCKER_DISPLAY} compose logs -f frontend control-plane media-node"
-echo "  Stop  : cd ${FLUXOMNI_DIR} && ${DOCKER_DISPLAY} compose down"
+echo "  Stop  : drain routes using the capacity upgrade guide before stopping containers"
