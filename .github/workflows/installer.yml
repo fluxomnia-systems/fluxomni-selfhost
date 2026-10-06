@@ -9,6 +9,7 @@ on:
       - .env.example
       - tests/**
       - scripts/requirements-test.txt
+      - scripts/capacity-upgrade.py
       - scripts/preparation-cgroup.py
       - scripts/verify-preparation-compose.py
       - .github/workflows/installer.yml
@@ -20,6 +21,7 @@ on:
       - .env.example
       - tests/**
       - scripts/requirements-test.txt
+      - scripts/capacity-upgrade.py
       - scripts/preparation-cgroup.py
       - scripts/verify-preparation-compose.py
       - .github/workflows/installer.yml
@@ -38,5 +40,7 @@ jobs:
         run: |
           bash -n install.sh
           shellcheck --severity=warning install.sh
+      - name: Check capacity helper
+        run: uvx ruff check scripts/capacity-upgrade.py tests/test_capacity_upgrade.py
       - name: Test fresh installs and upgrades
         run: uv run --no-project --with-requirements scripts/requirements-test.txt pytest -q tests

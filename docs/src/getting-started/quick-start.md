@@ -118,13 +118,9 @@ Then open `http://<your-server-ip>/routes`.
 
 ## Auto-Updates
 
-The compose stack includes a [Watchtower](https://containrrr.dev/watchtower/) service behind the `auto-update` profile. It is **not** started by default. To enable automatic daily image pulls and container recreation:
+Keep automatic updates disabled for capacity-ledger builds. Watchtower cannot coordinate the cluster drain and shutdown proofs required before container recreation. For existing installations, use [Capacity Ledger Upgrades](capacity-upgrades.md).
 
-```bash
-docker compose --profile auto-update up -d
-```
-
-To disable it again, stop the watchtower container:
+To stop an updater enabled by an earlier deployment:
 
 ```bash
 docker compose --profile auto-update stop watchtower

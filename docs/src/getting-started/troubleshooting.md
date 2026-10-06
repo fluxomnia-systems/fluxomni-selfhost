@@ -65,7 +65,7 @@ If it never appears, verify:
 
 `1128 exceed max open files=1024` means the container's file limit is below SRS's startup requirement.
 
-Rerun the latest installer with your existing directory and mode ([upgrade guide](upgrade-26.3.2.md)). It supplies limits of 65,536, including for v26.3.2 assets. Container recreation interrupts active streams but retains mounted data.
+Rerun the latest installer with your existing directory and explicit [capacity maintenance mode](capacity-upgrades.md). It supplies limits of 65,536, including for v26.3.2 assets. Container recreation interrupts active streams but retains mounted data.
 
 For manual installs, add this under `media-node` and check for conflicting overrides:
 
@@ -76,10 +76,9 @@ For manual installs, add this under `media-node` and check for conflicting overr
         hard: 65536
 ```
 
-From the installation directory, using your usual Compose flags:
+Apply the change through [Capacity Ledger Upgrades](capacity-upgrades.md), then verify:
 
 ```bash
-docker compose up -d --no-deps --force-recreate media-node
 docker compose exec media-node sh -c 'ulimit -Sn; ulimit -Hn'
 ```
 
@@ -104,12 +103,7 @@ docker compose ps
 
 ## Clean Restart
 
-From your install directory:
-
-```bash
-docker compose down
-docker compose up -d
-```
+Use [Capacity Ledger Upgrades](capacity-upgrades.md) for a planned restart. Disable and drain routes while the old reporters are alive; restarting containers does not clear old reservations.
 
 ## Playlist File Errors
 
@@ -159,12 +153,7 @@ echo 'FLUXOMNI_SRS_RTC_PORT=8800' >> .env
 echo 'FLUXOMNI_MEDIA_NODE_WHIP_PORT=8803' >> .env
 ```
 
-Then restart the stack:
-
-```bash
-docker compose down
-docker compose up -d
-```
+Apply the changes using [Capacity Ledger Upgrades](capacity-upgrades.md). For an already running installation, drain routes before recreating containers.
 
 Access the Control Surface at `http://<HOST-IP>:8080`. If you also set `FLUXOMNI_PUBLIC_URL`, make sure it includes the new port (e.g. `http://nas.local:8080`).
 
@@ -243,22 +232,6 @@ If you are locked out of the Control Surface:
 
 ## Rollback to a Previous Version
 
-If an update causes issues, pin the previous version in `.env`:
+Retain the database and diagnose the candidate using [Capacity Ledger Upgrades](capacity-upgrades.md#failure-and-retry). A predecessor image may not understand migrated state or durable capacity ownership; changing the image tag and recreating containers is not a verified rollback.
 
-```bash
-# From your install directory
-# Edit .env and change FLUXOMNI_VERSION to the previous release tag
-sed -i 's/FLUXOMNI_VERSION=.*/FLUXOMNI_VERSION=v26.2.0/' .env
-docker compose pull
-docker compose up -d
-```
-
-Available release tags are listed on the [GitHub Releases](https://github.com/fluxomnia-systems/fluxomni/releases) page. Prefer canonical public `vYY.Q.N` tags for new pins; core-image `vX.Y.Z` tags remain accepted for direct image pinning.
-
-To return to tracking the latest stable release, from the same directory:
-
-```bash
-sed -i 's/FLUXOMNI_VERSION=.*/FLUXOMNI_VERSION=latest/' .env
-docker compose pull
-docker compose up -d
-```
+Restoring an older database and matching images requires a separately reviewed recovery procedure, backups and proof that all predecessor execution is stopped. Never erase the ledger or reuse the initialization acknowledgement to release exposed ownership. Available image tags are listed on [GitHub Releases](https://github.com/fluxomnia-systems/fluxomni/releases).

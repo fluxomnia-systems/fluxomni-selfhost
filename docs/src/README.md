@@ -18,7 +18,7 @@ curl -fsSL https://install.fluxomni.io | bash
 
 By default, the installer uses the newest stable release and installs Fluxomni Studio on one server.
 
-Use `FLUXOMNI_VERSION=edge` only when you want the newest main-branch build. Use a canonical public tag like `v26.3.2` when you need a pinned stable release. Retained `v0.x.y` core tags remain available for rollback.
+Use `FLUXOMNI_VERSION=edge` only when you want the newest main-branch build. Use a canonical public tag like `v26.3.2` when you need a pinned stable release. Retained image tags require a separately reviewed recovery procedure when state has migrated.
 
 To add a remote media server, run the same installer on that server with `bash -s -- media-node`.
 

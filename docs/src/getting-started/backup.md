@@ -1,40 +1,28 @@
 # Backup & Restore
 
-Fluxomni Studio stores all persistent state in the `data/` directory inside
-your install path (default `~/fluxomni`). Backing up this directory
-preserves your entire configuration: routes, settings, user accounts,
-and cached playlist files.
+Back up runtime data and configuration, and preserve capacity ownership when stopping or moving an installation.
 
 ## What to back up
 
-| Path | Contents | Priority |
-| ---- | -------- | -------- |
-| `data/state.db` | Embedded SQLite state for routes, settings, and user accounts | Critical |
-| `data/videos/` | Cached playlist files | Recommended |
-| `.env` | Environment variables and auth token | Critical |
+Keep `data/state.db`, `.env` and cached playlist files in `data/videos/`. Include configured external data binds. SQLite may also create `state.db-wal` and `state.db-shm`; retain them beside the database for live filesystem snapshots.
 
-While the stack is running, SQLite may also create `data/state.db-wal`
-and `data/state.db-shm`. Keep those files beside `state.db` whenever
-you take live filesystem snapshots.
-
-The `data/dvr/` and `data/srs-http/` directories contain transient
-media data and can be regenerated. Back them up only if you need to
-preserve DVR recordings.
+DVR recordings in `data/dvr/` are optional backup data. Generated `data/srs-http/` media can be recreated.
 
 ## Create a backup
 
-Stop the stack first to ensure a consistent snapshot:
+For capacity-ledger builds, record enabled route IDs, disable all routes and wait for every node's committed, starting and retiring counts to reach zero while old reporters are alive. Follow [Capacity Ledger Upgrades](capacity-upgrades.md) before stopping execution.
+
+Then stop the full-stack installation, retaining its containers for storage verification:
 
 ```bash
 cd ~/fluxomni
-docker compose down
+docker compose --profile auto-update stop --timeout 30
 tar czf ~/fluxomni-backup-$(date +%Y%m%d).tar.gz data/ .env
-docker compose up -d
 ```
 
-If you need a live SQLite backup and have `sqlite3` available on the
-host, use SQLite's backup command instead of copying only `state.db`
-with `cp`:
+Restart the same tested build with the drained installer mode from the upgrade guide. Verify Fleet and playback, then restore the recorded enabled routes. Keep automatic updates stopped.
+
+For a live SQLite backup, use SQLite's backup command instead of copying only `state.db`:
 
 ```bash
 cd ~/fluxomni
@@ -42,63 +30,24 @@ sqlite3 data/state.db ".backup '$HOME/fluxomni-state-backup.db'"
 cp .env ~/fluxomni-env-backup
 ```
 
-If `sqlite3` is not available, prefer the stopped-stack backup above or
-a storage-level snapshot of the full `data/` directory.
+A live backup can contain exposed reservations. It is evidence and backup data; restoring it does not release ownership or prove predecessor execution stopped.
 
 ## Restore from backup
 
-To restore on the same or a new host:
+Restore matching database, files, configuration and images through a separately reviewed recovery procedure. Stop all predecessor execution and deployment automation before restoring. Preserve the original backup and current runtime data until recovery is verified.
 
-```bash
-cd ~/fluxomni
-docker compose down
-tar xzf ~/fluxomni-backup-20260408.tar.gz
-docker compose up -d
-```
-
-If restoring to a different server, update `FLUXOMNI_PUBLIC_HOST` and
-`FLUXOMNI_MEDIA_NODE_PUBLIC_HOST` in `.env` to reflect the new
-hostname or IP before starting the stack.
+Do not delete the capacity ledger, reset initialized state, or use the initial acknowledgement to discard reservations from a restored initialized database. Missing shutdown proof can keep ownership reserved and requires separate recovery work. The installer does not automate data rollback.
 
 ## Migrate between hosts
 
-1. Back up the `data/` directory and `.env` on the source host.
-2. Run the installer on the destination host (or set up the compose
-   stack manually).
-3. Stop the stack on the destination host.
-4. Copy `data/` and `.env` from the source to the destination install
-   directory.
-5. Update hostnames in `.env` if the public address has changed.
-6. Start the stack on the destination host.
+Drain the source cluster while reporters are alive, take a stopped backup, and keep source execution stopped throughout migration. Transfer the matching data and configuration, preserve node identities deliberately, and update public hostnames and shared video paths before startup.
 
-```bash
-# On source
-cd ~/fluxomni && tar czf /tmp/fluxomni-migrate.tar.gz data/ .env
-
-# Transfer to destination
-scp /tmp/fluxomni-migrate.tar.gz user@new-host:/tmp/
-
-# On destination
-cd ~/fluxomni
-docker compose down
-tar xzf /tmp/fluxomni-migrate.tar.gz
-# Edit .env if hostname changed
-docker compose up -d
-```
+Changed storage roots or a different host require a separately reviewed manual procedure. Verify the initialized ledger, acknowledgement absence and Fleet registration before enabling the recorded routes. Never run source and destination against copied ownership concurrently.
 
 ## Rotate the auth token
 
-If you need to rotate `FLUXOMNI_CONTROL_PLANE_INTERNAL_AUTH_TOKEN`:
+Drain all routes with the old credentials still valid, following [Capacity Ledger Upgrades](capacity-upgrades.md). Stop execution and automatic updates on every host, then stop the control plane.
 
-1. Generate a new token: `openssl rand -hex 24`
-2. Update the token in `.env` on the control-plane host.
-3. Update the same token in `.env` on every standalone media-node host.
-4. Restart all services:
+Generate a new token with `openssl rand -hex 24` and update `FLUXOMNI_CONTROL_PLANE_INTERNAL_AUTH_TOKEN` in `.env` on the full-stack and every standalone-node host. Restart the full stack with drained mode, then update standalone nodes with `--capacity-upgrade node --confirm-control-plane-ready`. Verify registration before restoring enabled routes.
 
-```bash
-# On each host
-docker compose down && docker compose up -d
-```
-
-All services must use the same token value. A mismatch causes media
-nodes to fail registration.
+All services must use the same token. A mismatch prevents node registration and shutdown reporting.

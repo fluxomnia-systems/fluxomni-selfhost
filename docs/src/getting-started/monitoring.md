@@ -48,11 +48,7 @@ endpoint in `.env`:
 FLUXOMNI_OTLP_ENDPOINT=http://collector.example.com:4318
 ```
 
-Then restart:
-
-```bash
-docker compose up -d
-```
+Apply changes through [Capacity Ledger Upgrades](capacity-upgrades.md). Disable and drain routes before recreating existing control-plane or media-node containers, then restore the recorded enabled routes after verification.
 
 This sends traces over HTTP (OTLP/HTTP) to the specified collector.
 From there, you can forward data to backends like Jaeger, Grafana Tempo,

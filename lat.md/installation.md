@@ -75,3 +75,76 @@ The tests use real Compose rendering and simulated host mutation. Invalid budget
 Provisioning tests verify ownership, root separation, live-owner reruns, reboot recreation, malformed roots and missing controllers without touching real host groups.
 
 [[tests/test_preparation_cgroup.py#test_owned_rerun_and_reboot_recreation_preserve_runtime_limits]] verifies the ownership marker and unit ordering. Real Linux validation additionally exercises the helper on a dedicated disposable subtree and checks the generated unit with systemd tooling.
+
+## Capacity maintenance selection
+
+Existing installations require an explicit initial, drained or standalone-node maintenance mode; fresh installation entry points remain unchanged.
+
+The initial mode is full-stack only and requires an external-execution-stopped assertion. Standalone updates assert that the upgraded control plane has verified the initial boundary, or the node drained before stopping. Raw acknowledgement environment/Compose overrides are rejected. See the public capacity upgrade guide for operator ordering.
+
+## Capacity ledger evidence
+
+The helper reads the actual control-plane bind-mounted SQLite through a WAL-aware read-only transaction and verifies its current assignment marker and persisted route state.
+
+[[scripts/capacity-upgrade.py#read_ledger]] never edits SQLite. Initialized ledgers always reject initial mode. Drained mode requires disabled routes and no capacity reservations. Storage resolution compares candidate Compose and actual owner mounts; custom commands, ambiguous mounts, symlinks and remote Docker fail closed.
+
+The runtime serializer omits `capacity_reservations` when empty, even with `capacity_initialized: true`. The helper follows that persisted schema: an omitted field means empty; a present malformed value or any retained claim is rejected.
+
+## Capacity upgrade service ordering
+
+Maintenance stops local automatic updates before replacing assets or pulling candidates. Full-stack upgrades verify control-plane initialization before restarting execution.
+
+[[scripts/capacity-upgrade.py#maintenance]] freezes writers and rechecks later drains before stopping nodes. Initial mode starts only the control plane with a private temporary Compose acknowledgement, verifies authenticated admission API readiness and persisted initialization, then recreates and verifies without acknowledgement. Watchtower stays stopped, including containers from an inactive profile. Failure stops the temporary acknowledged control plane and retains data and selected assets; no predecessor rollback occurs after state may have changed.
+
+## Capacity marker classification tests
+
+Initial upgrades accept legacy missing markers and reject initialized ledgers regardless of demand, without modifying SQLite.
+
+The tests also read uncheckpointed WAL changes and reject malformed ledger evidence.
+
+## Capacity drain proof tests
+
+Later upgrades reject uninitialized state, reserved claims and enabled routes instead of treating desired absence or liveness as shutdown proof.
+
+## Capacity empty ledger serialization tests
+
+Initialized empty snapshots omit the reservation field under the runtime serialization contract; committed WAL evidence still accepts drained mode and rejects initial mode.
+
+## Capacity storage binding tests
+
+Maintenance refuses custom app-root commands, unsupported database knobs, named volumes, shadowed binds and symlinked storage.
+
+## Capacity initialization ordering tests
+
+Initial cutover proves API readiness and durable initialization and removes the active acknowledgement before starting media.
+
+## Capacity initialization failure tests
+
+An unavailable candidate API, wrong candidate storage or missing durable marker never restarts execution or rewinds the database. The temporary acknowledged control plane is stopped before returning.
+
+## Capacity frozen drain tests
+
+Demand arriving before writers stop refuses node shutdown and restores only the old control plane so withdrawal proofs can continue.
+
+## Capacity maintenance selection tests
+
+Existing installer runs and initial cutovers fail before service mutation when maintenance selection or the external shutdown assertion is missing.
+
+## Capacity raw acknowledgement tests
+
+An ambient or persisted runtime acknowledgement cannot bypass the explicit maintenance flow or mutate installation state.
+
+## Capacity real Compose upgrade tests
+
+Real Compose-rendered initial upgrades remove temporary acknowledgement inputs, retain the selected database, keep Watchtower stopped and support later drained restart.
+
+
+## Incomplete fresh installation retries
+
+An installer-owned version/target marker permits retrying an incomplete bootstrap only with absent project containers and empty rendered runtime storage, without WAL or SHM sidecars.
+
+[[scripts/capacity-upgrade.py#fresh_preflight]] never treats the marker as shutdown proof or resets state. Runtime evidence requires explicit maintenance or manual recovery. The marker participates in configuration rollback and is removed only after complete readiness, including successful explicit maintenance.
+
+## Incomplete fresh installation retry tests
+
+Failed pulls and startup attempts before resource creation can retry; mismatched markers and runtime or durable-state evidence cannot bypass maintenance.

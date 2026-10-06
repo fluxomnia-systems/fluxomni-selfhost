@@ -52,11 +52,7 @@ FLUXOMNI_PUBLIC_URL=https://stream.example.com
 scheme. Without it, artifact fetch URLs default to `http://` which causes TLS
 handshake failures when media nodes download files through the HTTPS proxy.
 
-Then restart the stack:
-
-```bash
-docker compose up -d
-```
+Apply changes through [Capacity Ledger Upgrades](capacity-upgrades.md). Disable and drain routes before recreating existing control-plane or media-node containers, then restore the recorded enabled routes after verification.
 
 ### WebSocket support
 
