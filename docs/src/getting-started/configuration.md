@@ -70,11 +70,7 @@ If you move `FLUXOMNI_MEDIA_NODE_DATA_DIR` elsewhere, keep `FLUXOMNI_SHARED_VIDE
 
 ## Apply Changes
 
-From your install directory:
-
-```bash
-docker compose up -d
-```
+Apply changes through [Capacity Ledger Upgrades](capacity-upgrades.md). Disable and drain routes before recreating existing control-plane or media-node containers, then restore the recorded enabled routes after verification.
 
 The operator UI is served from the frontend host:
 
@@ -107,14 +103,9 @@ Set these only when you need to override the defaults:
 - `FLUXOMNI_MEDIA_NODE_LABELS`: comma-separated labels for node capabilities or operator grouping. Defaults to `selfhost`.
 - `FLUXOMNI_MEDIA_NODE_ZONE`: optional location or placement label. Defaults to `local`.
 
-## Update to Newest Image for Current Tag
+## Update an Existing Installation
 
-From your install directory:
-
-```bash
-docker compose pull
-docker compose up -d
-```
+Follow the [capacity upgrade guide](capacity-upgrades.md). Installer reruns require initial, drained or standalone-node maintenance mode; keep automatic updates stopped.
 
 ## Offline Preparation Resource Limits
 
@@ -158,8 +149,8 @@ is added.
 
 Installer reruns preserve budgets; an explicit environment value overrides its
 saved value. To change just CPU, rerun with
-`FLUXOMNI_PREPARATION_CPU_MILLICORES=750`. Alternatively, edit the enabled
-installation's `.env` and run `docker compose up -d` to recreate the node.
+`FLUXOMNI_PREPARATION_CPU_MILLICORES=750`. Changing an existing node requires the
+[drained maintenance procedure](capacity-upgrades.md#later-planned-upgrades).
 The installer requires the current media-node startup to confirm enforcement,
 so older images cannot pass using limits left by a previous version.
 Check that Fleet reports **enforced** after recreation. CPU throttling slows

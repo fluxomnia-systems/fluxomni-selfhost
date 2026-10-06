@@ -117,7 +117,7 @@ The installer manages:
 | `vX.Y.Z` | Core image tag, accepted for direct image pinning |
 | `edge` | Latest successful publish from `main` |
 
-Use `latest` unless you need a pinned release or a test build. The current stable public release is `v26.3.2`. Older `vYY.Q.P` and `v0.x.y` core tags remain available for rollback.
+Use `latest` unless you need a pinned release or a test build. The current stable public release is `v26.3.2`. Retained image tags are available for separately reviewed recovery; migrated state must not be restarted with predecessor images.
 
 See the What's New section above for the latest highlights.
 
@@ -131,20 +131,18 @@ cd ~/fluxomni
 # Troubleshooting (Connection & Health Doctor)
 ./doctor.sh
 
-# Update to the currently configured image tags
-docker compose pull
-docker compose up -d
+# Updates require the capacity-ledger maintenance procedure below
 
 # Follow logs
 docker compose logs -f
 
-# Stop the stack
-docker compose down
+# Planned stop: first disable and drain routes using the capacity upgrade guide
+docker compose --profile auto-update stop --timeout 30
 ```
 
 If you used a custom directory or installed only a media node, run these commands from that directory.
 
-You can run `install.sh` again on the same install. It keeps your data and updates known `.env` keys.
+Installer reruns preserve data and known `.env` settings, and require an explicit maintenance mode. Follow the [capacity upgrade guide](docs/src/getting-started/capacity-upgrades.md) for initial upgrades, later drained upgrades and standalone nodes.
 
 For SRS open-file errors, rerun the latest installer; see [troubleshooting](docs/src/getting-started/troubleshooting.md#srs-reports-too-few-open-files).
 

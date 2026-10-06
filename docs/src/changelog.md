@@ -4,6 +4,12 @@ Operator-facing highlights from recent Fluxomni Studio releases.
 
 The changelog is editorial release copy. Use `release-manifest.json` as the factual inventory for dates, module versions, images, and API client refs, but write the latest changelog entry by hand so it reads as operator-facing release notes instead of generated metadata.
 
+## Unreleased Installer Changes
+
+Existing installations now require an explicit capacity maintenance mode. The first ledger upgrade verifies global execution shutdown, persists initialization and removes its temporary acknowledgement before starting media; later upgrades require disabled routes and zero reservations.
+
+Automatic updates stay stopped. Candidate failures preserve runtime data and stop the temporary control plane. Follow [Capacity Ledger Upgrades](getting-started/capacity-upgrades.md) and select a tested admission-capable build; `v26.3.2` predates this runtime contract.
+
 ## v26.3.2 - 27 September 2026
 
 This release reduces repeated control-plane and idle media-node work, bounds artifact catalog requests, and makes output startup status reflect media progress. See the [upgrade guide](getting-started/upgrade-26.3.2.md) for deployment and API changes.

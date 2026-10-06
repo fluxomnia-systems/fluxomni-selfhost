@@ -5,12 +5,18 @@
 set -euo pipefail
 
 INSTALL_TARGET_ARG=""
+CAPACITY_UPGRADE_MODE=""
+EXECUTION_STOPPED_CONFIRMED=0
+NODE_READY_CONFIRMED=0
 
 usage() {
   cat <<'EOF'
 Usage:
   install.sh [full|media-node]
   install.sh --install-target <full|media-node>
+  install.sh full --capacity-upgrade initial --confirm-execution-stopped
+  install.sh full --capacity-upgrade drained
+  install.sh media-node --capacity-upgrade node --confirm-control-plane-ready
 
 Defaults:
   - No argument installs the full single-host stack.
@@ -42,6 +48,19 @@ while [ "$#" -gt 0 ]; do
       fi
       INSTALL_TARGET_ARG="$2"
       shift 2
+      ;;
+    --capacity-upgrade)
+      [ "$#" -ge 2 ] && [ -z "$CAPACITY_UPGRADE_MODE" ] || { usage; exit 1; }
+      CAPACITY_UPGRADE_MODE="$2"
+      shift 2
+      ;;
+    --confirm-execution-stopped)
+      EXECUTION_STOPPED_CONFIRMED=1
+      shift
+      ;;
+    --confirm-control-plane-ready)
+      NODE_READY_CONFIRMED=1
+      shift
       ;;
     -h|--help)
       usage
@@ -861,6 +880,7 @@ finish_config_transaction() {
     done
   fi
   rm -rf "$INSTALL_BACKUP"
+  if [ -n "${CAPACITY_HELPER:-}" ]; then rm -f "$CAPACITY_HELPER"; fi
   return "$status"
 }
 
@@ -1125,9 +1145,72 @@ print_recent_service_logs() {
   "${DOCKER_CMD[@]}" compose logs --tail=80 "$service" || true
 }
 
+# @lat: [[installation#Capacity maintenance selection]]
+validate_capacity_maintenance() {
+  if [ "${FLUXOMNI_CAPACITY_UPGRADE_STOPPED+x}" = x ] ||
+     { [ -f "${FLUXOMNI_DIR}/.env" ] && grep -Eq '^FLUXOMNI_CAPACITY_UPGRADE_STOPPED=' "${FLUXOMNI_DIR}/.env"; }; then
+    echo 'Error: remove the raw FLUXOMNI_CAPACITY_UPGRADE_STOPPED acknowledgement. Use the explicit maintenance mode.' >&2
+    exit 1
+  fi
+  if [ -n "$CAPACITY_UPGRADE_MODE" ] && { [ -n "${COMPOSE_PROFILES:-}" ] || [ -n "${COMPOSE_FILE:-}" ]; }; then
+    echo 'Error: maintenance requires the default Compose bundle with automatic updates disabled.' >&2
+    exit 1
+  fi
+  case "$CAPACITY_UPGRADE_MODE" in
+    '')
+      if [ -f "${FLUXOMNI_DIR}/.env" ]; then
+        echo 'Error: existing installs require --capacity-upgrade initial, drained, or node. Read the capacity upgrade guide before stopping execution.' >&2
+        exit 1
+      fi
+      [ "$EXECUTION_STOPPED_CONFIRMED" = 0 ] && [ "$NODE_READY_CONFIRMED" = 0 ] || { usage; exit 1; }
+      ;;
+    initial)
+      [ "$FLUXOMNI_INSTALL_TARGET" = full ] && [ "$EXECUTION_STOPPED_CONFIRMED" = 1 ] && [ "$NODE_READY_CONFIRMED" = 0 ] || {
+        echo 'Error: initial full-stack upgrade requires --confirm-execution-stopped. Stop every external execution container and its automatic updater first.' >&2
+        exit 1
+      }
+      ;;
+    drained)
+      [ "$FLUXOMNI_INSTALL_TARGET" = full ] && [ "$EXECUTION_STOPPED_CONFIRMED" = 0 ] && [ "$NODE_READY_CONFIRMED" = 0 ] || { usage; exit 1; }
+      ;;
+    node)
+      [ "$FLUXOMNI_INSTALL_TARGET" = media-node ] && [ "$NODE_READY_CONFIRMED" = 1 ] && [ "$EXECUTION_STOPPED_CONFIRMED" = 0 ] || {
+        echo 'Error: standalone update requires --confirm-control-plane-ready after the remote control plane has verified the initial shutdown boundary, or this node has drained to zero reservations.' >&2
+        exit 1
+      }
+      ;;
+    *) usage; exit 1 ;;
+  esac
+}
+
+prepare_capacity_maintenance() {
+  [ -n "$CAPACITY_UPGRADE_MODE" ] || return 0
+  [ -f "${FLUXOMNI_DIR}/.env" ] && [ -f "${FLUXOMNI_DIR}/docker-compose.yml" ] || {
+    echo 'Error: maintenance requires an existing installation.' >&2
+    exit 1
+  }
+  [ "$CAPACITY_UPGRADE_MODE" != node ] || return 0
+  require_cmd python3
+  CAPACITY_HELPER="$(mktemp)"
+  # The helper belongs to this installer, independently of the selected runtime
+  # release assets (older stable bundles do not contain it).
+  local local_helper
+  local_helper="$(dirname -- "${BASH_SOURCE[0]}")/scripts/capacity-upgrade.py"
+  if [ -f "$local_helper" ]; then
+    cp "$local_helper" "$CAPACITY_HELPER"
+  else
+    curl -fsSL "$(repo_raw_for_ref "${SELFHOST_REF_OVERRIDE:-main}")/scripts/capacity-upgrade.py" -o "$CAPACITY_HELPER"
+  fi
+  if ! CAPACITY_DATABASE=$(cd "$FLUXOMNI_DIR" && python3 "$CAPACITY_HELPER" preflight --mode "$CAPACITY_UPGRADE_MODE" --docker "${DOCKER_CMD[@]}"); then
+    rm -f "$CAPACITY_HELPER"
+    exit 1
+  fi
+}
+
 echo "Installing Fluxomni Studio (${FLUXOMNI_INSTALL_TARGET}) to ${FLUXOMNI_DIR}"
 
 validate_install_target
+validate_capacity_maintenance
 require_cmd curl
 require_cmd awk
 
@@ -1164,6 +1247,7 @@ fi
 
 mkdir -p "${FLUXOMNI_DIR}" "${FLUXOMNI_DIR}/data/videos" "${FLUXOMNI_DIR}/data/dvr" "${FLUXOMNI_DIR}/data/srs-http"
 
+prepare_capacity_maintenance
 begin_config_transaction
 
 echo "Downloading deployment files..."
@@ -1408,11 +1492,25 @@ fi
 if [ "$PREPARATION_ENABLED" = 0 ] && [ "$(read_env_file_value FLUXOMNI_PREPARATION_CGROUP_ENABLED "$INSTALL_BACKUP/.env")" = 1 ]; then
   run_privileged python3 "${FLUXOMNI_DIR}/preparation-cgroup.py" disable "$FLUXOMNI_DIR" >/dev/null
 fi
+if [ "$CAPACITY_UPGRADE_MODE" = initial ] || [ "$CAPACITY_UPGRADE_MODE" = drained ]; then
+  candidate_database=$(python3 "$CAPACITY_HELPER" preflight --mode "$CAPACITY_UPGRADE_MODE" --docker "${DOCKER_CMD[@]}")
+  [ "$candidate_database" = "$CAPACITY_DATABASE" ] || { echo 'Error: control-plane storage changed; use a manual migration.' >&2; exit 1; }
+fi
+# Once containers may touch SQLite, never restore predecessor assets/data.
 INSTALL_CONFIG_COMMITTED=1
 
 echo "Pulling images and starting containers..."
 "${DOCKER_CMD[@]}" compose pull
-"${DOCKER_CMD[@]}" compose up -d --remove-orphans
+case "$CAPACITY_UPGRADE_MODE" in
+  initial|drained)
+    python3 "$CAPACITY_HELPER" run --mode "$CAPACITY_UPGRADE_MODE" --database "$CAPACITY_DATABASE" --timeout "${FLUXOMNI_CAPACITY_UPGRADE_TIMEOUT_SECONDS:-90}" --docker "${DOCKER_CMD[@]}"
+    ;;
+  node)
+    "${DOCKER_CMD[@]}" compose stop --timeout 30 watchtower media-node
+    "${DOCKER_CMD[@]}" compose up -d --remove-orphans media-node
+    ;;
+  *) "${DOCKER_CMD[@]}" compose up -d --remove-orphans ;;
+esac
 verify_media_node_file_limit
 
 CONTROL_PLANE_CONTAINER_NAME="${REQUESTED_CONTROL_PLANE_CONTAINER_NAME:-$(read_env_file_value "FLUXOMNI_CONTROL_PLANE_CONTAINER_NAME" .env)}"
@@ -1447,7 +1545,7 @@ if [ "$FLUXOMNI_INSTALL_TARGET" = "media-node" ]; then
   echo "Data    : ${FLUXOMNI_DIR}/data"
   echo
   echo "Common commands:"
-  echo "  Update: cd ${FLUXOMNI_DIR} && ${DOCKER_DISPLAY} compose pull && ${DOCKER_DISPLAY} compose up -d"
+  echo "  Update: follow the capacity upgrade guide and rerun install.sh with --capacity-upgrade node --confirm-control-plane-ready"
   echo "  Logs  : cd ${FLUXOMNI_DIR} && ${DOCKER_DISPLAY} compose logs -f media-node"
   echo "  Stop  : cd ${FLUXOMNI_DIR} && ${DOCKER_DISPLAY} compose down"
   exit 0
@@ -1484,6 +1582,6 @@ echo "RTMP : rtmp://${MEDIA_HOST}:1935/app"
 echo "Data : ${FLUXOMNI_DIR}/data"
 echo
 echo "Common commands:"
-echo "  Update: cd ${FLUXOMNI_DIR} && ${DOCKER_DISPLAY} compose pull && ${DOCKER_DISPLAY} compose up -d"
+echo "  Update: follow the capacity upgrade guide and rerun install.sh with --capacity-upgrade initial or drained"
 echo "  Logs  : cd ${FLUXOMNI_DIR} && ${DOCKER_DISPLAY} compose logs -f frontend control-plane media-node"
 echo "  Stop  : cd ${FLUXOMNI_DIR} && ${DOCKER_DISPLAY} compose down"

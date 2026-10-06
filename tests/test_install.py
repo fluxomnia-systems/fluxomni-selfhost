@@ -7,6 +7,7 @@ import json
 import os
 from pathlib import Path
 import shutil
+import sqlite3
 import subprocess
 import sys
 
@@ -29,6 +30,7 @@ import json
 import os
 from pathlib import Path
 import shutil
+import sqlite3
 import subprocess
 import sys
 
@@ -61,12 +63,33 @@ elif name in ("apt-get", "ufw", "firewall-cmd", "systemctl"):
     with open(Path(os.environ["TEST_ASSETS"]).parent / "firewall.jsonl", "a") as log:
         log.write(json.dumps([name, *args]) + "\n")
 elif name == "docker":
+    with open(Path(os.environ["TEST_ASSETS"]).parent / "docker.jsonl", "a") as log:
+        # Keep payloads out of this sequence ledger; tests inspect service order.
+        log.write(json.dumps(args[:4] if args[:2] == ["compose", "exec"] else args) + "\n")
+    original_args = args
+    if args[:3] == ["compose", "--profile", "auto-update"]:
+        args = ["compose", *args[3:]]
     version_fixture = Path(os.environ["TEST_ASSETS"]) / "compose-version.txt"
     if args == ["compose", "version", "--short"] and version_fixture.exists():
         print(version_fixture.read_text())
         sys.exit(0)
+    if args[:2] == ["compose", "ps"]:
+        print(args[-1])
+        sys.exit(0)
+    if args[:2] == ["compose", "stop"]:
+        states = json.loads(Path("states.json").read_text())
+        names = args[4:] or list(states)
+        for service in names:
+            states[service] = False
+        Path("states.json").write_text(json.dumps(states))
+        sys.exit(0)
+    if args[:2] == ["compose", "start"]:
+        states = json.loads(Path("states.json").read_text())
+        states[args[-1]] = True
+        Path("states.json").write_text(json.dumps(states))
+        sys.exit(0)
     if args[:2] in (["compose", "config"], ["compose", "version"]):
-        sys.exit(subprocess.run([os.environ["REAL_DOCKER"], *args]).returncode)
+        sys.exit(subprocess.run([os.environ["REAL_DOCKER"], *original_args]).returncode)
     if args == ["info"] or args[:2] == ["compose", "pull"]:
         pass
     elif args[:2] == ["info", "--format"]:
@@ -75,10 +98,40 @@ elif name == "docker":
         print("default")
     elif args[:2] == ["context", "inspect"]:
         print(os.environ.get("TEST_DOCKER_ENDPOINT", "unix:///var/run/docker.sock"))
-    elif args[:2] == ["compose", "up"]:
-        rendered = subprocess.check_output([os.environ["REAL_DOCKER"], "compose", "config", "--format", "json"], text=True)
+    elif args[:2] == ["compose", "up"] or args[:2] == ["compose", "-f"]:
+        options = args[:3] if args[1] == "-f" else ["compose"]
+        rendered = subprocess.check_output([os.environ["REAL_DOCKER"], *options, "config", "--format", "json"], text=True)
+        config = json.loads(rendered)
+        states = json.loads(Path("states.json").read_text()) if Path("states.json").exists() else {}
+        selected = args[args.index("--force-recreate") + 1:] if "--force-recreate" in args else (args[4:] if "--no-deps" in args else list(config["services"]))
+        if not selected:
+            selected = list(config["services"])
+        for service in selected:
+            states[service] = True
+            Path(service + ".json").write_text(json.dumps(config["services"][service]))
+        Path("states.json").write_text(json.dumps(states))
         Path("started.json").write_text(rendered)
+        if "control-plane" in selected:
+            service = config["services"]["control-plane"]
+            root = next(v["source"] for v in service["volumes"] if v["target"] == "/app/fluxomni-data")
+            Path(root).mkdir(parents=True, exist_ok=True)
+            db = Path(root) / "state.db"
+            with sqlite3.connect(db) as connection:
+                connection.execute("CREATE TABLE IF NOT EXISTS assignment_snapshots(assignment_snapshot_id TEXT, snapshot_key TEXT, payload TEXT)")
+                connection.execute("CREATE TABLE IF NOT EXISTS restreams(payload TEXT)")
+                row = connection.execute("SELECT payload FROM assignment_snapshots").fetchone()
+                snapshot = json.loads(row[0]) if row else {"capacity_initialized": True}
+                if not os.environ.get("TEST_CAPACITY_INITIALIZATION_FAIL") and not os.environ.get("TEST_CAPACITY_UNSUPPORTED"):
+                    snapshot["capacity_initialized"] = True
+                connection.execute("DELETE FROM assignment_snapshots")
+                connection.execute("INSERT INTO assignment_snapshots VALUES('current','current',?)", (json.dumps(snapshot),))
     elif args[:2] == ["compose", "exec"]:
+        if args[3] == "control-plane":
+            if os.environ.get("TEST_CAPACITY_API_FAIL") or os.environ.get("TEST_CAPACITY_UNSUPPORTED"):
+                print('{"errors":[{"message":"unavailable"}]}')
+            else:
+                print('{"data":{"fleet":{"mediaNodes":[]}}}')
+            sys.exit(0)
         assert args[2:6] == ["-T", "media-node", "sh", "-c"]
         if "root=$FLUXOMNI_PREPARATION_CGROUP_ROOT" in args[6]:
             sys.exit(1 if os.environ.get("TEST_ENFORCEMENT_FAIL") else 0)
@@ -87,6 +140,10 @@ elif name == "docker":
         limit = config["services"]["media-node"]["ulimits"]["nofile"]["soft"]
         script = 'ulimit() { printf "%s\\n" "$TEST_LIMIT"; }; ' + args[6]
         sys.exit(subprocess.run(["sh", "-c", script], env={**os.environ, "TEST_LIMIT": str(limit)}).returncode)
+    elif args[0] == "inspect" and len(args) == 2:
+        service = json.loads(Path(args[1] + ".json").read_text())
+        states = json.loads(Path("states.json").read_text())
+        print(json.dumps([{"Config": {"Env": [k + "=" + str(v) for k, v in service["environment"].items()], "Cmd": []}, "Mounts": [{"Type": v["type"], "Source": v["source"], "Destination": v["target"], "RW": not v.get("read_only", False)} for v in service.get("volumes", [])], "State": {"Running": states[args[1]]}}]))
     elif args[0] == "inspect":
         print("2026-10-04T00:00:00Z" if "StartedAt" in args[2] else "healthy")
     elif args[0] == "logs":
@@ -117,13 +174,18 @@ else:
         "FLUXOMNI_MEDIA_NODE_PUBLIC_HOST": "127.0.0.1",
         "FLUXOMNI_MEDIA_NODE_ID": "test-node",
         "FLUXOMNI_MEDIA_NODE_NAME": "Test Node",
+        "FLUXOMNI_CAPACITY_UPGRADE_TIMEOUT_SECONDS": "1",
         "WITH_INITIAL_UPGRADE": "0",
         "WITH_UFW": "0",
         "WITH_FIREWALLD": "0",
     }
 
-    def run(target, overrides=None):
-        return subprocess.run(["bash", str(ROOT / "install.sh"), target], cwd=tmp_path, env={**env, **(overrides or {})}, text=True, capture_output=True, timeout=30)
+    def run(target, overrides=None, arguments=None):
+        if arguments is None:
+            arguments = []
+            if (destination / ".env").exists():
+                arguments = ["--capacity-upgrade", "drained"] if target == "full" else ["--capacity-upgrade", "node", "--confirm-control-plane-ready"]
+        return subprocess.run(["bash", str(ROOT / "install.sh"), target, *arguments], cwd=tmp_path, env={**env, **(overrides or {})}, text=True, capture_output=True, timeout=30)
 
     return assets, destination, run
 
@@ -158,13 +220,16 @@ def test_installs_and_reruns_preserve_data_and_supply_file_limits(installation, 
     with (destination / ".env").open("a") as env_file:
         env_file.write("ENV_FILE_SENTINEL=loaded\n")
     env_before = (destination / ".env").read_text()
-    (destination / "data/state.db").write_bytes(b"existing database sentinel")
+    with sqlite3.connect(destination / "data/state.db") as connection:
+        connection.execute("CREATE TABLE sentinel(value TEXT)")
+        connection.execute("INSERT INTO sentinel VALUES('preserved')")
     override = destination / "docker-compose.override.yml"
     override.write_text("services:\n  media-node:\n    environment:\n      OPERATOR_SETTING: retained\n")
     override_before = override.read_bytes()
     second = run(target)
     assert second.returncode == 0, second.stdout + second.stderr
-    assert (destination / "data/state.db").read_bytes() == b"existing database sentinel"
+    with sqlite3.connect(destination / "data/state.db") as connection:
+        assert connection.execute("SELECT value FROM sentinel").fetchone() == ("preserved",)
     assert (destination / ".env").read_text() == env_before
     assert override.read_bytes() == override_before
     started = json.loads((destination / "started.json").read_text())
@@ -383,3 +448,94 @@ def test_preparation_rendered_bind_creation_policy(bind, accepted):
     }}}
     result = subprocess.run([sys.executable, str(ROOT / 'scripts/verify-preparation-compose.py'), root, '500', '1024', '64'], input=json.dumps(config), text=True, capture_output=True)
     assert (result.returncode == 0) is accepted, result.stderr
+
+
+def capacity_snapshot(destination, initialized):
+    with sqlite3.connect(destination / 'data/state.db') as connection:
+        connection.execute('UPDATE assignment_snapshots SET payload=?', (json.dumps({'capacity_initialized': initialized}),))
+
+
+# @lat: [[installation#Capacity maintenance selection tests]]
+def test_existing_install_requires_explicit_maintenance_and_initial_confirmation(installation):
+    assets, destination, run = installation
+    assert run('full').returncode == 0
+    before = (destination / '.env').read_bytes()
+    log = assets.parent / 'docker.jsonl'
+    log.write_text('')
+    for arguments in [[], ['--capacity-upgrade', 'initial']]:
+        result = run('full', arguments=arguments)
+        assert result.returncode != 0
+        assert not log.read_text()
+        assert (destination / '.env').read_bytes() == before
+
+
+# @lat: [[installation#Capacity raw acknowledgement tests]]
+def test_runtime_acknowledgement_is_not_an_installer_shortcut(installation):
+    _, destination, run = installation
+    result = run('full', {'FLUXOMNI_CAPACITY_UPGRADE_STOPPED': 'true'})
+    assert result.returncode != 0
+    assert not destination.exists()
+    assert run('full').returncode == 0
+    with (destination / '.env').open('a') as stream:
+        stream.write('FLUXOMNI_CAPACITY_UPGRADE_STOPPED=true\n')
+    before = (destination / '.env').read_bytes()
+    result = run('full', arguments=['--capacity-upgrade', 'initial', '--confirm-execution-stopped'])
+    assert result.returncode != 0
+    assert (destination / '.env').read_bytes() == before
+
+
+# @lat: [[installation#Capacity real Compose upgrade tests]]
+def test_initial_upgrade_and_drained_restart_use_the_same_saved_database(installation):
+    assets, destination, run = installation
+    assert run('full').returncode == 0
+    # Model an updater left running by an earlier opt-in deployment. Its
+    # profile is inactive in today's environment, but maintenance must stop it.
+    states = json.loads((destination / 'states.json').read_text())
+    states['watchtower'] = True
+    (destination / 'states.json').write_text(json.dumps(states))
+    watchtower = {'environment': {}, 'volumes': []}
+    (destination / 'watchtower.json').write_text(json.dumps(watchtower))
+    capacity_snapshot(destination, False)
+    initial = run('full', arguments=['--capacity-upgrade', 'initial', '--confirm-execution-stopped'])
+    assert initial.returncode == 0, initial.stdout + initial.stderr
+    config = json.loads((destination / 'control-plane.json').read_text())
+    assert 'FLUXOMNI_CAPACITY_UPGRADE_STOPPED' not in config['environment']
+    assert 'FLUXOMNI_CAPACITY_UPGRADE_STOPPED' not in (destination / '.env').read_text()
+    assert not list(destination.glob('.capacity-upgrade-*'))
+    states = json.loads((destination / 'states.json').read_text())
+    assert states['watchtower'] is False
+    assert states['media-node'] is True
+    assert run('full', arguments=['--capacity-upgrade', 'drained']).returncode == 0
+    # Even a fully drained initialized ledger must not use initial mode again.
+    log = assets.parent / 'docker.jsonl'
+    log.write_text('')
+    repeated = run('full', arguments=['--capacity-upgrade', 'initial', '--confirm-execution-stopped'])
+    assert repeated.returncode != 0
+    events = [json.loads(line) for line in log.read_text().splitlines()]
+    assert not any(e[:2] in (['compose', 'stop'], ['compose', 'up']) for e in events)
+
+
+@pytest.mark.parametrize('failure', ['TEST_CAPACITY_API_FAIL', 'TEST_CAPACITY_INITIALIZATION_FAIL', 'TEST_CAPACITY_UNSUPPORTED'])
+def test_initial_candidate_failure_retains_state_and_never_starts_media(installation, failure):
+    assets, destination, run = installation
+    assert run('full').returncode == 0
+    capacity_snapshot(destination, False)
+    (assets.parent / 'docker.jsonl').write_text('')
+    result = run('full', {failure: '1'}, arguments=['--capacity-upgrade', 'initial', '--confirm-execution-stopped'])
+    assert result.returncode != 0
+    states = json.loads((destination / 'states.json').read_text())
+    assert states['media-node'] is False
+    assert states['control-plane'] is False
+    assert (destination / 'data/state.db').is_file()
+    assert not list(destination.glob('.capacity-upgrade-*'))
+    assert 'FLUXOMNI_CAPACITY_UPGRADE_STOPPED' not in (destination / '.env').read_text()
+    if failure == 'TEST_CAPACITY_INITIALIZATION_FAIL':
+        retry = run('full', arguments=['--capacity-upgrade', 'initial', '--confirm-execution-stopped'])
+        assert retry.returncode == 0, retry.stdout + retry.stderr
+
+
+def test_standalone_node_cannot_initialize_the_remote_ledger(installation):
+    _, destination, run = installation
+    result = run('media-node', arguments=['--capacity-upgrade', 'initial', '--confirm-execution-stopped'])
+    assert result.returncode != 0
+    assert not destination.exists()
