@@ -1,8 +1,8 @@
 # Scenarios
 
-End-to-end walkthroughs for the most common ways teams run Fluxomni Studio.
+Step-by-step guides for common ways to run Fluxomni Studio.
 
-Each scenario explains who it's for, what you'll build, the exact setup steps, and rough cost and scale notes. Start from the scenario closest to your team, then branch into the [User Guide](../user-guide/overview.md) for deeper topics.
+Each scenario explains who it is for, what you will build, the setup steps, and estimated costs and capacity. Choose the scenario closest to your needs. Use the [User Guide](../user-guide/overview.md) for more detail.
 
 - [Multistream agency](multistream-agency.md)
 - [Linear channel (24/7 broadcast)](linear-channel-24-7.md)

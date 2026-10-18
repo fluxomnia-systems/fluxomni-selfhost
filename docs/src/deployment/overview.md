@@ -17,15 +17,15 @@ The default install path is `~/fluxomni`.
 - **Supported platforms**: Linux x64/ARM64, macOS x64/Apple Silicon, Windows (WSL2 Ubuntu)
 - **Recommended server OS**: Ubuntu 24.04 LTS
 - **Architecture**: x86_64 (x64) or ARM64 (AArch64)
-- **Docker**: Engine with Compose v2 — the installer bootstraps Docker automatically on Debian/Ubuntu
+- **Docker**: Engine with Compose v2 — the installer installs Docker automatically on Debian/Ubuntu
 - **Ports**: see the [Configuration](../getting-started/configuration.md) page for the full port list
 
 For the smallest restreaming workloads, a 1-vCPU / 1 GB instance is usually enough.
-If you plan to run many concurrent routes or use transcoding, size up accordingly.
+Choose a larger server for many concurrent routes or transcoding.
 
 ## Cloud Provider Guides
 
-Step-by-step instructions for creating a server and auto-installing Fluxomni Studio:
+Follow these guides to create a server and install Fluxomni Studio automatically:
 
 - [DigitalOcean](digitalocean.md) — Droplets
 - [Hetzner Cloud](hetzner.md) — Cloud Servers

@@ -1,20 +1,20 @@
 # User Guide
 
-Fluxomni Studio is a web-based RTMP streaming platform that lets you broadcast a single source to multiple destinations simultaneously. The operator interface — called the **Control Surface** — runs in your browser and gives you real-time control over route health, outputs, playlists, media-node inventory, and local-user administration.
+Fluxomni Studio sends one RTMP source to several destinations at the same time. Its operator interface, the **Control Surface**, runs in your browser. Use it to check route health and manage outputs, playlists, media nodes, and local users.
 
-This guide covers the day-to-day operation of the Control Surface after your Fluxomni Studio instance is installed and running. For installation and deployment, see the [Quick Start](../getting-started/quick-start.md) section.
+This guide covers daily use of the Control Surface after you install Fluxomni Studio. For installation and deployment, see the [Quick Start](../getting-started/quick-start.md) section.
 
 ## Key Concepts
 
-**Route** — a named streaming pipeline that connects one ingest input to one or more output destinations. Each route has its own workspace where you manage execution, routing, playlists, and live playback.
+**Route** — a named streaming pipeline that connects one stream input to one or more output destinations. Each route has its own workspace where you manage execution, routing, playlists, and live playback.
 
-**Input** — the ingest endpoint where your source signal arrives. Fluxomni Studio generates a unique URL for each route depending on the chosen protocol (RTMP, SRT, or WebRTC). Point your encoder (OBS, FFmpeg, hardware encoder) at this URL.
+**Input** — the endpoint that receives your source stream. Fluxomni Studio generates a unique URL for each route depending on the chosen protocol (RTMP, SRT, or WebRTC). Point your encoder (OBS, FFmpeg, hardware encoder) at this URL.
 
-**Output** — a destination where Fluxomni Studio relays the ingested signal. Outputs are typically RTMP URLs for platforms like YouTube, Twitch, Facebook Live, or custom CDN endpoints.
+**Output** — a destination where Fluxomni Studio sends the incoming stream. Outputs are typically RTMP URLs for platforms like YouTube, Twitch, Facebook Live, or custom CDN endpoints.
 
-**Media Node** — a server that handles the actual media processing (transcoding, relaying, file playback). A single-host install runs one media node automatically. Larger deployments can attach multiple media nodes across different servers.
+**Media Node** — a server that processes media (transcoding, relaying, file playback). A single-host install runs one media node automatically. Larger deployments can attach multiple media nodes across different servers.
 
-**Fleet** — the collective view of all attached media nodes, their health, capacity, and cached files.
+**Fleet** — the view of all attached media nodes, their health, capacity, and cached files.
 
 **Playlist** — a queue of pre-recorded video files that a route can play out through its outputs, useful for scheduled programming or fallback content.
 
@@ -24,30 +24,30 @@ This guide covers the day-to-day operation of the Control Surface after your Flu
 
 ![Routes list with the navigation menu visible](../images/user-guide/routes-list.jpg)
 
-When you open the Control Surface, you see a persistent sidebar on the left with the Fluxomni Studio logo, version badge, theme toggle, navigation menu, sign-out action, and live system metrics. The main content area on the right changes based on the current page.
+The Control Surface has a sidebar on the left. It shows the Fluxomni Studio logo, version badge, theme toggle, navigation menu, sign-out action, and live system metrics. The area on the right shows the current page.
 
 ### Operate
 
-- **Attention** — a unified alert feed for route alerts, fleet alerts, and acknowledged known issues. Each route alert links directly to the affected workspace.
-- **Routes** — the main operational view. Combines search, scope toggles, health strips, route cards, and quick output actions.
-- **Artifacts** — the shared source-file library for uploads, Drive imports, tags, storage admission, and playlist reuse.
+- **Attention** — one feed for route alerts, fleet alerts, and known issues. Each route alert links directly to the affected workspace.
+- **Routes** — the main page for streams. It includes search, scope controls, health summaries, route cards, and output actions.
+- **Artifacts** — the shared source-file library. Upload files, import from Drive, add tags, check storage limits, and reuse files in playlists.
 
 ### Fleet
 
-- **Fleet** — inventory of all media nodes. Shows node health, assignments, heartbeat freshness, reachability, capabilities, and cached file distribution.
+- **Fleet** — a list of all media nodes. Check node health, assignments, heartbeat age, reachability, capabilities, and cached files.
 
 ### Control
 
-- **Settings** — a role-scoped settings workspace for general defaults, artifact ingest settings, media-profile references, session security, and user administration.
+- **Settings** — settings available to your role. Manage general defaults, artifact imports, media profiles, session security, and users.
 - **Export / Import** — bulk export or import of route configurations.
 
 ### System Metrics
 
-The bottom of the sidebar shows real-time CPU, memory, and network utilization for the control plane.
+The bottom of the sidebar shows real-time CPU, memory, and network usage for the control plane.
 
 ## Next Steps
 
-- [Attention](attention.md) — triage route, fleet, and storage alerts
+- [Attention](attention.md) — review route, fleet, and storage alerts
 - [Routes](routes.md) — learn how to create and operate routes
 - [Artifacts](artifacts.md) — upload and reuse source files across routes
 - [Fleet](fleet.md) — understand media node management

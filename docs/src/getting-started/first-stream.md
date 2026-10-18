@@ -16,7 +16,7 @@ A new installation can initially open as an **Open shell**. Create a named accou
 2. Enter a username, optional display name, and a strong password.
 3. Select **Create user**.
 
-The first persisted user becomes an Admin and enables named-user sign-in. Keep the credentials in your password manager. For the full account and role model, see [Settings](../user-guide/settings.md#users).
+The first saved user becomes an Admin and enables named-user sign-in. Keep the credentials in your password manager. For details about accounts and roles, see [Settings](../user-guide/settings.md#users).
 
 ## Create an RTMP route
 
@@ -45,7 +45,7 @@ Use H.264 video and AAC audio, select **Apply**, then **Start Streaming**.
 
 ### SRT
 
-In **Settings → Stream**, select **Service: Custom**, paste the **complete copied SRT URL** into **Server**, and leave **Stream Key** empty. Keep the `streamid` and any latency or passphrase parameters intact. OBS connects in caller mode by default.
+In **Settings → Stream**, select **Service: Custom**, paste the **complete copied SRT URL** into **Server**, and leave **Stream Key** empty. Keep the `streamid` and any latency or passphrase parameters unchanged. OBS connects in caller mode by default.
 
 Use H.264 video and AAC audio, select **Apply**, then **Start Streaming**. See the official [OBS SRT streaming guide](https://obsproject.com/kb/srt-protocol-streaming-guide).
 
@@ -61,7 +61,7 @@ Leave **Bearer Token** empty: Fluxomni includes the publishing credential in the
 
 Choose **WHIP**, not **Custom**: pasting this HTTP URL into Custom leaves OBS using RTMP and causes a handshake failure. If WHIP is missing, use an OBS build that supports it. See the official [OBS WHIP streaming guide](https://obsproject.com/kb/whip-streaming-guide).
 
-WHIP requires a media node with public gateway support. Both signaling TCP (default `8003`) and RTC media UDP (default `8000`) must be reachable from OBS, and the node must advertise a reachable ICE candidate. Use your deployment's actual ports; reaching the web UI alone does not establish media connectivity.
+WHIP requires a media node with public gateway support. Both signaling TCP (default `8003`) and RTC media UDP (default `8000`) must be reachable from OBS, and the node must advertise a reachable ICE candidate. Use your deployment's actual ports; access to the web UI alone does not mean that media ports are reachable.
 
 ### Confirm publishing
 
@@ -82,7 +82,7 @@ Fluxomni Studio supports RTMP/RTMPS, SRT, Icecast, and file output destinations.
 
 ## Verify the stream
 
-Confirm all of the following before relying on the route:
+Check the following before using the route in production:
 
 - The route header shows **LIVE**.
 - The **Live playback** panel shows **LIVE** and the expected outgoing stream when a playback URL is available.
@@ -100,4 +100,4 @@ Create a backup after this first successful stream. From the install directory, 
 - [Routes](../user-guide/routes.md) — add backups, playlists, and more outputs
 - [Reverse Proxy & TLS](reverse-proxy.md) — serve the operator UI securely on a domain
 - [Monitoring](monitoring.md) — monitor route and media-node health
-- [Backup & Restore](backup.md) — establish a regular backup routine
+- [Backup & Restore](backup.md) — set up regular backups

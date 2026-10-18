@@ -4,7 +4,7 @@
   <img src="images/logo.webp" alt="Fluxomni Studio Logo" width="10%">
 </p>
 
-Fluxomni Studio runs live streams on your own server. Send one stream in. Fluxomni Studio can send it out to many places at once: RTMP, SRT, or Icecast.
+Fluxomni Studio runs live streams on your own server. Send one stream to several destinations at the same time using RTMP, SRT, or Icecast.
 
 This repository contains self-host installation and deployment documentation only.
 
@@ -22,9 +22,9 @@ Use `FLUXOMNI_VERSION=edge` only when you want the newest main-branch build. Use
 
 To add a remote media server, run the same installer on that server with `bash -s -- media-node`.
 
-After installation, open `http://<your-server-ip>/routes` and follow [First Stream](getting-started/first-stream.md). It guides you through creating the first admin account, accepting an RTMP source, adding an output, verifying playback, and taking an initial backup.
+After installation, open `http://<your-server-ip>/routes` and follow [First Stream](getting-started/first-stream.md). It shows how to create the first admin account, accept an RTMP source, add an output, check playback, and create your first backup.
 
-Choose the next path that matches your goal:
+Choose a guide for your task:
 
 - **Run one stream on one server** — [Quick Start](getting-started/quick-start.md), then [First Stream](getting-started/first-stream.md)
 - **Deploy on a cloud provider** — [Deployment](deployment/overview.md)
@@ -34,18 +34,18 @@ Choose the next path that matches your goal:
 
 ## New in 26.3.2
 
-Read the [release notes](changelog.md) and [upgrade guide](getting-started/upgrade-26.3.2.md) before updating custom API clients. The [sizing guide](getting-started/sizing.md) separates empty routes, live inputs, and output fan-out using measured workloads.
+Read the [release notes](changelog.md) and [upgrade guide](getting-started/upgrade-26.3.2.md) before updating custom API clients. The [sizing guide](getting-started/sizing.md) uses measurements to explain the different costs of empty routes, live inputs, and multiple outputs.
 
 ## Documentation Sections
 
 - [Quick Start](getting-started/quick-start.md) — install Fluxomni Studio
-- [First Stream](getting-started/first-stream.md) — create, publish, verify, and protect your first route
-- [Deployment](deployment/overview.md) — cloud provider guides and server provisioning
+- [First Stream](getting-started/first-stream.md) — create your first route, publish a stream, check playback, and back up your setup
+- [Deployment](deployment/overview.md) — cloud provider guides and server setup
 - [User Guide](user-guide/overview.md) — operate the Control Surface, including Attention, Routes, Fleet, and settings
 - [Configuration](getting-started/configuration.md) — configure access, networking, and runtime variables
 - [Monitoring](getting-started/monitoring.md), [Backup & Restore](getting-started/backup.md), and [Troubleshooting](getting-started/troubleshooting.md) — maintain an installation
 - [Scenarios](scenarios/README.md) — choose a guided deployment pattern
-- [API Automation](api/overview.md) — session auth, raw GraphQL, TypeScript client, subscriptions, errors, and workflow recipes
+- [API Automation](api/overview.md) — session authentication, raw GraphQL, the TypeScript client, subscriptions, errors, and workflow examples
 - [Changelog](changelog.md) and [Roadmap](roadmap.md) — product updates and direction
 
 ## Release Channels
@@ -57,4 +57,4 @@ Read the [release notes](changelog.md) and [upgrade guide](getting-started/upgra
 
 ## Support
 
-- Found an issue? Open it in the [self-host repository issue tracker](https://github.com/fluxomnia-systems/fluxomni-selfhost/issues)
+- Report issues in the [self-host repository issue tracker](https://github.com/fluxomnia-systems/fluxomni-selfhost/issues)

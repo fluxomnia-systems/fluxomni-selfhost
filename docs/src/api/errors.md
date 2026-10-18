@@ -11,7 +11,7 @@ GraphQL errors include `extensions.code` and may include `extensions.status`.
 - `validation` — the input shape or value is not acceptable.
 - `not_found` — the requested route, source, output, artifact, node, user, or settings target does not exist.
 - `conflict` — the requested state conflicts with current durable state, ownership, or command preconditions.
-- `persistence_failure` — a durable write failed.
+- `persistence_failure` — saving persistent data failed.
 - `runtime_unavailable` — runtime state needed by the resolver is not readable right now.
 - `operation_rejected` — an exceptional operation, such as a Fleet command, was rejected or could not be safely applied.
 - `unknown` — the client could not classify the server code.
@@ -53,4 +53,4 @@ try {
 }
 ```
 
-Mutation result payloads are not exceptions. Treat `UPDATED`, `UNCHANGED`, and `NOT_FOUND` as normal convergence outcomes when the schema returns a result payload.
+When the schema returns a mutation result payload, treat `UPDATED`, `UNCHANGED`, and `NOT_FOUND` as normal outcomes. They are not exceptions.

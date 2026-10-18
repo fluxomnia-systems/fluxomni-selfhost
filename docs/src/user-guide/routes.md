@@ -1,10 +1,10 @@
 # Routes
 
-Routes are the core of Fluxomni Studio. Each route is an independent streaming pipeline with its own ingest input, one or more outputs, an optional playlist, and a live playback monitor.
+Each route in Fluxomni Studio is a separate streaming pipeline. It has its own stream input, one or more outputs, an optional playlist, and a live playback monitor.
 
 ## Flow Overview
 
-This short overview shows the normal live path: create an RTMP route, copy its publish URL into an encoder, wait for the route to become live, verify HLS preview in the workspace, and add a YouTube-style output.
+This video shows how to create an RTMP route, copy its publish URL into an encoder, wait for it to become live, check the HLS preview, and add an output such as YouTube.
 
 <video controls muted playsinline width="100%">
   <source src="../videos/user-guide/flow-overview.webm" type="video/webm">
@@ -16,25 +16,25 @@ Navigate to **Routes** in the sidebar (or visit `/routes`) to see all configured
 
 - The page header summarizes route count, live-input health, output health, and quick operator actions.
 - The **Controls** view combines search, scope selection, view mode, and health chips for inputs, signal integrity, and outputs.
-- The **Routes** view strips the collection controls back and focuses on the route cards themselves.
+- The **Routes** view shows route cards with fewer collection controls.
 
 ![The Routes page showing search, scope, health chips, and route cards](../images/user-guide/routes-list.jpg)
 
 ### Collection controls
 
-The Controls view gives you the fastest way to triage the whole system:
+Use the Controls view to review the whole system:
 
 - **Search** — find routes by route label, input label, or output label.
 - **Scope** — switch the search focus between **Inputs** and **Outputs**.
 - **View mode** — choose **Compact** or **Expanded** cards.
-- **Health strip** — shows whether the current slice is live, idle, clean, or needs attention.
+- **Health strip** — shows whether the selected routes are live, idle, clean, or need attention.
 - **Inputs / Signal / Outputs groups** — summarize route health, mismatch or fetch issues, and distribution state without opening each route.
 
 ### Route cards
 
 Each card shows the route label, ownership scope, current source, input and output state, and quick actions:
 
-- **Open workspace →** jumps into the full route workspace.
+- **Open workspace →** opens the full route workspace.
 - **+ Add output** opens the output modal directly from the card.
 - **Copy** duplicates the route configuration.
 - **Edit** opens the route modal.
@@ -50,7 +50,7 @@ The dialog is organized into three steps.
 ### 1. Route Identity
 
 - **Route Label** — a human-readable name for the route, such as `Main broadcast`.
-- **Owner** — for admins, choose whether the route stays **Shared** or is assigned to a named user. Shared routes are visible to every signed-in user; owned routes stay scoped to their assignee plus admins.
+- **Owner** — for admins, choose whether the route stays **Shared** or is assigned to a named user. Shared routes are visible to every signed-in user; owned routes are visible only to their assigned user and admins.
 
 The route key and publish key are generated automatically when the route is saved.
 
@@ -67,11 +67,11 @@ Then choose the source mode:
 - **Accept publish** — Fluxomni Studio generates an ingest address and waits for a publisher to push into it.
 - **Pull from remote** — Fluxomni Studio fetches a remote source URL itself.
 
-The **Generated publish address** area becomes actionable after the route is saved and assigned to a media node.
+You can use **Generated publish address** after the route is saved and assigned to a media node.
 
 ### 3. Advanced Routing
 
-Leave **Advanced routing** collapsed for the normal setup path, or expand it when the route needs custom runtime behavior:
+Keep **Advanced routing** collapsed for a basic setup. Expand it to change runtime settings:
 
 - **Execution placement** — keep auto-placement or pin the route to a specific media node.
 - **Failover policy** — stay on system defaults or customize stickiness and cooldown behavior.
@@ -108,23 +108,23 @@ The workspace has four tabs:
 
 ### Execution
 
-The **Execution** tab answers where the route is running and what the control plane currently knows about it.
+The **Execution** tab shows where the route is running and its current state as reported to the control plane.
 
 - **Assigned node** — the selected media node, its advertised endpoints, and a shortcut to node diagnostics.
 - **Manifest delivery** — whether the desired runtime plan has been applied.
-- **Observed runtime** — the latest runtime-side execution signal, including pending or degraded states.
+- **Observed runtime** — the latest execution state reported by the runtime, including pending or degraded states.
 
 ### Routing
 
-The **Routing** tab is the operational signal-path view.
+The **Routing** tab shows the path from the source to the outputs.
 
 ![The Routing tab showing signal path, outputs, playlist, and live playback panels](../images/user-guide/route-routing.jpg)
 
 - **Active source chip** — shows whether the route is awaiting source, live, playing from playlist, or running from fallback.
 - **Inputs lane** — displays the primary ingress and any live backups, with enable/disable controls and copyable ingest addresses.
 - **Outputs lane** — lists every destination with per-output state, filtering, bulk enable/disable, and the **+ Add output** action.
-- **Queue / Playlist** — the file-playout controls remain visible below the routing surface.
-- **Live playback** — the browser preview stays docked on the right when a playback URL exists.
+- **Queue / Playlist** — file playback controls are below the routing view.
+- **Live playback** — the browser preview stays on the right when a playback URL exists.
 
 ### Step-by-step: add an output
 
@@ -144,7 +144,7 @@ The output dialog also supports:
 
 - **Preview URL** — an optional URL associated with that destination.
 - **Audio mix-ins** — extra MP3 or TeamSpeak audio sources mixed into the output.
-- **Import multiple destinations** — a bulk path for pasting a list or JSON payload of outputs.
+- **Import multiple destinations** — paste a list or JSON payload to add several outputs.
 
 ### Editing advanced routing
 
@@ -152,7 +152,7 @@ Click **Edit route** in the workspace header to reopen the route modal with the 
 
 ![The Edit Route dialog with advanced routing expanded](../images/user-guide/route-edit-advanced.jpg)
 
-This is where admins and operators revisit placement, failover, live backups, and file fallback after the route is already running.
+Admins and operators can change placement, failover, live backups, and file fallback here after the route starts.
 
 ### Playlist
 
@@ -189,15 +189,15 @@ Each mix-in can define:
 
 ## Alerts
 
-Route-level and fleet-level issues surface on the [Attention](attention.md) page.
+Route and fleet issues appear on the [Attention](attention.md) page.
 
 ![The Attention page showing the all-clear state when no active alerts exist](../images/user-guide/attention.jpg)
 
-When active issues exist, Fluxomni Studio groups them into **Route alerts** and **Fleet alerts**. Operators can mark items as **Known** to move them into the muted known-issues area without keeping the sidebar urgency badge lit forever. When nothing is active, the page collapses to the all-clear state shown above.
+When active issues exist, Fluxomni Studio groups them into **Route alerts** and **Fleet alerts**. Operators can mark items as **Known** to move them to the muted known-issues area and remove them from the sidebar urgency badge. When no issues are active, the page shows the all-clear state above.
 
 Alert severity levels include:
 
 - **Critical** — route or fleet conditions that need immediate action.
 - **Attention** — warnings, mismatches, or degraded conditions that still need review.
 
-Use **Open route** on route alerts to jump directly into the affected workspace.
+Use **Open route** on route alerts to open the affected workspace.

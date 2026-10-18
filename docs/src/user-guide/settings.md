@@ -1,32 +1,32 @@
 # Settings
 
-The Settings workspace (`/settings`) is where Fluxomni Studio exposes server defaults, artifact ingest settings, media-profile references, self-service account information, and local user administration. Access it from **Settings** in the sidebar.
+Use Settings (`/settings`) to manage server defaults, artifact imports, media profiles, your account, and local users. Open **Settings** in the sidebar.
 
-![The General settings section with the section rail, hero card, and admin controls](../images/user-guide/settings.jpg)
+![The General settings section with the section list, summary card, and admin controls](../images/user-guide/settings.jpg)
 
 The page uses a split layout:
 
-- a persistent **section rail** on the left
-- a **hero card** at the top showing your current **Role** and **Access** level
+- a **section list** on the left
+- a **summary card** at the top showing your current **Role** and **Access** level
 - a large **content panel** for the selected section on the right
 
-Admins can reach **General**, **Artifacts**, **Media profiles**, **Security**, and **Users**. Operators stay limited to the self-service **General** and **Security** sections.
+Admins can open **General**, **Artifacts**, **Media profiles**, **Security**, and **Users**. Operators can only open the self-service **General** and **Security** sections.
 
 ## General
 
-The **General** section contains control-surface defaults plus a read-only shell summary. Admins can edit the shared defaults here; Operators see the same section as a self-service reference surface.
+The **General** section contains Control Surface defaults and a read-only summary of the current interface settings. Admins can edit shared defaults. Operators can view this section as a reference.
 
 ### Control surface defaults
 
-These settings affect the shared operator experience:
+These settings apply to the shared interface:
 
-- **Title** — the server name shown in the browser tab and shared shell chrome.
+- **Title** — the server name shown in the browser tab and shared interface.
 - **Confirm deletion actions** — requires confirmation before destructive actions such as deleting routes, outputs, or files.
 - **Confirm enable and disable actions** — adds confirmation before toggling inputs or outputs on or off.
 
 ### Live shell summary
 
-The lower summary cards mirror the current shell-level values visible to the operator:
+The lower summary cards show the current interface settings:
 
 - **Public host**
 - **Delete confirmation**
@@ -41,7 +41,7 @@ The **Artifacts** settings section is admin-only and controls ingest defaults fo
 
 ### Google Drive
 
-Google Drive settings control Drive imports into the artifact library and route playlist flows:
+Google Drive settings control imports into the artifact library and route playlists:
 
 - **Google API Key** — required before operators can import shared Drive files or folders.
 - **Files Limit** — maximum concurrent file operations for local uploads and remote imports.
@@ -63,12 +63,12 @@ Drive files and folders must be shared so the key can read them. Use link sharin
 
 ### Artifact workflow defaults
 
-The remaining cards are read-only reminders for the current artifact workflow:
+The remaining cards describe how artifacts work. You cannot edit these cards:
 
-- library uploads and Drive imports land in the shared artifact catalog
+- library uploads and Drive imports are added to the shared artifact catalog
 - route playlists and file-backup sources reuse the same library picker
-- storage admission and rejections are visible from the Artifacts page and Attention feed
-- media nodes cache artifacts as runtime state; the control plane remains the durable catalog authority
+- storage limits and rejections are shown on the Artifacts page and in the Attention feed
+- media nodes cache artifacts for playback; the control plane manages the persistent catalog
 
 ## Media Profiles
 
@@ -76,7 +76,7 @@ The **Media profiles** settings section is admin-only and lists the baseline pre
 
 ![The Media profiles settings section showing baseline preset definitions](../images/user-guide/settings-media-profiles.jpg)
 
-Profiles are reference presets, not encoder controls. They describe the video and audio shape a route expects before playlist files are allowed to start or stay healthy. The current presets cover common H.264/AAC stereo 48 kHz broadcast shapes:
+Profiles define the video and audio properties a route expects. Fluxomni Studio checks them before playlist playback and during health checks. They do not control the encoder. The current presets use H.264 video and AAC stereo audio at 48 kHz:
 
 - `1080p30`
 - `1080p60`
@@ -85,7 +85,7 @@ Profiles are reference presets, not encoder controls. They describe the video an
 - `720p60`
 - `720p25`
 
-Each row shows the comparable fields Fluxomni Studio checks:
+Each row shows the fields Fluxomni Studio compares:
 
 - video codec
 - width and height
@@ -94,17 +94,17 @@ Each row shows the comparable fields Fluxomni Studio checks:
 - audio sample rate
 - audio channel count
 
-Use this section when a route, playlist item, or artifact row shows a **Compatible**, **Incompatible**, or **Unknown** baseline status. Route workspaces and artifact pickers surface the quick status; Settings → Media profiles explains the exact profile contract those checks are comparing against.
+Use this section when a route, playlist item, or artifact row shows a **Compatible**, **Incompatible**, or **Unknown** baseline status. Route workspaces and artifact pickers show a short status. Settings → Media profiles shows the exact properties used for these checks.
 
 ## Security
 
-The **Security** section is focused on the current browser session and its authentication posture.
+The **Security** section shows authentication settings for the current browser session.
 
-![The Security settings section showing access posture and password rotation](../images/user-guide/settings-security.jpg)
+![The Security settings section showing session access and password change controls](../images/user-guide/settings-security.jpg)
 
 ### Access posture
 
-The top card shows the current auth boundary for this session:
+The top card shows how this session is authenticated:
 
 - **Current user** — the signed-in username, or the open admin shell when auth is disabled.
 - **Effective role** — the resolved role for the current session.
@@ -112,21 +112,21 @@ The top card shows the current auth boundary for this session:
 
 ### Change my password
 
-When you are signed in as a named local user, use the password form to rotate that account's password. Fluxomni Studio invalidates the current session and signs the browser back in with the new password once the change succeeds.
+When you are signed in as a named local user, use the password form to change that account's password. Fluxomni Studio invalidates the current session and signs the browser back in with the new password once the change succeeds.
 
 ### Sign-in screen
 
-When named-user auth is required, unauthenticated browsers land on the sign-in screen shown below.
+When named-user auth is required, browsers without a valid session show the sign-in screen shown below.
 
 ![The sign-in page for named local users](../images/user-guide/login.jpg)
 
-Creating the first persisted admin user is what flips a fresh open-shell install into named-user sign-in mode.
+Creating the first saved admin user enables named-user sign-in on a new open-shell install.
 
 ## Users
 
 The **Users** section is admin-only and manages local accounts plus route ownership.
 
-![The Users settings section with local account creation and the admin section rail](../images/user-guide/settings-users.jpg)
+![The Users settings section with local account creation and the admin section list](../images/user-guide/settings-users.jpg)
 
 ### Create user
 
@@ -137,7 +137,7 @@ Use the creation card to add a local account:
 - **Password** — initial password
 - **Role** — Admin, Operator, or Viewer
 
-On a brand-new open-shell install, the very first persisted user is always promoted to **Admin** and immediately becomes the account that enables named-user auth.
+On a new open-shell install, the first saved user always becomes an **Admin**. Creating this account immediately enables named-user authentication.
 
 ### Directory
 
@@ -148,18 +148,18 @@ The Directory card lists all local accounts with their:
 - last login timestamp
 - controls to **Update role** or **Delete** the user
 
-Changing your own role or deleting your own account forces the shell to reload under the new auth boundary.
+Changing your own role or deleting your own account reloads the interface with the new access permissions.
 
 ### Route ownership
 
 Fluxomni Studio routes can be either **Shared** or owned by a single named user.
 
 - **Shared routes** remain visible to every signed-in user.
-- **Owned routes** stay scoped to their assignee plus admins.
+- **Owned routes** are visible only to their assigned user and admins.
 - Admins can assign or clear ownership from the route modal and from the route-ownership panels in **Users**.
-- If a user is deleted, any routes they owned fall back to shared scope.
+- If a user is deleted, their routes become shared.
 
-The Users page organizes this with per-user **Route ownership** panels plus a **Shared routes** section for reassigning unowned routes.
+The Users page has a **Route ownership** panel for each user and a **Shared routes** section for assigning unowned routes.
 
 ### User roles
 

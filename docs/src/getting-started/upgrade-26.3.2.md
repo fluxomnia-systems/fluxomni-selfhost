@@ -1,6 +1,6 @@
 # Upgrade to 26.3.2
 
-Upgrade the frontend, control plane, and every media node to the same release. Custom GraphQL clients must adopt library pagination and scoped file subscriptions. Plan a maintenance window for active media workloads.
+Upgrade the frontend, control plane, and every media node to the same release. Custom GraphQL clients must use library pagination and file subscriptions for specific routes or files. Plan a maintenance window for active media workloads.
 
 ## Before upgrading
 
@@ -27,7 +27,7 @@ FLUXOMNI_DIR="$HOME/fluxomni-media-node" FLUXOMNI_VERSION=v26.3.2 \
   bash /tmp/fluxomni-install.sh media-node
 ```
 
-Keep the existing control-plane endpoint, internal authentication token, node identity, and public host settings. Review custom Compose overrides before restarting. The installer preserves data and updates its managed files; it is not a zero-downtime rolling-upgrade guarantee. Manual deployments should update all three image tags to `v26.3.2`, pull them, and recreate the services using their existing configuration.
+Keep the existing control-plane endpoint, internal authentication token, node identity, and public host settings. Review custom Compose overrides before restarting. The installer keeps data and updates its managed files. It does not guarantee a rolling upgrade without downtime. Manual deployments should update all three image tags to `v26.3.2`, pull them, and recreate the services using their existing configuration.
 
 The latest installer fixes missing SRS file limits in v26.3.2 assets; updating images alone does not. For manual installs, see [troubleshooting](troubleshooting.md#srs-reports-too-few-open-files).
 
@@ -50,7 +50,7 @@ query LibraryPage($after: String) {
 
 Start with `after: null`. Process `nodes`; while `hasNextPage` is true, send the returned `endCursor` as `after`. Reset the cursor when filters or sorting change. Do not treat the first page as the whole library or assume pagination is a snapshot of a concurrently changing catalog.
 
-Replace the removed `artifacts` subscription with the scope your consumer needs:
+Replace the removed `artifacts` subscription with one that covers the data your client needs:
 
 - `fileTransfers`: active and failed transfers; completed library files are excluded.
 - `routeFiles(routeId: ...)`: files referenced by one visible route's playlist and file sources.
@@ -66,4 +66,4 @@ Use paginated queries for library listings. Unsubscribe when a consumer leaves a
 4. Open Artifacts, move beyond the first page, and exercise your custom API queries and subscriptions. Check logs for schema errors, startup failures, and stale heartbeats.
 5. Compare CPU, memory, and network use under your actual workload with the [sizing guidance](sizing.md). Empty-route measurements do not predict active-stream capacity.
 
-If verification fails, stop the changed stack, restore the saved configuration and a consistent pre-upgrade data backup, and recreate the previous pinned images on all hosts. Retain diagnostic logs first. Do not assume a previous binary can safely run against state already changed by a newer release.
+If verification fails, stop the changed stack, restore the saved configuration and a consistent pre-upgrade data backup, and recreate the previous pinned images on all hosts. Save diagnostic logs first. Do not assume a previous binary can safely run against state already changed by a newer release.

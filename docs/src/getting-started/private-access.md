@@ -2,13 +2,13 @@
 
 Run Fluxomni Studio on a private overlay network when the Control Surface and media ports should be reachable only from your own devices or servers.
 
-This page shows Tailscale first because it is the easiest private-network option for most self-host deployments. The same Fluxomni Studio rule applies to every option: set the advertised hosts to the address that your publishers, viewers, and extra media nodes can actually reach.
+This page shows Tailscale first because it is the easiest private-network option for most self-host deployments. For every option, set the advertised hosts to addresses that your publishers, viewers, and extra media nodes can reach.
 
 ## When to Use This
 
 Use private access when you want a home lab, creator workstation, staging server, or internal fleet that is not exposed directly to the public internet.
 
-Private overlays are a good fit for:
+Use private overlays for:
 
 - operator access to `/routes`, `/fleet`, and settings
 - private RTMP/SRT publish tests from your own machines
@@ -125,7 +125,7 @@ tailscale serve status
 # sudo tailscale serve reset
 ```
 
-This is a Tailscale/Docker forwarding workaround, not a Fluxomni Studio setting. Tailscale Serve does not forward SRT UDP (`10080/udp`) or RTC media UDP (`8000/udp`), so use RTMP for private tailnet ingest/testing when you rely on Serve forwarding.
+This workaround uses Tailscale/Docker forwarding. It does not change a Fluxomni Studio setting. Tailscale Serve does not forward SRT UDP (`10080/udp`) or RTC media UDP (`8000/udp`), so use RTMP for private tailnet ingest/testing when you rely on Serve forwarding.
 
 If you use a Tailscale Service, pass its TailVIP to `--service` so the stable service name, not the physical node name, owns the forwarded ports:
 
@@ -267,7 +267,7 @@ Use Cloudflare Access if you want identity-based protection for the UI. Keep med
 
 ## Choosing an Option
 
-Pick the private-access layer based on which surface needs to be private.
+Choose a private-access option based on which services need to be private.
 
 | Option | Best for | Trade-offs |
 | --- | --- | --- |

@@ -1,44 +1,44 @@
 # Roadmap
 
-Fluxomni Studio self-host is built for teams that need dependable live operations under their own control. This roadmap focuses on operator and client outcomes, not internal platform work.
+Fluxomni Studio self-host helps teams run reliable live streams on their own servers. This roadmap describes planned improvements for operators and clients.
 
-Timelines are intentionally absent because priorities shift with customer deployments, Design Partner feedback, and active production incidents. For the current active backlog, follow the [fluxomni-selfhost issue tracker](https://github.com/fluxomnia-systems/fluxomni-selfhost/issues).
+We do not list dates because priorities change with customer deployments, Design Partner feedback, and production incidents. For current work, see the [fluxomni-selfhost issue tracker](https://github.com/fluxomnia-systems/fluxomni-selfhost/issues).
 
 ## Available now
 
-The current self-host release covers the production workflows most teams need before building deeper integrations.
+The current self-host release supports these production workflows:
 
-- **One source to every destination.** Ingest over RTMP, SRT, or WebRTC, then send the same program to RTMP, SRT, and Icecast destinations without per-output software caps.
-- **Per-destination audio control.** Keep program audio, select a source track or channel, mute origin audio, or apply mix-ins per output while keeping one backend-owned output contract.
-- **Always-on channel playout.** Run 24/7 channels from local files, Google Drive assets, playlists, or fallback loops so a live route can recover without a manual scramble.
+- **One source to every destination.** Ingest over RTMP, SRT, or WebRTC, then send the same program to RTMP, SRT, and Icecast destinations without software limits on the number of outputs.
+- **Per-destination audio control.** Keep program audio, select a source track or channel, mute origin audio, or apply mix-ins per output using one output contract managed by the backend.
+- **Always-on channel playout.** Run 24/7 channels from local files, Google Drive assets, playlists, or fallback loops so a live route can recover without manual action.
 - **Scheduled playlist starts.** Arm one-shot sequential starts, replay completed queue rows, and keep played state visible without blocking playlist clearing or replay.
 - **Reusable media library.** Upload, import, tag, bulk tag, bulk delete, filter, and reuse artifacts across playlists, fallback loops, and route workflows from the operator UI.
-- **Storage-aware operations.** See usable capacity, configured headroom, top consumers, recent storage rejections, durable object rows, private fetch URLs, and derived-artifact policy before large uploads or imports fail.
-- **Learned media baselines.** Teach route media profiles from real files or observed live sources, save custom profiles, and reject incompatible playlist or live-source media before it reaches the media node.
-- **Public automation surface.** Use the stable GraphQL schema, session-aware TypeScript client, generated operations, subscription examples, mutation result payloads, and AI-readable automation recipes for route, playlist, artifact, settings, and Fleet workflows.
+- **Storage-aware operations.** Check usable capacity, configured headroom, files using the most space, and recent storage rejections before large uploads or imports fail. Inspect durable object records, private fetch URLs, and the derived-artifact policy.
+- **Learned media baselines.** Create route media profiles from files or live sources and save custom profiles. Reject incompatible playlist or live-source media before it reaches the media node.
+- **Public automation API.** Use the stable GraphQL schema, session-aware TypeScript client, generated operations, subscription examples, mutation result payloads, and AI-readable automation recipes for route, playlist, artifact, settings, and Fleet workflows.
 - **Fleet and failover visibility.** Add regional media nodes, pin routes when needed, and see route, node, and failover health in the Control Surface and Attention feed.
-- **Recording catalog safety.** Recording rows participate in catalog-backed modals and runtime checks, while non-durable DVR files stay cache-like and object-storage rows reject unsafe overwrites.
+- **Recording catalog safety.** Recording records appear in catalog dialogs and runtime checks. Non-durable DVR files are treated as cache, and object-storage records reject unsafe overwrites.
 - **Controlled self-host access.** Run behind public DNS, a reverse proxy, Tailscale, WireGuard, NetBird, or Cloudflare Tunnel, with named operators and role-based access.
 - **Pinned, recoverable installs.** Use canonical public release pins such as `v26.2.4`, plan recovery with matching state and images, or track `edge` only when you intentionally want main-branch builds.
 
 ## In focus
 
-These are the next product areas being shaped with active users and Design Partners.
+We are planning these areas with active users and Design Partners.
 
 - **Event-driven automation.** Trigger route changes, output toggles, playlist boundaries, fallback behavior, and notifications from real stream events instead of one-off scripts.
-- **Client-ready media workspaces.** Build clearer client, show, campaign, and channel organization on top of the shipped artifact tags, bulk operations, route usage checks, and baseline compatibility signals.
-- **Recording-to-reuse flow.** Promote live recordings into managed artifacts that can be reviewed, tagged, replayed, or used as fallback content without leaving the platform.
-- **Operator handoff polish.** Improve guided setup, copyable endpoint instructions, and status explanations so non-developer operators can run daily workflows confidently.
+- **Client-ready media workspaces.** Organize media by client, show, campaign, and channel using existing artifact tags, bulk operations, route usage checks, and baseline compatibility status.
+- **Recording-to-reuse flow.** Save live recordings as managed artifacts. Review, tag, replay, or use them as fallback content within the platform.
+- **Operator handoff polish.** Improve guided setup, endpoint instructions, and status explanations so operators can manage daily work without development experience.
 
 ## On the roadmap
 
-Further out items are larger workflow expansions. Scope and sequencing are still being shaped by deployments.
+These larger additions are planned for later. Their scope and order depend on deployment needs.
 
-- **Deeper integrations.** Webhooks, Slack or Teams alerts, richer storage-provider controls, and handoffs into client delivery systems.
-- **Distributed media jobs.** Fleet-backed transcode, proxy generation, clip export, and packaging jobs for teams with larger media libraries.
-- **Automated highlight generation.** Produce reviewable short clips from long-form source material and route them back into the artifact library.
+- **Deeper integrations.** Webhooks, Slack or Teams alerts, more storage-provider controls, and connections to client delivery systems.
+- **Distributed media jobs.** Transcoding, proxy generation, clip export, and packaging jobs across the fleet for teams with larger media libraries.
+- **Automated highlight generation.** Create short clips from long recordings for review and save them in the artifact library.
 - **Client workspaces.** Separate operational views, assets, and route templates for agencies or teams serving multiple brands.
 
 ## Become a Design Partner
 
-Teams serious about the In Focus and Roadmap areas can join the Platform Early Access program. [Apply via email](mailto:sales@fluxomni.io?subject=Platform%20Early%20Access) with a short description of your use case: current deployment, channels or clients served, the workflows you want automated, and what would unblock your operators.
+Teams that need the In Focus and Roadmap features can join the Platform Early Access program. [Apply via email](mailto:sales@fluxomni.io?subject=Platform%20Early%20Access) with a short description of your use case: current deployment, channels or clients served, the workflows you want to automate, and what your operators need.

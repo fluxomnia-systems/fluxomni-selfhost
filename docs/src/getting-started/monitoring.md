@@ -8,8 +8,8 @@ and supports exporting traces via OpenTelemetry (OTLP).
 The bottom of the Control Surface sidebar shows real-time gauges for the
 control-plane host:
 
-- **CPU** — current processor utilization percentage.
-- **MEM** — current memory utilization percentage.
+- **CPU** — current CPU usage percentage.
+- **MEM** — current memory usage percentage.
 - **NET** — current network throughput.
 
 These values update in real time and give operators a quick health check
@@ -31,7 +31,7 @@ The [Fleet](../user-guide/fleet.md) page shows per-node telemetry:
 
 ## Attention feed
 
-The **Attention** page (`/attention`) aggregates alerts across all routes
+The **Attention** page (`/attention`) shows alerts from all routes
 and fleet nodes. Alert severity levels:
 
 - **CRITICAL (HIGH)** — route probe errors, offline nodes, or failures
@@ -84,7 +84,7 @@ Point `FLUXOMNI_OTLP_ENDPOINT` at the collector's HTTP receiver.
 
 ## Log management
 
-By default, Fluxomni Studio logs to stdout which Docker captures. View logs
+By default, Fluxomni Studio writes logs to stdout. Docker captures these logs. View logs
 with:
 
 ```bash

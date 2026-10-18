@@ -1,6 +1,6 @@
 # TypeScript Client
 
-`@fluxomni/api-client` is a thin session-aware GraphQL transport. It does not hide the schema behind a separate domain SDK.
+`@fluxomni/api-client` sends GraphQL requests and manages sessions. It uses the schema directly without a separate domain SDK.
 
 Install it in your automation project:
 
@@ -40,7 +40,7 @@ Browser and same-origin callers can omit endpoint options and let the browser ma
 
 ## Generated Operations
 
-The package exports generated GraphQL documents and result types for callers that want compile-time operation typing.
+The package exports generated GraphQL documents and result types. Use them to check operation types at compile time.
 
 ```typescript
 import { GraphQLClient, ServerInfoDocument } from '@fluxomni/api-client';
@@ -52,12 +52,12 @@ client.stop();
 
 ## Executable Examples
 
-Release examples live in the main Fluxomni repository under `api/examples/typescript`.
+Release examples are in the main Fluxomni repository under `api/examples/typescript`.
 
 They cover:
 
 - session login plus raw query/subscription
-- route desired-state convergence
+- applying and checking the desired route state
 - publish credential, source preference, failover, and output controls
 - playlist, artifact tags, settings export/import, Fleet health, and guarded Fleet commands
 

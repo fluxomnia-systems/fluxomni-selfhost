@@ -1,11 +1,11 @@
 How to Deploy Fluxomni Studio to Hetzner Cloud
 =========================================
 
-This guide provides a common and recommended way to deploy Fluxomni Studio as a standalone server on [Hetzner Cloud].
+This guide shows the recommended setup for Fluxomni Studio on one [Hetzner Cloud] server.
 
 ## 0. Prerequisites
 
-You should have a registered account on [Hetzner Cloud] with a [payment method attached][1] and a [Project] created.
+You need a [Hetzner Cloud] account with a [payment method][1] and a [Project].
 
 ![Create new Project](../images/hcloud_0.jpg)
 
@@ -15,7 +15,7 @@ From your project dashboard, click to create a new server.
 
 ### 1.1. Choose a Location
 
-Select a location that is geographically close to both your stream source and your destination endpoints to minimize latency.
+Choose a location near both your stream source and destinations to reduce latency.
 
 ![Location](../images/hcloud_1.1.jpg)
 
@@ -31,7 +31,7 @@ Supported platforms:
 
 ### 1.3. Choose a Type
 
-For simple restreaming, the cheapest plan (e.g., `CX11`) should be sufficient. If you plan to run a large number of streams or require transcoding, consider a more powerful server type.
+The cheapest plan, such as `CX11`, should be enough for simple restreaming. Choose a more powerful server for many streams or transcoding.
 
 ![Server resources](../images/hcloud_1.3.jpg)
 
@@ -39,7 +39,7 @@ For simple restreaming, the cheapest plan (e.g., `CX11`) should be sufficient. I
 
 > __NOTE__: Skip this step if you do not plan to record streams to files.
 
-If you intend to record live streams, you may need more disk space than the default provided. You can attach an external volume to the server.
+Recording live streams may need more disk space than the default disk provides. You can attach an external volume to the server.
 
 ![Add volume](../images/hcloud_1.4.1.jpg)
 ![Setup volume](../images/hcloud_1.4.2.jpg)
@@ -48,7 +48,7 @@ The installer will automatically detect and use the attached volume for Fluxomni
 
 ### 1.5. Add User Data
 
-To automatically install Fluxomni Studio on the new server, paste the following script into the `User data` field. This runs once when the server is first created and also configures a firewall with the required ports.
+To automatically install Fluxomni Studio on the new server, paste the following script into the `User data` field. The script runs once when the server is created. It also configures a firewall with the required ports.
 
 ```bash
 #!/bin/bash
@@ -59,7 +59,7 @@ curl -fsSL https://install.fluxomni.io | WITH_UFW=1 bash -s
 
 ### 1.6. Add an SSH Key
 
-[Hetzner Cloud] requires an [SSH] key to access the server. This is for managing the server itself; it is not required for using the Fluxomni Studio application.
+[Hetzner Cloud] requires an [SSH] key to access the server. The key is for server management. You do not need it to use Fluxomni Studio.
 
 ![SSH access](../images/hcloud_1.6.jpg)
 
@@ -73,20 +73,20 @@ Click **Create & Buy Now** to begin provisioning.
 
 ## 2. Access Fluxomni Studio
 
-After you launch the server, allow 5-15 minutes for the provisioning and installation to complete.
+After you create the server, wait 5-15 minutes for server setup and installation.
 
 You can find the IP address of your server in the Hetzner Cloud console.
 
 ![Server IP](../images/hcloud_2.jpg)
 
-Open your web browser and navigate to the IP address of the server.
+Open the server's IP address in your browser.
 
 ![Address bar](../images/browser.jpg)
 
 Current releases serve the operator UI from the `frontend` container.
 Use `/routes` for route management and `/fleet` to inspect attached media nodes.
 
-> __NOTE__: By default, Fluxomni Studio is served over `http://`. For production use, it is highly recommended to set up a domain name and configure a reverse proxy (e.g., Nginx or Caddy) to enable `https://` for secure access.
+> __NOTE__: Fluxomni Studio uses `http://` by default. For production, we strongly recommend a domain name and a reverse proxy, such as Nginx or Caddy, to provide secure access over `https://`.
 
 Next, complete [First Stream](../getting-started/first-stream.md) to create a protected operator account and verify one live route.
 

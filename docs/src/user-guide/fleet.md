@@ -1,6 +1,6 @@
 # Fleet
 
-The Fleet page (`/fleet`) provides an inventory view of all media nodes attached to your Fluxomni Studio instance. Use it to monitor node health, inspect capacity, and confirm which artifacts are cached where.
+The Fleet page (`/fleet`) lists all media nodes attached to your Fluxomni Studio instance. Use it to check node health, capacity, and cached artifacts.
 
 ## Fleet Overview
 
@@ -26,7 +26,7 @@ A focused list of all registered nodes.
 
 ### Artifacts
 
-The cache distribution view for artifacts required by assigned routes. Use the separate [Artifacts page](artifacts.md) to upload, import, tag, delete, or inspect library storage.
+Shows where artifacts required by assigned routes are cached. Use the separate [Artifacts page](artifacts.md) to upload, import, tag, delete, or inspect library storage.
 
 ## Media Node Card
 
@@ -60,15 +60,15 @@ Below the capabilities, you can see which routes are currently placed on this no
 
 ## File Distribution (Artifacts)
 
-The Fleet **Artifacts** section is operational visibility for node caches, not the shared library editor. It helps answer whether each assigned route's required artifacts have reached the node that will play them.
+The Fleet **Artifacts** section shows node caches. Use it to check whether the artifacts required by a route are on its assigned node. To edit the shared library, use the separate Artifacts page.
 
 - **Cached artifacts** — total files cached across all nodes.
 - **Nodes with gaps** — nodes that are missing files required by their assigned routes.
 - **Blocked routes** — routes that cannot start because required files are not cached on the assigned node.
 
-The distribution table shows per-node, per-route breakdowns of required, cached, and missing files with an overall status (Applied, Pending, etc.).
+The distribution table lists required, cached, and missing files for each node and route, with an overall status (Applied, Pending, etc.).
 
-If a row shows a baseline compatibility status such as **Compatible**, **Incompatible**, or **Unknown**, the exact preset definitions live in [Settings → Media profiles](settings.md#media-profiles). Fleet shows whether required files are present on nodes; profile definitions explain why a file may or may not match the route's expected media shape.
+If a row shows a baseline compatibility status such as **Compatible**, **Incompatible**, or **Unknown**, the exact preset definitions are in [Settings → Media profiles](settings.md#media-profiles). Fleet shows whether required files are present on nodes; profile definitions explain why a file may or may not match the route's expected media properties.
 
 For library operations, use:
 
@@ -78,4 +78,4 @@ For library operations, use:
 
 ## Opening a Node
 
-Click **Open node →** on any media node card to view detailed node information, including full telemetry, route assignments, and cached file inventory. Use [Attention](attention.md) to triage node conditions that need action before returning to node diagnostics.
+Click **Open node →** on any media node card to view detailed node information, including full telemetry, route assignments, and cached file inventory. Use [Attention](attention.md) to review node issues that need action, then return to node diagnostics.

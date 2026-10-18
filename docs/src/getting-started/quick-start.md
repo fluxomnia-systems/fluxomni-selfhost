@@ -1,6 +1,6 @@
 # Quick Start
 
-Get Fluxomni Studio running in minutes. Fluxomni Studio runs live streams on your own server. Send one stream in. Fluxomni Studio can send it out to many places at once: RTMP, SRT, or Icecast.
+Install Fluxomni Studio on your own server. Send one stream to several destinations at the same time using RTMP, SRT, or Icecast.
 
 ## Prerequisites
 
@@ -17,7 +17,7 @@ If Docker is already installed, the installer uses it. Installer deployments req
 curl -fsSL https://install.fluxomni.io | bash
 ```
 
-By default, Fluxomni Studio installs to `~/fluxomni` and follows the newest stable release channel (`latest`).
+By default, Fluxomni Studio installs to `~/fluxomni` and uses the newest stable release channel (`latest`).
 The installer creates one Docker Compose stack and stores data in `./data`.
 The web UI is included in the default install.
 
@@ -64,7 +64,7 @@ You can also set `FLUXOMNI_MEDIA_NODE_ID`, `FLUXOMNI_MEDIA_NODE_NAME`, `FLUXOMNI
 ## Access the Operator UI
 
 After Fluxomni Studio starts, open `http://<your-server-ip>`.
-Current releases use these primary operator surfaces:
+Current releases use these main pages:
 
 - `/routes` for the route list
 - `/routes/:id` for an individual route workspace

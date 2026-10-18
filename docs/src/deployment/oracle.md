@@ -1,15 +1,15 @@
 How to Deploy Fluxomni Studio to Oracle Cloud Infrastructure
 ====================================================
 
-This guide provides a common and recommended way to deploy Fluxomni Studio as a standalone instance on [Oracle Cloud Infrastructure] (OCI).
+This guide shows the recommended setup for Fluxomni Studio on one [Oracle Cloud Infrastructure] (OCI) instance.
 
-OCI can be a cost-effective option due to its [Free Tier] instances. However, be aware that their resources and bandwidth are limited and may not be suitable for a large number of high-bitrate streams.
+OCI offers [Free Tier] instances that can reduce costs. Their resources and bandwidth are limited, so they may not support many high-bitrate streams.
 
 > __NOTE__: The official bandwidth for a Free Tier VM instance is often higher than the real-world performance. Expect around 50 Mbps, which is enough for up to 8 streams at 5000 kbps each.
 
 ## 0. Prerequisites
 
-You should have a registered account on [Oracle Cloud Infrastructure]. The registration process can be lengthy and requires careful data entry.
+You need an [Oracle Cloud Infrastructure] account. Registration can take time. Check your details carefully.
 
 ## 1. Create VM Instance
 
@@ -19,7 +19,7 @@ From the OCI console, select **Create a VM instance**.
 
 ### 1.1. Name and Compartment
 
-Choose a name for your instance. Then, click **Edit** in the "Placement and hardware" section to customize the configuration.
+Choose a name for your instance. Then, click **Edit** in the "Placement and hardware" section to change the configuration.
 
 ![VM instance name](../images/oci_1.1.png)
 
@@ -49,7 +49,7 @@ You can add an [SSH] key to access the instance for server administration. This 
 
 ### 1.5. Use Cloud-Init Script
 
-Expand the **Show advanced options** section. Go to the **Management** tab and paste the following script into the `Cloud-init script` field. This runs once when the instance is first created, configures the OS-level firewall (firewalld), and installs Fluxomni Studio.
+Expand the **Show advanced options** section. Go to the **Management** tab and paste the following script into the `Cloud-init script` field. The script runs once when the instance is created. It configures the OS firewall (firewalld) and installs Fluxomni Studio.
 
 ```bash
 #!/bin/bash
@@ -62,7 +62,7 @@ Click **Create** to begin provisioning the VM instance.
 
 ## 2. Configure Networking
 
-By default, OCI instances have a restrictive firewall. You must create ingress rules to allow traffic to Fluxomni Studio.
+The default OCI firewall blocks most incoming traffic. You must add ingress rules to allow traffic to Fluxomni Studio.
 
 ### 2.1. Navigate to Virtual Cloud Network
 
@@ -90,20 +90,20 @@ This allows all incoming traffic to your instance. For a production environment,
 
 ## 3. Access Fluxomni Studio
 
-After the instance is created and the networking is configured, allow 5-15 minutes for the provisioning and installation to complete.
+After you create the instance and configure networking, wait 5-15 minutes for server setup and installation.
 
 Find the **Public IP address** on the instance details page.
 
 ![VM instance IP](../images/oci_3.png)
 
-Open your web browser and navigate to the IP address.
+Open the IP address in your browser.
 
 ![Address bar](../images/browser.jpg)
 
 Current releases serve the operator UI from the `frontend` container.
 Use `/routes` for route management and `/fleet` to inspect attached media nodes.
 
-> __NOTE__: By default, Fluxomni Studio is served over `http://`. For production use, it is highly recommended to set up a domain name and configure a reverse proxy (e.g., Nginx or Caddy) to enable `https://` for secure access.
+> __NOTE__: Fluxomni Studio uses `http://` by default. For production, we strongly recommend a domain name and a reverse proxy, such as Nginx or Caddy, to provide secure access over `https://`.
 
 Next, complete [First Stream](../getting-started/first-stream.md) to create a protected operator account and verify one live route.
 

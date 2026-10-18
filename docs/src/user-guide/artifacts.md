@@ -4,7 +4,7 @@ Artifacts are reusable source files and generated media assets that Fluxomni Stu
 
 ## Artifact Library
 
-Open **Artifacts** in the sidebar to manage the global source library.
+Open **Artifacts** in the sidebar to manage the shared source library.
 
 ![The Artifacts page showing the shared media library, filters, tags, and storage summary](../images/user-guide/artifacts.jpg)
 
@@ -25,8 +25,8 @@ Use **Add files** to bring media into the library.
 The menu supports:
 
 - **Upload file** — choose one or more local video files.
-- **Upload folder** — choose a folder; non-video sidecars are skipped.
-- **Import from Drive** — enter a Google Drive file ID or URL. Folder imports are available from playlist flows.
+- **Upload folder** — choose a folder; extra files that are not videos are skipped.
+- **Import from Drive** — enter a Google Drive file ID or URL. You can import folders from a playlist.
 
 Uploads and imports share the same transfer drawer. The drawer shows queued files, upload progress, skipped non-video files, and storage rejections.
 
@@ -41,9 +41,9 @@ Expand the panel to inspect:
 - Used and free artifact capacity.
 - Raw disk size and configured headroom.
 - Admission limit for new uploads.
-- Outstanding reservations from in-flight transfers.
-- Top artifact consumers.
-- Recent storage rejection context.
+- Space reserved for transfers in progress.
+- Artifacts using the most storage.
+- Reasons for recent storage rejections.
 
 Fluxomni Studio rejects uploads before they exceed the backend admission limit. The rejected upload also appears in Attention as a storage alert so operators can free space or move content before retrying.
 
@@ -51,11 +51,11 @@ Fluxomni Studio rejects uploads before they exceed the backend admission limit. 
 
 Route playlists use the same library picker. Open a route, switch to **Playlist**, then choose **From library** to add existing artifacts without uploading or importing the same file again.
 
-The picker can filter by tags and route baseline compatibility. In multi-select mode it commits only visible, usable rows, so stale selections from prior filters are skipped instead of adding hidden files by accident.
+The picker can filter by tags and route baseline compatibility. In multi-select mode, it adds only visible, usable rows. It skips selections hidden by a previous filter.
 
 ## Operational Tips
 
 - Use short, stable tags such as `client-acme`, `intro`, `sponsor`, or `2026-season`.
 - Check the storage panel before folder uploads or Drive imports.
-- Keep file backup distinct from playlist programming: file backup is the safety loop; playlist is scheduled playout.
+- Use file backup for fallback loops and playlists for scheduled playback.
 - Use Fleet when you need to confirm whether a media node has cached artifacts required by an assigned route.

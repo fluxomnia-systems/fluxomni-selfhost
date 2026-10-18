@@ -1,12 +1,12 @@
 # Server Sizing
 
-Size media nodes by active inputs, outputs, bitrate, and processing mode. A stored route, a live route without destinations, and a route sending twelve outputs have different costs. Current measurements qualify specific workloads, not a universal server maximum.
+Size media nodes by active inputs, outputs, bitrate, and processing mode. A stored route, a live route without destinations, and a route sending twelve outputs have different costs. These measurements apply to specific workloads. They do not define a maximum for all servers.
 
 ## Where to run each service
 
-A single host is convenient for a pilot. Budget for the OS, Docker, frontend, control plane, media node, and storage together. The control plane owns API requests, subscriptions, state persistence, and fleet coordination; media nodes run SRS, FFmpeg, ingest, and output delivery.
+A single host is convenient for an initial test. Budget for the OS, Docker, frontend, control plane, media node, and storage together. The control plane owns API requests, subscriptions, state persistence, and fleet coordination; media nodes run SRS, FFmpeg, ingest, and output delivery.
 
-For production capacity qualification, separate the control plane from media hosts so media pressure does not compete with API and database work. Place test publishers and receivers on other hosts. This is an isolation recommendation, not evidence for a particular control-plane server size or linear scaling across nodes.
+For production capacity tests, separate the control plane from media hosts so media pressure does not compete with API and database work. Place test publishers and receivers on other hosts. This separates the workloads. It does not prove a specific control-plane server size or linear scaling across nodes.
 
 Use a stable CPU allocation, sufficient RAM and usable network bandwidth, and persistent storage appropriate to your artifact, playlist, and recording workload. Advertised vCPU count alone is insufficient: record CPU model, cgroup limits, swap, and other tenants. No automatic hardware-derived route or output limit is enforced by this release.
 
@@ -38,7 +38,7 @@ Subtracting each round's mean of its starting and ending zero-route baselines ga
 - **2 waiting routes:** control-plane memory +0.86/+0.64 MiB; media memory −1.08/+0.08 MiB. CPU changed by +0.055/+0.045 and −0.015/−0.066 points, respectively.
 - **10 waiting routes:** control-plane memory +2.87/+2.74 MiB; media memory −0.04/+1.68 MiB. CPU changed by +0.106/+0.091 and +0.023/−0.010 points, respectively.
 
-CPU percentages refer to one core. Memory is charged cgroup memory, including cache; it is not whole-host RAM. Negative increments are measurement variation. The media CPU deltas are too small to infer a dependable CPU-per-empty-route coefficient. Ten waiting routes added a few MiB of control-plane state rather than ten media pipelines.
+CPU percentages refer to one core. Memory is charged cgroup memory, including cache; it is not whole-host RAM. Negative increments are measurement variation. The media CPU differences are too small to estimate reliable CPU use per empty route. Ten waiting routes added a few MiB of control-plane state rather than ten media pipelines.
 
 By contrast, **one live RTMP pull route with no external outputs** added 55.32/56.74 MiB and 3.491/3.483 CPU percentage points to the media baseline, with two copy-mode FFmpeg workers. Two live pull routes added 111.22/115.02 MiB and 7.336/7.102 points; ten added 550.76/566.02 MiB and 37.084/37.919 points. Ingest and switching are real media work even before a destination is added.
 
@@ -57,7 +57,7 @@ SRS protocol polling and timers, health checks, heartbeats, and state coordinati
 1. Fix the CPU model, service placement, container limits, image digests, and workload. Count live inputs separately from outputs and record codecs, bitrate, protocols, copy/transcode mode, subscriptions, recording, and playlist activity.
 2. Start with a workload below the observed pressure points. Track cgroup CPU, throttling, memory, OOM counters, API latency/errors, heartbeat age, and receiver continuity throughout startup and steady delivery.
 3. Estimate network payload as the sum of output bitrates, then include input traffic, transport overhead, preview traffic, and operating reserve. Verify sustained physical egress and provider transfer allowances independently.
-4. Soak on your target hardware and exercise simultaneous reconnects, node loss, restart, and failover. Preserve headroom for those events before choosing an operating budget.
+4. Run a sustained test on your target hardware. Test simultaneous reconnects, node loss, restart, and failover. Preserve headroom for those events before choosing an operating budget.
 5. Increase one workload dimension at a time. Adding media nodes distributes work, but does not establish linear capacity scaling or remove shared control-plane and network constraints.
 
 The exploratory relay experiments used p95 CPU at most 75% of the one-core ceiling and peak RAM at most 75% of the 2-GiB ceiling as candidate headroom checks. These are laboratory selection criteria, not production SLOs or scheduler limits. See [Monitoring](monitoring.md) and [Architecture](architecture.md) for operational context.

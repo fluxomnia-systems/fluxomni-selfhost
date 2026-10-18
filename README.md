@@ -4,16 +4,16 @@
   <img src="docs/src/images/logo.webp" alt="Fluxomni Studio Logo" width="10%">
 </p>
 
-Fluxomni Studio runs live streams on your own server. Send one stream in. Fluxomni Studio can send it out to many places at once: RTMP, SRT, or Icecast.
+Fluxomni Studio runs live streams on your own server. Send one stream to several destinations at the same time using RTMP, SRT, or Icecast.
 
-This repo is for self-host installs. Linux and macOS are supported on x64 and ARM64. Windows is supported through WSL2 with Ubuntu.
+This repository contains the files for self-hosted installs. Linux and macOS are supported on x64 and ARM64. Windows is supported through WSL2 with Ubuntu.
 
 ## What's New in 26.3.2
 
-- **More responsive control plane** — bounded persistence and independent node delivery reduce the impact of slow storage and slow media nodes
-- **Less idle route work** — unused push routes start no FFmpeg workers; media nodes reuse unchanged source state instead of repeatedly copying and scanning the catalog
-- **Larger artifact libraries** — paginated queries and scoped file subscriptions keep catalog work bounded; custom API clients need an update
-- **Clearer output readiness** — an output becomes LIVE after FFmpeg reports media progress, with a deadline for stalled startup
+- **More responsive control plane** — limits on persistence work and separate delivery to each node reduce the impact of slow storage and media nodes
+- **Less idle route work** — unused push routes start no FFmpeg workers; media nodes reuse source state when it has not changed, avoiding repeated catalog copies and scans
+- **Larger artifact libraries** — paginated queries and file subscriptions for specific routes or files limit catalog work; custom API clients need an update
+- **Clearer output readiness** — an output becomes LIVE after FFmpeg reports media progress, with a startup deadline if progress stops
 
 Read the [26.3.2 upgrade guide](docs/src/getting-started/upgrade-26.3.2.md), [release notes](docs/src/changelog.md), and [measured sizing guidance](docs/src/getting-started/sizing.md).
 
@@ -45,7 +45,7 @@ curl -fsSL https://install.fluxomni.io | bash
 
 ### Standalone Media Node
 
-Use this when Fluxomni Studio already runs somewhere else and this server should only move video.
+Use this when Fluxomni Studio already runs on another server and this server will only handle media.
 
 ```bash
 curl -fsSL https://install.fluxomni.io | \
@@ -91,7 +91,7 @@ For the default self-host setup, the installer:
 - creates or updates `.env` in place
 - pulls and starts Fluxomni Studio
 - preserves your existing `data/` directory on reruns
-- verifies that the local services actually start before printing success
+- checks that the local services start before reporting success
 
 The web UI is included in the default install.
 
@@ -119,7 +119,7 @@ The installer manages:
 
 Use `latest` unless you need a pinned release or a test build. The current stable public release is `v26.3.2`. Retained image tags are available for separately reviewed recovery; migrated state must not be restarted with predecessor images.
 
-See the What's New section above for the latest highlights.
+See the What's New section above for recent changes.
 
 ## Manage Your Instance
 
@@ -148,10 +148,10 @@ For SRS open-file errors, rerun the latest installer; see [troubleshooting](docs
 
 ## Advanced Installer Notes
 
-- If `FLUXOMNI_VERSION` is pinned, the installer tries the matching self-host files first. Stable public pins fail loudly when matching assets are missing after release sync.
+- If `FLUXOMNI_VERSION` is pinned, the installer tries the matching self-host files first. The installer reports an error if files for a pinned stable public release are missing after release sync.
 - Use `FLUXOMNI_SELFHOST_REF` to force a self-host asset ref.
 - Use `FLUXOMNI_REPO_RAW` to use a custom raw asset base.
-- The installer requires Compose 2.20+ and writes `docker-compose.yml`, `compose.defaults.yml`, and `compose.release.yml`. Keep them together; put customizations in `docker-compose.override.yml`.
+- The installer requires Compose 2.20+ and writes `docker-compose.yml`, `compose.defaults.yml`, and `compose.release.yml`. Keep them together. Put custom settings in `docker-compose.override.yml`.
 - Use `FLUXOMNI_FRONTEND_IMAGE`, `FLUXOMNI_CONTROL_PLANE_IMAGE`, and `FLUXOMNI_MEDIA_NODE_IMAGE` only when you publish your own images.
 
 Useful standalone media-node overrides:
@@ -164,7 +164,7 @@ Useful standalone media-node overrides:
 
 ## Documentation
 
-Start here if you want step-by-step guidance:
+Use these guides for setup and operation:
 
 - [Published documentation](https://docs.fluxomni.io/)
 - [Book introduction](./docs/src/README.md)

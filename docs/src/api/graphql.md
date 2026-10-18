@@ -2,7 +2,7 @@
 
 Fluxomni Studio accepts GraphQL HTTP POST requests at `/api`.
 
-Raw GraphQL is the most portable automation format because it maps directly to the release schema.
+Raw GraphQL uses the release schema directly and works across languages and clients.
 
 ## Query
 
@@ -16,7 +16,7 @@ curl \
 
 ## Mutation
 
-Mutation payloads expose machine-readable status values when no-op or missing-target outcomes are normal convergence states.
+Mutation payloads return status values for scripts to check. An operation that changes nothing or finds no target can return a normal result.
 
 ```graphql
 mutation DisableOutput($routeId: RouteId!, $outputId: OutputId!) {

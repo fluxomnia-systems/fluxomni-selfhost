@@ -2,7 +2,7 @@
 
 ## Installation Health Check (Doctor)
 
-If you encounter issues during or after installation, run the diagnostic script from your install directory:
+If you have issues during or after installation, run the diagnostic script from your install directory:
 
 ```bash
 # From your install directory (default ~/fluxomni)
@@ -46,7 +46,7 @@ Common causes:
 
 ## Media Node Does Not Appear in Fleet
 
-If the control surface loads but a standalone node never shows up under `/fleet`, check the media-node logs:
+If the Control Surface loads but a standalone node does not appear under `/fleet`, check the media-node logs:
 
 ```bash
 cd ~/fluxomni-media-node
@@ -91,7 +91,7 @@ If the UI shows RTMP, HLS, SRT, or WebRTC URLs with a private IP, Docker hostnam
 - `FLUXOMNI_PUBLIC_HOST` for control-plane links
 - `FLUXOMNI_MEDIA_NODE_PUBLIC_HOST` for media ingest and playback links
 
-On current releases, `/routes` is the main operator surface and `/fleet` shows attached media nodes. Those pages use the configured public hosts when they render copyable endpoints.
+On current releases, `/routes` is the main operator page and `/fleet` shows attached media nodes. Both pages use the configured public hosts in the endpoints you can copy.
 
 ## Check Running State
 
@@ -161,7 +161,7 @@ Access the Control Surface at `http://<HOST-IP>:8080`. If you also set `FLUXOMNI
 
 In environments with multiple networks (e.g. cloud VPCs, complex office LANs, or behind NAT), the Web UI might be unreachable if the public-facing address is misconfigured.
 
-The **Self-Host Doctor** (`./doctor.sh`) will automatically detect your local IP addresses and warn you if `FLUXOMNI_PUBLIC_HOST` is set to a restricted loopback address.
+The **Self-Host Doctor** (`./doctor.sh`) detects your local IP addresses and warns you if `FLUXOMNI_PUBLIC_HOST` is set to a restricted loopback address.
 
 **Symptoms:**
 
@@ -227,8 +227,8 @@ If the output stream has artifacts, stuttering, or audio sync problems:
 If you are locked out of the Control Surface:
 
 - Verify the username and password. Passwords are case-sensitive.
-- If you forgot the admin password, current installs store user accounts in `data/state.db`, not `data/state.json`. Stop the stack first, back up `data/`, and use `sqlite3 data/state.db` as a last-resort recovery path if you need to inspect or repair the `users` table before restarting.
-- If no user accounts exist, Fluxomni Studio falls back to the open admin shell. After emergency recovery, use Settings to create a new admin account before re-enabling named-user sign-in.
+- If you forgot the admin password, current installs store user accounts in `data/state.db`, not `data/state.json`. Stop the stack first, back up `data/`, and use `sqlite3 data/state.db` only as a last resort if you need to inspect or repair the `users` table before restarting.
+- If no user accounts exist, Fluxomni Studio uses the open admin shell. After emergency recovery, use Settings to create a new admin account before re-enabling named-user sign-in.
 
 ## Rollback to a Previous Version
 

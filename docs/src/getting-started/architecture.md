@@ -1,6 +1,6 @@
 # Architecture
 
-Fluxomni Studio uses a split runtime with the **frontend**, the
+Fluxomni Studio runs as separate services: the **frontend**, the
 **control-plane**, and one or more **media nodes**.
 
 ## Components
@@ -8,12 +8,12 @@ Fluxomni Studio uses a split runtime with the **frontend**, the
 ### Frontend
 
 The frontend serves the operator UI (Control Surface). In Docker Compose,
-it is the public HTTP entrypoint and proxies API/file requests back to the
-control-plane over Docker-internal networking.
+it receives public HTTP traffic and forwards API and file requests to the
+control-plane through the Docker network.
 
 ### Control-plane
 
-The control-plane is the brain of the system. It:
+The control-plane manages the system. It:
 
 - Serves the GraphQL API and backend HTTP endpoints used by the frontend.
 - Manages route definitions, playlist state, user accounts, and settings.
@@ -25,7 +25,7 @@ A single control-plane instance manages the entire fleet. It runs as the
 
 ### Media node
 
-A media node handles the actual media work:
+A media node processes and delivers media:
 
 - Receives ingest streams (RTMP push, RTMP pull, SRT push, WebRTC push).
 - Relays streams to output destinations (RTMP, RTMPS, SRT, Icecast, file).
@@ -33,15 +33,15 @@ A media node handles the actual media work:
 - Reports health, telemetry, and heartbeat to the control-plane over gRPC.
 - Caches playlist files locally for fast playback.
 
-In a single-host install, one media node runs alongside the control-plane
-and communicates over Docker-internal networking. In distributed
+In a single-host install, one media node runs with the control-plane
+and communicates through the Docker network. In distributed
 deployments, additional media nodes run on separate servers and connect
 back to the control-plane over its published gRPC port (TCP 50052).
 
 ### SRS (Simple Realtime Server)
 
-Each media node embeds an [SRS](https://ossrs.io) instance that provides
-the low-level RTMP, HLS, SRT, and WebRTC protocol handling. Fluxomni Studio
+Each media node includes an [SRS](https://ossrs.io) instance that handles
+the RTMP, HLS, SRT, and WebRTC protocols. Fluxomni Studio
 manages SRS configuration and lifecycle automatically. Operators do not
 interact with SRS directly.
 
@@ -62,8 +62,8 @@ interact with SRS directly.
 ```
 
 - **Frontend to control-plane**: The frontend serves the Control Surface
-  and proxies API/file requests to the control-plane over Docker-internal
-  HTTP.
+  and forwards API and file requests to the control-plane over HTTP
+  through the Docker network.
 - **Control-plane to media node**: The control-plane pushes route
   manifests, playlist updates, and scheduling decisions to media nodes
   over gRPC.

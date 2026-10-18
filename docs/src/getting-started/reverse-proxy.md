@@ -5,9 +5,9 @@ terminate TLS, serve the UI on port 443, and optionally restrict access.
 
 ## Overview
 
-Fluxomni Studio exposes an HTTP surface (UI + API) and several media-plane ports.
-A reverse proxy sits in front of the HTTP surface while media ports
-(RTMP, SRT, HLS, WHIP signaling, and RTC media) are typically passed through directly.
+Fluxomni Studio serves its UI and API over HTTP and uses separate ports for media.
+A reverse proxy handles HTTP traffic. Media ports
+(RTMP, SRT, HLS, WHIP signaling, and RTC media) usually remain directly accessible.
 
 ```text
 Internet
@@ -39,7 +39,7 @@ Reload Caddy:
 sudo systemctl reload caddy
 ```
 
-Caddy provisions a certificate automatically. Set your `.env` values to
+Caddy creates a certificate automatically. Set your `.env` values to
 match:
 
 ```bash
@@ -107,7 +107,7 @@ sudo certbot --nginx -d stream.example.com
 
 ## Media ports
 
-RTMP (TCP 1935), SRT (UDP 10080), and RTC media (UDP 8000) must have reachable transport paths. HLS uses TCP 8000; WHIP signaling uses TCP 8003. Keep these ports published directly unless you deliberately proxy HLS or WHIP over HTTP. Proxying WHIP signaling does not proxy RTC UDP media. For custom ports, use the values from `.env`.
+RTMP (TCP 1935), SRT (UDP 10080), and RTC media (UDP 8000) must be reachable over their respective protocols. HLS uses TCP 8000; WHIP signaling uses TCP 8003. Keep these ports published directly unless you deliberately proxy HLS or WHIP over HTTP. Proxying WHIP signaling does not proxy RTC UDP media. For custom ports, use the values from `.env`.
 
 If you need TLS on RTMP, some CDN endpoints accept RTMPS. Fluxomni Studio
 outputs support `rtmps://` destination URLs natively.

@@ -1,10 +1,10 @@
 # How to Deploy Fluxomni Studio to VScale/Selectel Cloud
 
-This guide provides the recommended method for deploying Fluxomni Studio to [VScale/Selectel Cloud].
+This guide shows the recommended setup for Fluxomni Studio on [VScale/Selectel Cloud].
 
 This provider is a good option for users who need servers in Moscow or St. Petersburg.
 
-> **NOTE**: This installation method requires accessing the server via SSH.
+> **NOTE**: This installation method requires SSH access to the server.
 
 ## 0. Prerequisites
 
@@ -24,19 +24,19 @@ Supported platforms:
 
 ### 1.1. Choose a Configuration
 
-For simple restreaming, the smallest configuration is usually sufficient. If you plan to run a large number of streams, consider a more powerful server.
+The smallest configuration is usually enough for simple restreaming. Choose a more powerful server for many streams.
 
 ![Server Configuration](../images/vscale_1.1.png)
 
 ### 1.2. Choose a Location
 
-Choose a location that is geographically close to both your stream source and destination endpoints to minimize latency.
+Choose a location near both your stream source and destinations to reduce latency.
 
 ![Location](../images/vscale_1.2.png)
 
 ### 1.3. Set the Server Name
 
-Give your server a descriptive name so you can easily identify it later.
+Give your server a clear name so you can find it later.
 
 ![Server Name](../images/vscale_1.3.png)
 
@@ -60,7 +60,7 @@ If you did not provide an SSH key, you will be given a username and password. Yo
 
 ### 1.6. Install Fluxomni Studio
 
-To install Fluxomni Studio, you need to connect to the server using an [SSH] client and run the installation script.
+Connect to the server with an [SSH] client and run the installation script.
 
 Find the IP address of your server. In this example, it is `80.249.146.84`.
 
@@ -76,14 +76,14 @@ If you are using password authentication, you will be prompted to enter the pass
 
 ## 2. Access Fluxomni Studio
 
-After the installation script is finished (it may take 5-15 minutes), you can access Fluxomni Studio by navigating to the server's IP address in your web browser.
+Installation may take 5-15 minutes. When it finishes, open the server's IP address in your browser.
 
 ![Address Bar](../images/browser.jpg)
 
 Current releases serve the operator UI from the `frontend` container.
 Use `/routes` for route management and `/fleet` to inspect attached media nodes.
 
-> **NOTE**: By default, Fluxomni Studio is served over `http://`. For production use, it is highly recommended to set up a domain name and configure a reverse proxy (e.g., Nginx or Caddy) to enable `https://` for secure access.
+> **NOTE**: Fluxomni Studio uses `http://` by default. For production, we strongly recommend a domain name and a reverse proxy, such as Nginx or Caddy, to provide secure access over `https://`.
 
 Next, complete [First Stream](../getting-started/first-stream.md) to create a protected operator account and verify one live route.
 

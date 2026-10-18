@@ -1,11 +1,11 @@
 How to Deploy Fluxomni Studio to DigitalOcean
 =======================================
 
-This guide provides a common and recommended way to deploy Fluxomni Studio as a standalone droplet on [DigitalOcean].
+This guide shows the recommended setup for Fluxomni Studio on one [DigitalOcean] droplet.
 
 ## 0. Prerequisites
 
-You should have a registered account on [DigitalOcean] with a [payment method attached to it][1].
+You need a [DigitalOcean] account with a [payment method][1].
 
 ## 1. Create Droplet
 
@@ -23,7 +23,7 @@ Supported platforms:
 
 ### 1.2. Choose a Plan
 
-For simple restreaming, the cheapest plan should be sufficient. If you plan to run a large number of streams or require transcoding, consider a more powerful plan.
+The cheapest plan should be enough for simple restreaming. Choose a more powerful plan for many streams or transcoding.
 
 ![Server resources](../images/do_1.2.jpg)
 
@@ -31,7 +31,7 @@ For simple restreaming, the cheapest plan should be sufficient. If you plan to r
 
 > __NOTE__: Skip this step if you do not plan to record streams to files.
 
-If you intend to record live streams, you may need more disk space than the default provided. You can attach an external block storage volume to the droplet.
+Recording live streams may need more disk space than the default disk provides. You can attach an external block storage volume to the droplet.
 
 ![Add volume](../images/do_1.3.1.jpg)
 ![Setup volume](../images/do_1.3.2.jpg)
@@ -40,13 +40,13 @@ The installer will automatically detect and use the attached volume for Fluxomni
 
 ### 1.4. Choose a Datacenter Region
 
-Select a region that is geographically close to both your stream source and your destination endpoints to minimize latency.
+Choose a region near both your stream source and destinations to reduce latency.
 
 ![Region](../images/do_1.4.jpg)
 
 ### 1.5. Add User Data
 
-To automatically install Fluxomni Studio on the new droplet, paste the following script into the `User data` field. This runs once when the droplet is first created and also configures a firewall with the required ports.
+To automatically install Fluxomni Studio on the new droplet, paste the following script into the `User data` field. The script runs once when the droplet is created. It also configures a firewall with the required ports.
 
 ```bash
 #!/bin/bash
@@ -57,7 +57,7 @@ curl -fsSL https://install.fluxomni.io | WITH_UFW=1 bash -s
 
 ### 1.6. Select Authentication Method
 
-[DigitalOcean] requires an authentication method to access the droplet. You can use an [SSH] key (recommended) or set a root password. This is for managing the server itself; it is not required for using the Fluxomni Studio application.
+[DigitalOcean] requires an authentication method to access the droplet. You can use an [SSH] key (recommended) or set a root password. These credentials are for server management. You do not need them to use Fluxomni Studio.
 
 ![SSH access](../images/do_1.6.jpg)
 
@@ -71,20 +71,20 @@ Click **Create Droplet** to begin provisioning.
 
 ## 2. Access Fluxomni Studio
 
-After you launch the droplet, allow 5-15 minutes for the provisioning and installation to complete.
+After you create the droplet, wait 5-15 minutes for server setup and installation.
 
 You can find the IP address of your droplet in the DigitalOcean control panel.
 
 ![Droplet IP](../images/do_2.jpg)
 
-Open your web browser and navigate to the IP address of the droplet.
+Open the droplet's IP address in your browser.
 
 ![Address bar](../images/browser.jpg)
 
 Current releases serve the operator UI from the `frontend` container.
 Use `/routes` for route management and `/fleet` to inspect attached media nodes.
 
-> __NOTE__: By default, Fluxomni Studio is served over `http://`. For production use, it is highly recommended to set up a domain name and configure a reverse proxy (e.g., Nginx or Caddy) to enable `https://` for secure access.
+> __NOTE__: Fluxomni Studio uses `http://` by default. For production, we strongly recommend a domain name and a reverse proxy, such as Nginx or Caddy, to provide secure access over `https://`.
 
 Next, complete [First Stream](../getting-started/first-stream.md) to create a protected operator account and verify one live route.
 

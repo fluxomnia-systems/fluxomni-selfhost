@@ -1,6 +1,6 @@
 # Configuration
 
-Fluxomni Studio is configured through environment variables in `.env`.
+Configure Fluxomni Studio with environment variables in `.env`.
 
 ## Core Variables
 
@@ -65,7 +65,7 @@ The installer maps canonical public pins to the matching core image tag when nat
 - `FLUXOMNI_SHARED_VIDEO_DIR`: host directory mounted read-only into the media-node video cache path.
 - `FLUXOMNI_OTLP_ENDPOINT`: OpenTelemetry collector endpoint (e.g. `http://collector:4318`).
 
-For single-host installs, keep both data-directory variables on `./data` unless you intentionally want separate storage surfaces.
+For single-host installs, keep both data-directory variables on `./data` unless you need separate storage locations.
 If you move `FLUXOMNI_MEDIA_NODE_DATA_DIR` elsewhere, keep `FLUXOMNI_SHARED_VIDEO_DIR` pointed at the control-plane video cache so downloaded or imported playlist files remain readable from the media-node.
 
 ## Apply Changes
@@ -92,7 +92,7 @@ FLUXOMNI_MEDIA_NODE_PUBLIC_HOST=media2.example.com \
   curl -fsSL https://install.fluxomni.io | bash -s -- media-node
 ```
 
-That mode installs into `~/fluxomni-media-node` by default, writes a media-node-only compose bundle, derives a host-specific node ID when one is not provided, and waits for a successful `Registered media node with control plane` log before printing success.
+This mode installs into `~/fluxomni-media-node` by default and writes Compose files for a media node only. If no node ID is provided, it creates one from the hostname. It waits for a `Registered media node with control plane` log before reporting success.
 Set `FLUXOMNI_MEDIA_NODE_PUBLIC_HOST` to the hostname or IP that the control-plane, publishers, and viewers should use for that media server. In the example above, that is `media2.example.com`.
 
 Set these only when you need to override the defaults:

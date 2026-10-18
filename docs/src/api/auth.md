@@ -24,7 +24,7 @@ curl -b "fluxomni_session=$SESSION" \
 
 ## Roles
 
-Automation inherits the same role guards as the UI:
+Automation uses the same role permissions as the UI:
 
 - **Admin** — full access to routes, artifacts, Fleet, settings, user management, export/import, and ownership assignment.
 - **Operator** — can manage visible routes, sources, outputs, playlists, and artifacts, plus self-service settings.
@@ -32,7 +32,7 @@ Automation inherits the same role guards as the UI:
 
 ## Session Expiry
 
-Session lifetime is controlled by the server `sessionTtlSeconds` setting. A value of `0` or `null` disables expiry; otherwise the in-memory session expires after that many seconds from login.
+Session lifetime is controlled by the server `sessionTtlSeconds` setting. A value of `0` or `null` disables expiry. Other values set the number of seconds from login until the in-memory session expires.
 
 Scripts should treat HTTP `401` or GraphQL `extensions.code: "UNAUTHORIZED"` as a signal to log in again.
 
