@@ -1,6 +1,16 @@
 # Optional preparation limits: combine with docker-compose.preparation-cgroup.yml.
 # The installer provisions the owned Linux subtree and persists this include.
 services:
+  control-init:
+    image: ${FLUXOMNI_CONTROL_PLANE_IMAGE:-ghcr.io/fluxomnia-systems/fluxomni-control-plane}:${FLUXOMNI_VERSION:-latest}
+    entrypoint: ["/usr/local/bin/init-control-session", "/control", "/node"]
+    environment:
+      FLUXOMNI_MEDIA_NODE_ID: ${FLUXOMNI_MEDIA_NODE_ID:-media-node-1}
+      FLUXOMNI_PUBLIC_HOST: ${FLUXOMNI_PUBLIC_HOST:-127.0.0.1}
+    volumes:
+      - control-secrets:/control
+      - local-node-secrets:/node
+
   frontend:
     image: ${FLUXOMNI_FRONTEND_IMAGE:-ghcr.io/fluxomnia-systems/fluxomni-frontend}:${FLUXOMNI_VERSION:-latest}
     container_name: ${FLUXOMNI_FRONTEND_CONTAINER_NAME:-fluxomni-frontend}
@@ -19,10 +29,17 @@ services:
   control-plane:
     image: ${FLUXOMNI_CONTROL_PLANE_IMAGE:-ghcr.io/fluxomnia-systems/fluxomni-control-plane}:${FLUXOMNI_VERSION:-latest}
     container_name: ${FLUXOMNI_CONTROL_PLANE_CONTAINER_NAME:-fluxomni-control-plane}
+    depends_on:
+      control-init:
+        condition: service_completed_successfully
     restart: unless-stopped
     env_file: .env
     environment:
       FLUXOMNI_APP_ROOT: /app/fluxomni-data
+      FLUXOMNI_CONTROL_PLANE_RPC_BIND: 0.0.0.0:50052
+      FLUXOMNI_CONTROL_TLS_CERT: /run/fluxomni-control/server.crt
+      FLUXOMNI_CONTROL_TLS_KEY: /run/fluxomni-control/server.key
+      FLUXOMNI_NODE_CREDENTIALS_FILE: /run/fluxomni-control/credential-hashes.json
       FLUXOMNI_COMPAT_SRT_PORT: ${FLUXOMNI_MEDIA_NODE_SRT_PORT:-10080}
       FLUXOMNI_COMPAT_SRS_HTTP_PORT: ${FLUXOMNI_MEDIA_NODE_HLS_PORT:-8000}
       FLUXOMNI_CONTROL_PLANE_INTERNAL_AUTH_TOKEN: ${FLUXOMNI_CONTROL_PLANE_INTERNAL_AUTH_TOKEN:?Set FLUXOMNI_CONTROL_PLANE_INTERNAL_AUTH_TOKEN in .env}
@@ -32,6 +49,7 @@ services:
     ports:
       - "${FLUXOMNI_CONTROL_PLANE_RPC_PORT:-127.0.0.1:50052}:50052"
     volumes:
+      - control-secrets:/run/fluxomni-control:ro
       - ${FLUXOMNI_CONTROL_PLANE_DATA_DIR:-./data}:/app/fluxomni-data
     labels:
       - com.centurylinklabs.watchtower.enable=true
@@ -50,9 +68,10 @@ services:
     environment:
       FLUXOMNI_APP_ROOT: /app/fluxomni-data
       FLUXOMNI_CONTROL_PLANE_INTERNAL_AUTH_TOKEN: ${FLUXOMNI_CONTROL_PLANE_INTERNAL_AUTH_TOKEN:?Set FLUXOMNI_CONTROL_PLANE_INTERNAL_AUTH_TOKEN in .env}
-      FLUXOMNI_CONTROL_PLANE_RPC_ENDPOINT: http://control-plane:50052
-      FLUXOMNI_MEDIA_NODE_ENDPOINT: http://media-node:50051
-      FLUXOMNI_MEDIA_NODE_GRPC_BIND: 0.0.0.0:50051
+      FLUXOMNI_CONTROL_PLANE_RPC_ENDPOINT: https://control-plane:50052
+      FLUXOMNI_CONTROL_TLS_CA: /run/fluxomni-node/ca.crt
+      FLUXOMNI_NODE_CREDENTIAL_FILE: /run/fluxomni-node/credential
+      FLUXOMNI_MEDIA_NODE_HTTP_HOST: media-node
       FLUXOMNI_MEDIA_NODE_HEARTBEAT_INTERVAL_SECS: ${FLUXOMNI_MEDIA_NODE_HEARTBEAT_INTERVAL_SECS:-5}
       FLUXOMNI_MEDIA_NODE_ID: ${FLUXOMNI_MEDIA_NODE_ID:-media-node-1}
       FLUXOMNI_MEDIA_NODE_LABELS: ${FLUXOMNI_MEDIA_NODE_LABELS:-selfhost}
@@ -77,6 +96,7 @@ services:
       - "127.0.0.1:${FLUXOMNI_MEDIA_NODE_SRS_CALLBACK_PORT:-8081}:8081"
       - "${FLUXOMNI_MEDIA_NODE_SRT_PORT:-10080}:10080/udp"
     volumes:
+      - local-node-secrets:/run/fluxomni-node:ro
       - ${FLUXOMNI_MEDIA_NODE_DATA_DIR:-./data}:/app/fluxomni-data
       - ${FLUXOMNI_SHARED_VIDEO_DIR:-./data/videos}:/app/fluxomni-data/videos:ro
     labels:
@@ -93,3 +113,7 @@ services:
       WATCHTOWER_POLL_INTERVAL: "86400"
       WATCHTOWER_LABEL_ENABLE: "true"
     profiles: ["auto-update"]
+
+volumes:
+  control-secrets:
+  local-node-secrets:

@@ -6,6 +6,8 @@ Back up runtime data and configuration, and preserve capacity ownership when sto
 
 Keep `data/state.db`, `.env` and cached playlist files in `data/videos/`. Include configured external data binds. SQLite may also create `state.db-wal` and `state.db-shm`; retain them beside the database for live filesystem snapshots.
 
+Also save standalone `node-secrets/` and the full installation's `control-secrets` and `local-node-secrets` Docker volumes. The data archive below does not include Docker volumes; back them up separately before restart.
+
 DVR recordings in `data/dvr/` are optional backup data. Generated `data/srs-http/` media can be recreated.
 
 ## Create a backup
@@ -44,10 +46,14 @@ Drain the source cluster while reporters are alive, take a stopped backup, and k
 
 Changed storage roots or a different host require a separately reviewed manual procedure. Verify the initialized ledger, acknowledgement absence and Fleet registration before enabling the recorded routes. Never run source and destination against copied ownership concurrently.
 
-## Rotate the auth token
+## Preserve machine identities
 
-Drain all routes with the old credentials still valid, following [Capacity Ledger Upgrades](capacity-upgrades.md). Stop execution and automatic updates on every host, then stop the control plane.
+Back up the full installation's `control-secrets` and `local-node-secrets` Docker volumes along with its database, files and configuration. Standalone nodes keep their credential, identity and trust files under `node-secrets/`. Protect these backups as secrets.
 
-Generate a new token with `openssl rand -hex 24` and update `FLUXOMNI_CONTROL_PLANE_INTERNAL_AUTH_TOKEN` in `.env` on the full-stack and every standalone-node host. Restart the full stack with drained mode, then update standalone nodes with `--capacity-upgrade node --confirm-control-plane-ready`. Verify registration before restoring enabled routes.
+Restore the matching node credential and control-plane hash authority together. Enrollment cannot replace an existing node's credential. Do not delete identity files to force new enrollment or bypass reserved execution ownership.
 
-All services must use the same token. A mismatch prevents node registration and shutdown reporting.
+## Rotate internal HTTP artifact access
+
+`FLUXOMNI_CONTROL_PLANE_INTERNAL_AUTH_TOKEN` is separate from machine admission. A full installation creates it for internal HTTP artifact access; standalone enrollment does not copy it into the node's `.env`.
+
+Coordinate changes through the capacity maintenance procedure and verify artifact access after current control sessions reconnect. Machine credential rotation and recovery after permanent credential loss require a separate reviewed procedure.

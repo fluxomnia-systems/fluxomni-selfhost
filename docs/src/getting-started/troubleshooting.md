@@ -39,10 +39,10 @@ Common causes:
 
 - Docker daemon is not running.
 - The selected image tag does not exist.
-- `FLUXOMNI_CONTROL_PLANE_INTERNAL_AUTH_TOKEN` is missing from `.env` after a manual install.
-- The configured frontend HTTP port, 1935, 8000/tcp, 8003/tcp, 8000/udp, 8081/tcp (loopback), 10080/udp, 50051/tcp, or 50052/tcp is already in use.
+- A manual control-plane install has missing TLS or initial credential-hash files.
+- The configured frontend HTTP port, 1935, 8000/tcp, 8003/tcp, 8000/udp, 8081/tcp (loopback), 10080/udp, or 50052/tcp is already in use.
 - For standalone media-node installs, the control-plane RPC endpoint in `.env` is unreachable from the media server.
-- For standalone media-node installs, the advertised `FLUXOMNI_MEDIA_NODE_ENDPOINT` does not point back to the media server.
+- The control hostname does not match its TLS certificate, or the private CA was not supplied.
 
 ## Media Node Does Not Appear in Fleet
 
@@ -56,10 +56,17 @@ docker compose logs -f media-node
 Look for a successful `Registered media node with control plane` message.
 If it never appears, verify:
 
-- `FLUXOMNI_CONTROL_PLANE_RPC_ENDPOINT` is reachable from the media-node host.
-- `FLUXOMNI_CONTROL_PLANE_INTERNAL_AUTH_TOKEN` matches the control-plane value exactly.
-- `FLUXOMNI_MEDIA_NODE_PUBLIC_HOST` and `FLUXOMNI_MEDIA_NODE_ENDPOINT` point back to the actual media-node host and published gRPC port.
-- Any firewall between hosts allows TCP `50052` to the control-plane and the published media-node gRPC port back to the node when remote operators or services need it.
+- `FLUXOMNI_CONTROL_PLANE_RPC_ENDPOINT` uses HTTPS and is reachable from the node.
+- Its hostname matches the server certificate and its CA is trusted.
+- `node-secrets/credential` and the identity metadata remain present and readable by the node.
+- Fleet shows the expected node ID and a consumed enrollment code.
+- No inbound node control port is required. Public media settings do not affect admission.
+
+If an enrollment response was lost, rerun the original command. If its first redemption expired or was cancelled, generate a new code for the same node and retain the saved credential. An already committed code can only confirm that same hash.
+
+For a running installation, use the [standalone maintenance mode](capacity-upgrades.md) before recreating containers. A changed node ID or control endpoint cannot reuse another saved identity directory.
+
+If the machine credential is permanently lost or damaged, stop the node and restore its credential from backup. Enrollment cannot rotate an existing node's credential or clear uncertain execution ownership.
 
 ## SRS Reports Too Few Open Files
 
@@ -206,7 +213,6 @@ Fluxomni Studio uses both TCP and UDP ports. A common mistake is only opening TC
 | 8000 | UDP | WebRTC media |
 | 8081 | TCP (localhost) | SRS callback (internal) |
 | 10080 | UDP | SRT ingest |
-| 50051 | TCP | Media-node gRPC |
 | 50052 | TCP | Control-plane gRPC (localhost by default) |
 
 SRT (port 10080) is **UDP only**. If SRT publishers cannot connect, verify that UDP traffic is allowed through your firewall or cloud security group.

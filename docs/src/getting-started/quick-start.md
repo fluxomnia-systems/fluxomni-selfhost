@@ -38,28 +38,17 @@ Use `FLUXOMNI_SELFHOST_REF` only when the config files must come from a differen
 
 ## Attach Another Media Node
 
-Before attaching a remote media node, expose `50052/tcp` from the main
-control-plane host only to trusted node IPs. For direct binding, set
-`FLUXOMNI_CONTROL_PLANE_RPC_PORT=50052` in the main install's `.env`,
-restart the stack, and restrict access with a firewall.
+Open Fleet → Add Node as an Admin. Choose the node ID and name, then select Generate join command. Copy the command and run it on the remote node host.
 
-Run this on the remote media server:
+The command contains a fifteen-minute, single-use enrollment code. The installer creates and saves a machine credential before redeeming the code over verified HTTPS. The control plane stores its hash; the machine secret never passes through the browser.
 
-```bash
-curl -fsSL https://install.fluxomni.io | \
-FLUXOMNI_VERSION=edge \
-FLUXOMNI_CONTROL_PLANE_RPC_ENDPOINT=http://control.example.com:50052 \
-FLUXOMNI_CONTROL_PLANE_INTERNAL_AUTH_TOKEN=replace-with-shared-token \
-FLUXOMNI_MEDIA_NODE_PUBLIC_HOST=media2.example.com \
-  bash -s -- media-node
-```
+The enrollment HTTPS origin and outbound control endpoint must be reachable from the node. Their certificates must match their hostnames. Fleet includes the control listener certificate as a pin. Advanced settings can use a stable issuing CA instead. Update the saved trust file when a pinned certificate is renewed. Use the separate enrollment HTTPS CA field for a private HTTPS origin.
 
-The installer writes files to `~/fluxomni-media-node`. It checks that it can reach the main Fluxomni Studio server before it starts.
-Set `FLUXOMNI_MEDIA_NODE_PUBLIC_HOST` to the real hostname or IP for this media server.
+A VPN, public node address and inbound node control port are optional. Leave the public host and HTTP relay host empty for a private node with no published ports. Configure media hosts only when publishers, viewers or HTTP relays need them.
 
-Set `FLUXOMNI_MEDIA_NODE_ENDPOINT` only when the media server uses a custom gRPC endpoint.
+Fleet distinguishes a consumed code from a connected node. After redemption, the existing outbound TLS handshake completes registration. Codes can be cancelled in Add Node, and expired codes can be replaced before successful enrollment.
 
-You can also set `FLUXOMNI_MEDIA_NODE_ID`, `FLUXOMNI_MEDIA_NODE_NAME`, `FLUXOMNI_MEDIA_NODE_LABELS`, and `FLUXOMNI_MEDIA_NODE_ZONE`.
+The installer keeps credentials in owner-only `node-secrets/` under `~/fluxomni-media-node`. Repeating an interrupted installation reuses the saved secret. For a node that already started, follow [Capacity Ledger Upgrades](capacity-upgrades.md) before recreating it; maintenance reruns do not repeat enrollment.
 
 ## Access the Operator UI
 
@@ -136,3 +125,5 @@ docker compose --profile auto-update stop watchtower
 
 For per-node playlist normalization CPU/memory/thread budgets, see
 [Offline Preparation Resource Limits](configuration.md#offline-preparation-resource-limits).
+
+If redemption loses its response, the installer keeps the same credential and confirms it through the outbound control connection. Rerun the original command after an interrupted install. Never delete `node-secrets/` to retry.

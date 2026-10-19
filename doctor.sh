@@ -58,6 +58,7 @@ fi
 echo -e "\n${BLUE}--- Configuration ---${NC}"
 
 # .env check
+STANDALONE_NODE=0
 if [ -f .env ]; then
   check pass ".env file exists"
   
@@ -65,7 +66,14 @@ if [ -f .env ]; then
   read_env() { grep "^$1=" .env | cut -d= -f2- | tr -d '"' | tr -d "'" || true; }
   
   AUTH_TOKEN=$(read_env FLUXOMNI_CONTROL_PLANE_INTERNAL_AUTH_TOKEN)
-  if [ -n "$AUTH_TOKEN" ]; then
+  if [ -n "$(read_env FLUXOMNI_NODE_CREDENTIAL_FILE)" ]; then
+    STANDALONE_NODE=1
+    if [ -s node-secrets/credential ]; then
+      check pass "Node credential saved"
+    else
+      check fail "Node credential missing" "Restore node-secrets from backup; do not rotate by deleting the directory."
+    fi
+  elif [ -n "$AUTH_TOKEN" ]; then
     check pass "Internal Auth Token configured"
   else
     check fail "Internal Auth Token MISSING" "Set FLUXOMNI_CONTROL_PLANE_INTERNAL_AUTH_TOKEN in .env"
@@ -103,6 +111,8 @@ if [ -f .env ]; then
         echo -e "   Run: ${BLUE}sed -i 's/FLUXOMNI_PUBLIC_HOST=.*/FLUXOMNI_PUBLIC_HOST=<chosen-ip>/' .env && docker compose up -d${NC}"
       fi
     fi
+  elif [ "$STANDALONE_NODE" = 1 ]; then
+    check info "Private node" "Public media is optional; control is outbound."
   else
     check warn "FLUXOMNI_PUBLIC_HOST unset" "Defaults to 127.0.0.1 (local access only)"
     echo -e "\n${YELLOW}💡 Hint: To access the Web UI from another machine, set FLUXOMNI_PUBLIC_HOST to your server's IP in .env:${NC}"
@@ -146,11 +156,15 @@ MN_HLS_PORT=${FLUXOMNI_MEDIA_NODE_HLS_PORT:-8000}
 MN_WHIP_PORT=${FLUXOMNI_MEDIA_NODE_WHIP_PORT:-8003}
 CP_RPC_PORT=${FLUXOMNI_CONTROL_PLANE_RPC_PORT:-127.0.0.1:50052}
 
-check_port "$FRONTEND_HTTP_PORT" "Web UI"
-check_port "$MN_RTMP_PORT" "RTMP Ingest"
-check_port "$MN_HLS_PORT" "HLS Playback"
-check_port "$MN_WHIP_PORT" "WHIP Signaling"
-check_port "$CP_RPC_PORT" "Internal RPC"
+if [ "$STANDALONE_NODE" = 0 ]; then
+  check_port "$FRONTEND_HTTP_PORT" "Web UI"
+  check_port "$CP_RPC_PORT" "Outbound control listener"
+fi
+if [ "$STANDALONE_NODE" = 0 ] || [ -n "$(read_env FLUXOMNI_MEDIA_NODE_PUBLIC_HOST)" ]; then
+  check_port "$MN_RTMP_PORT" "RTMP Ingest"
+  check_port "$MN_HLS_PORT" "HLS Playback"
+  check_port "$MN_WHIP_PORT" "WHIP Signaling"
+fi
 
 # --- CONTAINER STATUS ---
 echo -e "\n${BLUE}--- Container Status ---${NC}"

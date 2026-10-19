@@ -45,18 +45,11 @@ curl -fsSL https://install.fluxomni.io | bash
 
 ### Standalone Media Node
 
-Use this when Fluxomni Studio already runs on another server and this server will only handle media.
+Open Fleet → Add Node on the existing control plane as an Admin. Choose the node identity and generate a join command, then copy it to the remote server.
 
-```bash
-curl -fsSL https://install.fluxomni.io | \
-FLUXOMNI_VERSION=edge \
-FLUXOMNI_CONTROL_PLANE_RPC_ENDPOINT=http://control.example.com:50052 \
-FLUXOMNI_CONTROL_PLANE_INTERNAL_AUTH_TOKEN=replace-with-shared-token \
-FLUXOMNI_MEDIA_NODE_PUBLIC_HOST=media2.example.com \
-  bash -s -- media-node
-```
+The installer exchanges a short-lived code over verified HTTPS and keeps the machine credential in owner-only `node-secrets/`. The node uses outbound TLS control; it needs no VPN, public address or inbound control port. Public media settings are optional.
 
-Set `FLUXOMNI_MEDIA_NODE_PUBLIC_HOST` to the real hostname or IP for this media server. Fluxomni Studio uses it for ingest and playback URLs.
+See [Attach Another Media Node](docs/src/getting-started/quick-start.md#attach-another-media-node) for TLS trust and interrupted-installation recovery.
 
 ## Common Install Examples
 
@@ -156,7 +149,8 @@ For SRS open-file errors, rerun the latest installer; see [troubleshooting](docs
 
 Useful standalone media-node overrides:
 
-- `FLUXOMNI_MEDIA_NODE_ENDPOINT`
+- `FLUXOMNI_MEDIA_NODE_PUBLIC_HOST` — optional public media URLs
+- `FLUXOMNI_MEDIA_NODE_HTTP_HOST` — optional HTTP media relay
 - `FLUXOMNI_MEDIA_NODE_ID`
 - `FLUXOMNI_MEDIA_NODE_NAME`
 - `FLUXOMNI_MEDIA_NODE_LABELS`

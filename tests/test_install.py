@@ -20,7 +20,7 @@ ROOT = Path(__file__).resolve().parents[1]
 @pytest.fixture
 def installation(tmp_path):
     assets = tmp_path / "assets"
-    shutil.copytree(ROOT, assets, ignore=shutil.ignore_patterns(".git", "book", "__pycache__", ".pytest_cache"))
+    shutil.copytree(ROOT, assets, ignore=shutil.ignore_patterns(".git", "book", "docs", "screenshots", "tests", ".venv", "__pycache__", ".pytest_cache"))
     commands = tmp_path / "bin"
     commands.mkdir()
     stub = commands / "stub"
@@ -37,6 +37,23 @@ import sys
 name, args = Path(sys.argv[0]).name, sys.argv[1:]
 if name == "curl":
     url = next(arg for arg in args if arg.startswith("https://"))
+    if "--request" in args and args[args.index("--request") + 1] == "POST":
+        payload = json.load(sys.stdin)
+        ledger = Path(os.environ["TEST_ASSETS"]).parent / "enrollment.jsonl"
+        with ledger.open("a") as log:
+            log.write(json.dumps({"nodeId": payload["nodeId"], "credentialHash": payload["credentialHash"], "tls": args}) + "\n")
+        if os.environ.get("TEST_ENROLLMENT_FAIL"):
+            print("400", end="")
+            sys.exit(0)
+        authority = ledger.with_name("authority.json")
+        saved = json.loads(authority.read_text()) if authority.exists() else {}
+        saved[payload["nodeId"]] = payload["credentialHash"]
+        authority.write_text(json.dumps(saved))
+        if os.environ.get("TEST_ENROLLMENT_LOST_RESPONSE"):
+            sys.exit(28)
+        Path(args[args.index("--output") + 1]).write_text('{"enrolled":true}')
+        print("200", end="")
+        sys.exit(0)
     relative = "scripts/" + url.rsplit("/", 1)[1] if "/scripts/" in url else url.rsplit("/", 1)[1]
     shutil.copyfile(Path(os.environ["TEST_ASSETS"]) / relative, args[args.index("-o") + 1])
 elif name == "python3":
@@ -102,6 +119,8 @@ elif name == "docker":
         print("default")
     elif args[:2] == ["context", "inspect"]:
         print(os.environ.get("TEST_DOCKER_ENDPOINT", "unix:///var/run/docker.sock"))
+    elif args[:6] == ["compose", "run", "--rm", "--no-deps", "control-init"]:
+        pass
     elif args[:2] == ["compose", "up"] or args[:2] == ["compose", "-f"]:
         if os.environ.get("TEST_START_FAIL"):
             sys.exit(1)
@@ -153,6 +172,13 @@ elif name == "docker":
     elif args[0] == "inspect":
         print("2026-10-04T00:00:00Z" if "StartedAt" in args[2] else "healthy")
     elif args[0] == "logs":
+        credential = Path("node-secrets/credential")
+        if credential.exists():
+            authority = Path(os.environ["TEST_ASSETS"]).parent / "authority.json"
+            saved = json.loads(authority.read_text()) if authority.exists() else {}
+            digest = hashlib.sha256(credential.read_bytes().strip()).hexdigest()
+            assert digest in saved.values(), "control authority rejected the saved credential"
+            assert "--since" in args
         print("Registered media node with control plane")
         if os.environ.get("TEST_ISOLATION_UNAVAILABLE"):
             print("Preparation isolation unavailable")
@@ -175,7 +201,9 @@ else:
         "FLUXOMNI_REPO_RAW": "https://assets.invalid/v26.3.2",
         "FLUXOMNI_DIR": str(destination),
         "FLUXOMNI_VERSION": "v26.3.2",
-        "FLUXOMNI_CONTROL_PLANE_RPC_ENDPOINT": "http://127.0.0.1:50052",
+        "FLUXOMNI_CONTROL_PLANE_RPC_ENDPOINT": "https://127.0.0.1:50052",
+        "FLUXOMNI_ENROLLMENT_URL": "https://control.invalid/api/node-enrollment/redeem",
+        "FLUXOMNI_ENROLLMENT_CODE": "fixture-enrollment-code",
         "FLUXOMNI_CONTROL_PLANE_INTERNAL_AUTH_TOKEN": "test-token",
         "FLUXOMNI_MEDIA_NODE_PUBLIC_HOST": "127.0.0.1",
         "FLUXOMNI_MEDIA_NODE_ID": "test-node",

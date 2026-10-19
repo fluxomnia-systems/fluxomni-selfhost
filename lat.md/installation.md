@@ -2,6 +2,20 @@
 
 Installer contracts for full stacks and standalone media nodes.
 
+## One-time node enrollment
+
+Fleet issues a fifteen-minute code for one fresh node. The installer saves its random machine credential before exchanging the code and credential hash over verified HTTPS.
+
+Owner-only `node-secrets/` contains the credential, public CA files, bound identity and enrollment receipt. The directory is mounted read-only into the node. Codes and plaintext credentials never enter `.env` or diagnostic output. Ambiguous responses are confirmed through this boot's outbound Hello/Welcome. Interrupted installs can retry admission with the saved credential without another code. A saved receipt skips redemption on later starts.
+
+The node opens its outbound TLS Hello/Welcome connection after redemption. Private nodes publish no ports. Public ingest/playback and HTTP media relay settings each enable only their own media ports. A full installation bootstraps its colocated node through the same credential authority before the control plane starts.
+
+## Enrollment recovery coverage
+
+Installer tests verify owner-only credential storage, exact retries after response loss, reuse without a new code, bound identity, HTTPS trust and optional public media ports.
+
+The simulated redemption endpoint records only node IDs and credential hashes. Real Docker acceptance uses the current control-plane redemption service and existing outbound admission.
+
 ## Media-node file limits
 
 Both Compose templates set soft/hard `nofile` to 65,536. The installer fills missing limits in downloaded assets, including v26.3.2.

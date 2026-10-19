@@ -63,18 +63,19 @@ curl -fsSL https://install.fluxomni.io | WITH_UFW=1 FLUXOMNI_VERSION=edge bash -
 
 ### Media-node mode
 
-Install a standalone media-node by passing `media-node` as a positional argument:
+Open Fleet → Add Node as an Admin. Choose the node ID and name, then select Generate join command. Copy the command and run it on the remote node host.
 
-```bash
-FLUXOMNI_CONTROL_PLANE_RPC_ENDPOINT=http://control.example.com:50052 \
-FLUXOMNI_CONTROL_PLANE_INTERNAL_AUTH_TOKEN=replace-with-shared-token \
-FLUXOMNI_MEDIA_NODE_PUBLIC_HOST=media2.example.com \
-  curl -fsSL https://install.fluxomni.io | bash -s -- media-node
-```
+The command contains a fifteen-minute, single-use enrollment code. The installer creates and saves a machine credential before redeeming the code over verified HTTPS. The control plane stores its hash; the machine secret never passes through the browser.
 
-Required variables: `FLUXOMNI_CONTROL_PLANE_RPC_ENDPOINT`, `FLUXOMNI_CONTROL_PLANE_INTERNAL_AUTH_TOKEN`, and `FLUXOMNI_MEDIA_NODE_PUBLIC_HOST`.
+The enrollment HTTPS origin and outbound control endpoint must be reachable from the node. Their certificates must match their hostnames. Fleet includes the control listener's public certificate; use Advanced settings for a private enrollment HTTPS CA.
 
-Optional media-node overrides: `FLUXOMNI_MEDIA_NODE_ENDPOINT`, `FLUXOMNI_MEDIA_NODE_ID`, `FLUXOMNI_MEDIA_NODE_NAME`, `FLUXOMNI_MEDIA_NODE_LABELS`, `FLUXOMNI_MEDIA_NODE_ZONE`.
+A VPN, public node address and inbound node control port are optional. Leave the public host and HTTP relay host empty for a private node with no published ports. Configure media hosts only when publishers, viewers or HTTP relays need them.
+
+Fleet distinguishes a consumed code from a connected node. After redemption, the existing outbound TLS handshake completes registration. Codes can be cancelled in Add Node, and expired codes can be replaced before successful enrollment.
+
+The installer keeps credentials in owner-only `node-secrets/` under `~/fluxomni-media-node`. Repeating an interrupted installation reuses the saved secret. For a node that already started, follow [Capacity Ledger Upgrades](../getting-started/capacity-upgrades.md) before recreating it; maintenance reruns do not repeat enrollment.
+
+The command sets `FLUXOMNI_ENROLLMENT_URL`, `FLUXOMNI_ENROLLMENT_CODE`, `FLUXOMNI_CONTROL_PLANE_RPC_ENDPOINT` and the chosen node ID. These short-lived installer values do not replace the saved machine credential.
 
 ## Release Channels
 

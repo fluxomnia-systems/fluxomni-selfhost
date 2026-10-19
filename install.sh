@@ -133,7 +133,6 @@ REQUESTED_SRS_RTC_PORT="${FLUXOMNI_SRS_RTC_PORT:-}"
 REQUESTED_MEDIA_NODE_WHIP_PORT="${FLUXOMNI_MEDIA_NODE_WHIP_PORT:-}"
 REQUESTED_MEDIA_NODE_SRT_PORT="${FLUXOMNI_MEDIA_NODE_SRT_PORT:-}"
 REQUESTED_MEDIA_NODE_SRS_CALLBACK_PORT="${FLUXOMNI_MEDIA_NODE_SRS_CALLBACK_PORT:-}"
-REQUESTED_MEDIA_NODE_GRPC_PORT="${FLUXOMNI_MEDIA_NODE_GRPC_PORT:-}"
 REQUESTED_MEDIA_NODE_ID="${FLUXOMNI_MEDIA_NODE_ID:-}"
 REQUESTED_MEDIA_NODE_NAME="${FLUXOMNI_MEDIA_NODE_NAME:-}"
 REQUESTED_MEDIA_NODE_LABELS="${FLUXOMNI_MEDIA_NODE_LABELS:-}"
@@ -335,9 +334,8 @@ configure_firewall() {
   udp_ports=("$SRS_RTC_PORT_DEFAULT" "$(published_port "$MEDIA_NODE_SRT_PORT_DEFAULT")")
   case "$FLUXOMNI_INSTALL_TARGET" in
     media-node)
-      if ! is_local_port_mapping "$MEDIA_NODE_GRPC_PORT_DEFAULT"; then
-        tcp_ports+=("$(published_port "$MEDIA_NODE_GRPC_PORT_DEFAULT")")
-      fi
+      if [ -z "$MEDIA_NODE_PUBLIC_HOST_DEFAULT" ]; then tcp_ports=(); udp_ports=(); fi
+      if [ -n "$MEDIA_NODE_HTTP_HOST_DEFAULT" ]; then tcp_ports+=("$MEDIA_NODE_DVR_PORT_DEFAULT"); fi
       ;;
     *)
       if ! is_local_port_mapping "$FRONTEND_HTTP_PORT_DEFAULT"; then
@@ -557,37 +555,6 @@ default_media_node_name() {
   printf 'Media Node %s\n' "$host_label"
 }
 
-resolve_media_node_endpoint_default() {
-  local requested_endpoint="$1"
-  local existing_endpoint="$2"
-  local existing_public_host="$3"
-  local existing_grpc_port="$4"
-  local current_public_host="$5"
-  local current_grpc_port="$6"
-  local previous_derived_endpoint current_derived_endpoint
-
-  if [ -n "$requested_endpoint" ]; then
-    printf '%s\n' "$requested_endpoint"
-    return
-  fi
-
-  current_derived_endpoint="$(derive_http_endpoint "$current_public_host" "$current_grpc_port")"
-
-  if [ -z "$existing_endpoint" ]; then
-    printf '%s\n' "$current_derived_endpoint"
-    return
-  fi
-
-  if [ -n "$existing_public_host" ]; then
-    previous_derived_endpoint="$(derive_http_endpoint "$existing_public_host" "${existing_grpc_port:-50051}")"
-    if [ "$existing_endpoint" = "$previous_derived_endpoint" ]; then
-      printf '%s\n' "$current_derived_endpoint"
-      return
-    fi
-  fi
-
-  printf '%s\n' "$existing_endpoint"
-}
 
 require_media_node_value() {
   local key="$1"
@@ -861,7 +828,7 @@ preflight_preparation_host() {
 begin_config_transaction() {
   INSTALL_BACKUP="$(mktemp -d)"
   INSTALL_CONFIG_COMMITTED=0
-  INSTALL_MANAGED_FILES=(.install-pending docker-compose.yml compose.release.yml compose.defaults.yml .env .env.example doctor.sh docker-compose.preparation-cgroup.yml preparation-cgroup.py verify-preparation-compose.py)
+  INSTALL_MANAGED_FILES=(node-enrollment.sh compose.node-media.yml .install-pending docker-compose.yml compose.release.yml compose.defaults.yml .env .env.example doctor.sh docker-compose.preparation-cgroup.yml preparation-cgroup.py verify-preparation-compose.py)
   local file
   for file in "${INSTALL_MANAGED_FILES[@]}"; do
     if [ -e "${FLUXOMNI_DIR}/$file" ]; then cp -p "${FLUXOMNI_DIR}/$file" "$INSTALL_BACKUP/$file"; fi
@@ -1118,16 +1085,18 @@ wait_for_container_ready() {
 wait_for_media_node_registration() {
   local container_name="$1"
   local timeout_secs="${2:-90}"
-  local deadline
+  local deadline started_at
 
+  started_at=$("${DOCKER_CMD[@]}" inspect --format '{{.State.StartedAt}}' "$container_name") || return 1
+  [ -n "$started_at" ] || return 1
   deadline=$((SECONDS + timeout_secs))
 
   while [ "$SECONDS" -lt "$deadline" ]; do
-    if "${DOCKER_CMD[@]}" logs "$container_name" 2>&1 | grep -q "Registered media node with control plane"; then
+    if "${DOCKER_CMD[@]}" logs --since "$started_at" "$container_name" 2>&1 | grep -q "Registered media node with control plane"; then
       return 0
     fi
 
-    if "${DOCKER_CMD[@]}" logs "$container_name" 2>&1 | grep -q "Failed to register media node with control plane"; then
+    if "${DOCKER_CMD[@]}" logs --since "$started_at" "$container_name" 2>&1 | grep -q "Failed to register media node with control plane"; then
       sleep 2
     else
       sleep 2
@@ -1321,8 +1290,6 @@ EXISTING_FRONTEND_HTTP_PORT="$(read_env_file_value "FLUXOMNI_FRONTEND_HTTP_PORT"
 EXISTING_CONTROL_PLANE_HTTP_PORT="$(read_env_file_value "FLUXOMNI_CONTROL_PLANE_HTTP_PORT" "$ENV_FILE")"
 EXISTING_CONTROL_PLANE_RPC_PORT="$(read_env_file_value "FLUXOMNI_CONTROL_PLANE_RPC_PORT" "$ENV_FILE")"
 EXISTING_CONTROL_PLANE_RPC_ENDPOINT="$(read_env_file_value "FLUXOMNI_CONTROL_PLANE_RPC_ENDPOINT" "$ENV_FILE")"
-EXISTING_MEDIA_NODE_GRPC_PORT="$(read_env_file_value "FLUXOMNI_MEDIA_NODE_GRPC_PORT" "$ENV_FILE")"
-EXISTING_MEDIA_NODE_ENDPOINT="$(read_env_file_value "FLUXOMNI_MEDIA_NODE_ENDPOINT" "$ENV_FILE")"
 EXISTING_MEDIA_NODE_ID="$(read_env_file_value "FLUXOMNI_MEDIA_NODE_ID" "$ENV_FILE")"
 EXISTING_MEDIA_NODE_NAME="$(read_env_file_value "FLUXOMNI_MEDIA_NODE_NAME" "$ENV_FILE")"
 EXISTING_MEDIA_NODE_LABELS="$(read_env_file_value "FLUXOMNI_MEDIA_NODE_LABELS" "$ENV_FILE")"
@@ -1344,7 +1311,6 @@ PUBLIC_HOST_DEFAULT="${REQUESTED_PUBLIC_HOST:-${EXISTING_PUBLIC_HOST:-$HOST_IP}}
 MEDIA_NODE_PUBLIC_HOST_DEFAULT="${REQUESTED_MEDIA_NODE_PUBLIC_HOST:-${EXISTING_MEDIA_NODE_PUBLIC_HOST:-${REQUESTED_PUBLIC_HOST:-${EXISTING_PUBLIC_HOST:-$HOST_IP}}}}"
 FRONTEND_HTTP_PORT_DEFAULT="${REQUESTED_FRONTEND_HTTP_PORT:-${EXISTING_FRONTEND_HTTP_PORT:-${REQUESTED_CONTROL_PLANE_HTTP_PORT:-${EXISTING_CONTROL_PLANE_HTTP_PORT:-80}}}}"
 CONTROL_PLANE_RPC_PORT_DEFAULT="${REQUESTED_CONTROL_PLANE_RPC_PORT:-${EXISTING_CONTROL_PLANE_RPC_PORT:-127.0.0.1:50052}}"
-MEDIA_NODE_GRPC_PORT_DEFAULT="${REQUESTED_MEDIA_NODE_GRPC_PORT:-${EXISTING_MEDIA_NODE_GRPC_PORT:-50051}}"
 MEDIA_NODE_RTMP_PORT_DEFAULT="${REQUESTED_MEDIA_NODE_RTMP_PORT:-${EXISTING_MEDIA_NODE_RTMP_PORT:-1935}}"
 MEDIA_NODE_HLS_PORT_DEFAULT="${REQUESTED_MEDIA_NODE_HLS_PORT:-${EXISTING_MEDIA_NODE_HLS_PORT:-8000}}"
 SRS_CANDIDATE_DEFAULT="${REQUESTED_SRS_CANDIDATE:-${EXISTING_SRS_CANDIDATE:-}}"
@@ -1362,8 +1328,6 @@ SHARED_VIDEO_DIR_DEFAULT="${REQUESTED_SHARED_VIDEO_DIR:-${EXISTING_SHARED_VIDEO_
 
 if [ "$FLUXOMNI_INSTALL_TARGET" = "media-node" ]; then
   require_media_node_value "FLUXOMNI_CONTROL_PLANE_RPC_ENDPOINT" "${FLUXOMNI_CONTROL_PLANE_RPC_ENDPOINT:-${EXISTING_CONTROL_PLANE_RPC_ENDPOINT:-}}"
-  require_media_node_value "FLUXOMNI_CONTROL_PLANE_INTERNAL_AUTH_TOKEN" "$AUTH_TOKEN_DEFAULT"
-  require_media_node_value "FLUXOMNI_MEDIA_NODE_PUBLIC_HOST" "${REQUESTED_MEDIA_NODE_PUBLIC_HOST:-${EXISTING_MEDIA_NODE_PUBLIC_HOST:-}}"
 
   CONTROL_PLANE_RPC_ENDPOINT_DEFAULT="${FLUXOMNI_CONTROL_PLANE_RPC_ENDPOINT:-${EXISTING_CONTROL_PLANE_RPC_ENDPOINT:-}}"
 
@@ -1375,15 +1339,15 @@ if [ "$FLUXOMNI_INSTALL_TARGET" = "media-node" ]; then
     MEDIA_NODE_NAME_DEFAULT="$(default_media_node_name)"
   fi
 
-  MEDIA_NODE_ENDPOINT_DEFAULT="$(
-    resolve_media_node_endpoint_default \
-      "${FLUXOMNI_MEDIA_NODE_ENDPOINT:-}" \
-      "${EXISTING_MEDIA_NODE_ENDPOINT:-}" \
-      "${EXISTING_MEDIA_NODE_PUBLIC_HOST:-}" \
-      "${EXISTING_MEDIA_NODE_GRPC_PORT:-}" \
-      "$MEDIA_NODE_PUBLIC_HOST_DEFAULT" \
-      "$MEDIA_NODE_GRPC_PORT_DEFAULT"
-  )"
+  MEDIA_NODE_PUBLIC_HOST_DEFAULT="${FLUXOMNI_MEDIA_NODE_PUBLIC_HOST-${EXISTING_MEDIA_NODE_PUBLIC_HOST:-}}"
+  MEDIA_NODE_HTTP_HOST_DEFAULT="${FLUXOMNI_MEDIA_NODE_HTTP_HOST-$(read_env_file_value FLUXOMNI_MEDIA_NODE_HTTP_HOST "$ENV_FILE")}"
+  MEDIA_NODE_HTTP_HOST_DEFAULT="${MEDIA_NODE_HTTP_HOST_DEFAULT:-$MEDIA_NODE_PUBLIC_HOST_DEFAULT}"
+  MEDIA_NODE_DVR_PORT_DEFAULT="${FLUXOMNI_MEDIA_NODE_DVR_PORT:-$(read_env_file_value FLUXOMNI_MEDIA_NODE_DVR_PORT "$ENV_FILE")}"
+  MEDIA_NODE_DVR_PORT_DEFAULT="${MEDIA_NODE_DVR_PORT_DEFAULT:-8004}"
+  download_asset scripts/node-enrollment.sh "${FLUXOMNI_DIR}/node-enrollment.sh"
+  bash -n "${FLUXOMNI_DIR}/node-enrollment.sh"
+  source "${FLUXOMNI_DIR}/node-enrollment.sh"
+  prepare_node_enrollment "$MEDIA_NODE_ID_DEFAULT" "$CONTROL_PLANE_RPC_ENDPOINT_DEFAULT"
 
   if [ ! -f "$ENV_FILE" ]; then
     cat > "$ENV_FILE" <<ENVVARS
@@ -1392,9 +1356,6 @@ FLUXOMNI_VERSION=${FLUXOMNI_VERSION}
 FLUXOMNI_MEDIA_NODE_IMAGE=${MEDIA_NODE_IMAGE_DEFAULT}
 FLUXOMNI_MEDIA_NODE_PUBLIC_HOST=${MEDIA_NODE_PUBLIC_HOST_DEFAULT}
 FLUXOMNI_CONTROL_PLANE_RPC_ENDPOINT=${CONTROL_PLANE_RPC_ENDPOINT_DEFAULT}
-FLUXOMNI_CONTROL_PLANE_INTERNAL_AUTH_TOKEN=${AUTH_TOKEN_DEFAULT}
-FLUXOMNI_MEDIA_NODE_ENDPOINT=${MEDIA_NODE_ENDPOINT_DEFAULT}
-FLUXOMNI_MEDIA_NODE_GRPC_PORT=${MEDIA_NODE_GRPC_PORT_DEFAULT}
 FLUXOMNI_MEDIA_NODE_ID=${MEDIA_NODE_ID_DEFAULT}
 FLUXOMNI_MEDIA_NODE_NAME=${MEDIA_NODE_NAME_DEFAULT}
 FLUXOMNI_MEDIA_NODE_LABELS=${MEDIA_NODE_LABELS_DEFAULT}
@@ -1417,9 +1378,6 @@ ENVVARS
   upsert_env_value "$ENV_FILE" "FLUXOMNI_MEDIA_NODE_IMAGE" "$MEDIA_NODE_IMAGE_DEFAULT"
   upsert_env_value "$ENV_FILE" "FLUXOMNI_MEDIA_NODE_PUBLIC_HOST" "$MEDIA_NODE_PUBLIC_HOST_DEFAULT"
   upsert_env_value "$ENV_FILE" "FLUXOMNI_CONTROL_PLANE_RPC_ENDPOINT" "$CONTROL_PLANE_RPC_ENDPOINT_DEFAULT"
-  upsert_env_value "$ENV_FILE" "FLUXOMNI_CONTROL_PLANE_INTERNAL_AUTH_TOKEN" "$AUTH_TOKEN_DEFAULT"
-  upsert_env_value "$ENV_FILE" "FLUXOMNI_MEDIA_NODE_ENDPOINT" "$MEDIA_NODE_ENDPOINT_DEFAULT"
-  upsert_env_value "$ENV_FILE" "FLUXOMNI_MEDIA_NODE_GRPC_PORT" "$MEDIA_NODE_GRPC_PORT_DEFAULT"
   upsert_env_value "$ENV_FILE" "FLUXOMNI_MEDIA_NODE_ID" "$MEDIA_NODE_ID_DEFAULT"
   upsert_env_value "$ENV_FILE" "FLUXOMNI_MEDIA_NODE_NAME" "$MEDIA_NODE_NAME_DEFAULT"
   upsert_env_value "$ENV_FILE" "FLUXOMNI_MEDIA_NODE_LABELS" "$MEDIA_NODE_LABELS_DEFAULT"
@@ -1439,6 +1397,16 @@ ENVVARS
   if [ -n "$REQUESTED_WATCHTOWER_CONTAINER_NAME" ]; then
     upsert_env_value "$ENV_FILE" "FLUXOMNI_WATCHTOWER_CONTAINER_NAME" "$REQUESTED_WATCHTOWER_CONTAINER_NAME"
   fi
+  tmp_env=$(mktemp)
+  awk '!/^FLUXOMNI_(CONTROL_PLANE_INTERNAL_AUTH_TOKEN|MEDIA_NODE_ENDPOINT|MEDIA_NODE_GRPC_PORT|MEDIA_NODE_GRPC_BIND)=/' "$ENV_FILE" > "$tmp_env"
+  mv "$tmp_env" "$ENV_FILE"
+  upsert_env_value "$ENV_FILE" FLUXOMNI_NODE_CREDENTIAL_FILE /run/fluxomni-node/credential
+  upsert_env_value "$ENV_FILE" FLUXOMNI_MEDIA_NODE_HTTP_HOST "$MEDIA_NODE_HTTP_HOST_DEFAULT"
+  upsert_env_value "$ENV_FILE" FLUXOMNI_MEDIA_NODE_DVR_PORT "$MEDIA_NODE_DVR_PORT_DEFAULT"
+  if [ -s "${FLUXOMNI_DIR}/node-secrets/ca.crt" ]; then
+    upsert_env_value "$ENV_FILE" FLUXOMNI_CONTROL_TLS_CA /run/fluxomni-node/ca.crt
+  fi
+
 else
   if [ -z "$AUTH_TOKEN_DEFAULT" ]; then
     AUTH_TOKEN_DEFAULT="$(generate_internal_auth_token)"
@@ -1520,6 +1488,25 @@ ENVVARS
 fi
 
 write_preparation_config
+if [ "$FLUXOMNI_INSTALL_TARGET" = media-node ]; then
+  {
+    printf 'services:\n  media-node:\n    ports:'
+    if [ -z "$MEDIA_NODE_PUBLIC_HOST_DEFAULT" ] && [ -z "$MEDIA_NODE_HTTP_HOST_DEFAULT" ]; then
+      printf ' []\n'
+    else
+      printf '\n'
+      if [ -n "$MEDIA_NODE_PUBLIC_HOST_DEFAULT" ]; then
+        printf '      - "%s:1935"\n' "$MEDIA_NODE_RTMP_PORT_DEFAULT"
+        printf '      - "%s:8000"\n' "$MEDIA_NODE_HLS_PORT_DEFAULT"
+        printf '      - "%s:8003"\n' "$MEDIA_NODE_WHIP_PORT_DEFAULT"
+        printf '      - "%s:%s/udp"\n' "$SRS_RTC_PORT_DEFAULT" "$SRS_RTC_PORT_DEFAULT"
+        printf '      - "%s:10080/udp"\n' "$MEDIA_NODE_SRT_PORT_DEFAULT"
+      fi
+      if [ -n "$MEDIA_NODE_HTTP_HOST_DEFAULT" ]; then printf '      - "%s:8004"\n' "$MEDIA_NODE_DVR_PORT_DEFAULT"; fi
+    fi
+  } > "${FLUXOMNI_DIR}/compose.node-media.yml"
+  printf '      - compose.node-media.yml\n' >> "${FLUXOMNI_DIR}/docker-compose.yml"
+fi
 
 if [ "$WITH_FIREWALLD" = "1" ] || [ "$WITH_UFW" = "1" ]; then
   echo "Configuring firewall..."
@@ -1549,6 +1536,11 @@ INSTALL_CONFIG_COMMITTED=1
 
 echo "Pulling images and starting containers..."
 "${DOCKER_CMD[@]}" compose pull
+# Maintenance starts the control plane without dependencies. Prepare only its
+# credential files first; this helper never starts media execution.
+if [ "$FLUXOMNI_INSTALL_TARGET" = full ] && [ -n "$CAPACITY_UPGRADE_MODE" ]; then
+  "${DOCKER_CMD[@]}" compose run --rm --no-deps control-init
+fi
 case "$CAPACITY_UPGRADE_MODE" in
   initial|drained)
     python3 "$CAPACITY_HELPER" run --mode "$CAPACITY_UPGRADE_MODE" --database "$CAPACITY_DATABASE" --timeout "${FLUXOMNI_CAPACITY_UPGRADE_TIMEOUT_SECONDS:-90}" --docker "${DOCKER_CMD[@]}"
@@ -1579,18 +1571,21 @@ if [ "$FLUXOMNI_INSTALL_TARGET" = "media-node" ]; then
     exit 1
   fi
 
+  confirm_node_enrollment
   verify_preparation_runtime
 
   MEDIA_HOST="$(read_env_file_value "FLUXOMNI_MEDIA_NODE_PUBLIC_HOST" .env)"
-  MEDIA_NODE_ENDPOINT="$(read_env_file_value "FLUXOMNI_MEDIA_NODE_ENDPOINT" .env)"
   MEDIA_NODE_ID="$(read_env_file_value "FLUXOMNI_MEDIA_NODE_ID" .env)"
 
   echo
   rm -f "${FLUXOMNI_DIR}/.install-pending"
   echo "Media node is connected"
   echo "Node ID : ${MEDIA_NODE_ID}"
-  echo "Node RPC: ${MEDIA_NODE_ENDPOINT}"
-  echo "RTMP    : rtmp://${MEDIA_HOST}:1935/app"
+  if [ -n "$MEDIA_HOST" ]; then
+    echo "RTMP    : rtmp://${MEDIA_HOST}:1935/app"
+  else
+    echo "Media   : no public ingest or playback ports"
+  fi
   echo "Data    : ${FLUXOMNI_DIR}/data"
   echo
   echo "Common commands:"

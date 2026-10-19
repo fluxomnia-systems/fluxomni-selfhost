@@ -47,32 +47,15 @@ interact with SRS directly.
 
 ## Communication
 
-```text
-┌──────────────┐    HTTP :80     ┌─────────────────┐    gRPC :50052    ┌─────────────────┐
-│   Frontend   │◄──────────────► │  Control-plane  │◄────────────────► │   Media Node 1  │
-│  - UI/API    │                 │  - API          │    gRPC :50051    │  - RTMP :1935   │
-│  proxy       │                 │  - State mgmt   │◄────────────────► │  - SRT  :10080  │
-└──────────────┘                 │  - Scheduling   │                   │  - HLS  :8000   │
-                                 │                 │    gRPC :50051    └─────────────────┘
-                                 │                 │◄──────────────┐
-                                 └─────────────────┘               │    ┌─────────────────┐
-                                                                   └──► │   Media Node 2  │
-                                                                        │  (remote host)  │
-                                                                        └─────────────────┘
-```
+Each media node initiates one authenticated TLS control connection to the control plane, normally on TCP 50052. Runtime commands and feedback travel in opposite directions over that same connection.
 
-- **Frontend to control-plane**: The frontend serves the Control Surface
-  and forwards API and file requests to the control-plane over HTTP
-  through the Docker network.
-- **Control-plane to media node**: The control-plane pushes route
-  manifests, playlist updates, and scheduling decisions to media nodes
-  over gRPC.
-- **Media node to control-plane**: Each media node sends periodic
-  heartbeats, telemetry (CPU, memory, network), and execution state
-  updates back to the control-plane.
-- **Auth token**: Both services share
-  `FLUXOMNI_CONTROL_PLANE_INTERNAL_AUTH_TOKEN`. This token authenticates
-  gRPC calls in both directions.
+- The frontend forwards operator API and file requests to the control plane.
+- Fleet issues a one-time enrollment code for a fresh node. The installer saves the machine credential locally and registers only its hash with the control plane.
+- Hello/Welcome admits the node's boot and connection generation. Manifest delivery, runtime commands, heartbeat and feedback reuse the outbound connection.
+- The control plane never opens a node control connection. A connected private node does not automatically expose public media.
+- Artifact bytes use HTTP or durable storage. Internal HTTP artifact tokens are separate from machine admission.
+
+Public RTMP, SRT, HLS and WebRTC access still needs its own advertised media endpoints and reachable ports.
 
 ## Route lifecycle
 

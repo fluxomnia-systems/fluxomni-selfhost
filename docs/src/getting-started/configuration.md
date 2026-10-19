@@ -16,13 +16,7 @@ Configure Fluxomni Studio with environment variables in `.env`.
 - `FLUXOMNI_MEDIA_NODE_LABELS`: optional comma-separated capability labels for routing and fleet filters.
 - `FLUXOMNI_MEDIA_NODE_ZONE`: optional placement zone used to describe where the node runs.
 
-`FLUXOMNI_MEDIA_NODE_PUBLIC_HOST` is especially important for standalone media-node installs.
-Fluxomni Studio uses it in two places:
-
-- It is shown in the RTMP, HLS, SRT, and WebRTC URLs that operators and publishers use.
-- For standalone media-node installs, it is used to derive the default `FLUXOMNI_MEDIA_NODE_ENDPOINT` as `http://<FLUXOMNI_MEDIA_NODE_PUBLIC_HOST>:50051`. Single-host compose installs use Docker-internal networking (`http://media-node:50051`) instead.
-
-If this value points to a private hostname, a Docker-only hostname, or the wrong server, the control-plane can register the node with an address that other systems cannot reach.
+`FLUXOMNI_MEDIA_NODE_PUBLIC_HOST` advertises media URLs only. It is optional for a private node and does not participate in control registration. `FLUXOMNI_MEDIA_NODE_HTTP_HOST` independently advertises an HTTP media relay.
 
 Example:
 
@@ -35,7 +29,7 @@ FLUXOMNI_PUBLIC_HOST=control.example.com
 FLUXOMNI_MEDIA_NODE_PUBLIC_HOST=control.example.com
 ```
 
-`install.sh` also writes `FLUXOMNI_CONTROL_PLANE_INTERNAL_AUTH_TOKEN` automatically. Keep the same token on both services; rotate it only if you are restarting the whole stack together.
+`install.sh` also writes `FLUXOMNI_CONTROL_PLANE_INTERNAL_AUTH_TOKEN` automatically. This token serves internal HTTP artifact access; node admission uses separate machine credentials.
 Published self-host releases serve the operator UI from the `frontend` container, so `FLUXOMNI_PUBLIC_HOST` and `FLUXOMNI_FRONTEND_HTTP_PORT` determine the browser URL you share with operators.
 If you deploy behind a domain or reverse proxy, set `FLUXOMNI_PUBLIC_HOST`, `FLUXOMNI_MEDIA_NODE_PUBLIC_HOST`, and `FLUXOMNI_PUBLIC_URL` (with the `https://` scheme) so generated URLs use the correct hostnames and scheme. See [Reverse Proxy & TLS](reverse-proxy.md) for examples.
 
@@ -51,7 +45,7 @@ The installer maps canonical public pins to the matching core image tag when nat
 ## Optional Variables
 
 - `FLUXOMNI_FRONTEND_HTTP_PORT`: host HTTP port for the frontend UI and proxied API.
-- `FLUXOMNI_CONTROL_PLANE_RPC_PORT`: host gRPC port for remote media-node registration and delivery. Defaults to localhost-only; expose it deliberately when attaching external media nodes.
+- `FLUXOMNI_CONTROL_PLANE_RPC_PORT`: host TLS control port for outbound media-node connections. Defaults to localhost-only; expose it deliberately when attaching external media nodes.
 - `FLUXOMNI_MEDIA_NODE_RTMP_PORT`: host RTMP ingest port.
 - `FLUXOMNI_MEDIA_NODE_HLS_PORT`: host HLS TCP port.
 - `FLUXOMNI_MEDIA_NODE_WHIP_PORT`: host WHIP signaling TCP port (default `8003`).
@@ -59,7 +53,6 @@ The installer maps canonical public pins to the matching core image tag when nat
 - `FLUXOMNI_SRS_CANDIDATE`: reachable ICE candidate hostname/IP; defaults to the media-node public host when empty.
 - `FLUXOMNI_MEDIA_NODE_SRS_CALLBACK_PORT`: host loopback port for the internal SRS callback listener.
 - `FLUXOMNI_MEDIA_NODE_SRT_PORT`: host SRT UDP port.
-- `FLUXOMNI_MEDIA_NODE_GRPC_PORT`: host gRPC port for a standalone media-node.
 - `FLUXOMNI_CONTROL_PLANE_DATA_DIR`: control-plane app data directory on the host.
 - `FLUXOMNI_MEDIA_NODE_DATA_DIR`: media-node app data directory on the host.
 - `FLUXOMNI_SHARED_VIDEO_DIR`: host directory mounted read-only into the media-node video cache path.
@@ -80,28 +73,17 @@ The operator UI is served from the frontend host:
 
 ## Attach an External Media Node
 
-The full self-host install binds the control-plane RPC listener to localhost by default.
-Before attaching another media server, expose `50052/tcp` only to trusted node IPs, then run the installer on that server in explicit `media-node` mode.
-`FLUXOMNI_CONTROL_PLANE_RPC_ENDPOINT`, `FLUXOMNI_CONTROL_PLANE_INTERNAL_AUTH_TOKEN`, and `FLUXOMNI_MEDIA_NODE_PUBLIC_HOST` are required for that mode:
+Open Fleet → Add Node as an Admin. Choose the node ID and name, then select Generate join command. Copy the command and run it on the remote node host.
 
-```bash
-FLUXOMNI_VERSION=edge \
-FLUXOMNI_CONTROL_PLANE_RPC_ENDPOINT=http://control.example.com:50052 \
-FLUXOMNI_CONTROL_PLANE_INTERNAL_AUTH_TOKEN=replace-with-shared-token \
-FLUXOMNI_MEDIA_NODE_PUBLIC_HOST=media2.example.com \
-  curl -fsSL https://install.fluxomni.io | bash -s -- media-node
-```
+The command contains a fifteen-minute, single-use enrollment code. The installer creates and saves a machine credential before redeeming the code over verified HTTPS. The control plane stores its hash; the machine secret never passes through the browser.
 
-This mode installs into `~/fluxomni-media-node` by default and writes Compose files for a media node only. If no node ID is provided, it creates one from the hostname. It waits for a `Registered media node with control plane` log before reporting success.
-Set `FLUXOMNI_MEDIA_NODE_PUBLIC_HOST` to the hostname or IP that the control-plane, publishers, and viewers should use for that media server. In the example above, that is `media2.example.com`.
+The enrollment HTTPS origin and outbound control endpoint must be reachable from the node. Their certificates must match their hostnames. Fleet includes the control listener's public certificate; use Advanced settings for a private enrollment HTTPS CA.
 
-Set these only when you need to override the defaults:
+A VPN, public node address and inbound node control port are optional. Leave the public host and HTTP relay host empty for a private node with no published ports. Configure media hosts only when publishers, viewers or HTTP relays need them.
 
-- `FLUXOMNI_MEDIA_NODE_ENDPOINT`: advertised media-node gRPC endpoint. Defaults to `http://<FLUXOMNI_MEDIA_NODE_PUBLIC_HOST>:50051`.
-- `FLUXOMNI_MEDIA_NODE_ID`: stable node ID. Defaults to `media-node-<hostname>`.
-- `FLUXOMNI_MEDIA_NODE_NAME`: display name shown in the control-plane. Defaults to `Media Node <hostname>`.
-- `FLUXOMNI_MEDIA_NODE_LABELS`: comma-separated labels for node capabilities or operator grouping. Defaults to `selfhost`.
-- `FLUXOMNI_MEDIA_NODE_ZONE`: optional location or placement label. Defaults to `local`.
+Fleet distinguishes a consumed code from a connected node. After redemption, the existing outbound TLS handshake completes registration. Codes can be cancelled in Add Node, and expired codes can be replaced before successful enrollment.
+
+The installer keeps credentials in owner-only `node-secrets/` under `~/fluxomni-media-node`. Repeating an interrupted installation reuses the saved secret. For a node that already started, follow [Capacity Ledger Upgrades](capacity-upgrades.md) before recreating it; maintenance reruns do not repeat enrollment.
 
 ## Update an Existing Installation
 

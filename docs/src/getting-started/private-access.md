@@ -178,68 +178,13 @@ If Tailscale SSH works but `http://<tailscale-host>/routes` times out, check the
 
 ## Remote Media Node over Tailscale
 
-A standalone media node can register to the control plane over the tailnet. Add the media-node host from [Tailscale's Add device page](https://login.tailscale.com/admin/machines/new), join the same tailnet, then run this on the media-node host.
+Tailscale is an optional way to reach the control plane. Node control itself requires only outbound access; the control plane never dials a node control port.
 
-```bash
-#!/usr/bin/env bash
-set -euo pipefail
+Join the hosts to the tailnet, make the control plane's HTTPS enrollment origin and TLS control listener reachable there, then use Fleet → Add Node. Choose control hostnames present in their TLS certificates. A private CA can be copied through the authenticated Fleet flow; do not disable verification.
 
-: "${CONTROL_TS_HOST:?Set CONTROL_TS_HOST to the control-plane Tailscale IP or MagicDNS name}"
-: "${FLUXOMNI_CONTROL_PLANE_INTERNAL_AUTH_TOKEN:?Set the same token used by the control plane}"
+The node uses its saved node-specific credential. Do not copy a cluster token or expose port 50051. Public ingest, playback, WebRTC media and HTTP relays remain independent choices. See [Attach Another Media Node](quick-start.md#attach-another-media-node).
 
-sudo tailscale up --ssh
-
-MEDIA_TS_IP="$(tailscale ip -4 | head -n1)"
-
-curl -fsSL https://install.fluxomni.io | \
-  FLUXOMNI_CONTROL_PLANE_RPC_ENDPOINT="http://${CONTROL_TS_HOST}:50052" \
-  FLUXOMNI_CONTROL_PLANE_INTERNAL_AUTH_TOKEN="$FLUXOMNI_CONTROL_PLANE_INTERNAL_AUTH_TOKEN" \
-  FLUXOMNI_MEDIA_NODE_PUBLIC_HOST="$MEDIA_TS_IP" \
-  FLUXOMNI_MEDIA_NODE_ENDPOINT="http://${MEDIA_TS_IP}:50051" \
-  FLUXOMNI_MEDIA_NODE_LABELS="selfhost,tailnet" \
-  FLUXOMNI_MEDIA_NODE_ZONE="tailnet" \
-  bash -s -- media-node
-```
-
-Use the same internal auth token as the control plane. The control-plane RPC port (`50052/tcp`) and media-node gRPC port (`50051/tcp`) only need to be reachable inside the tailnet unless you intentionally run a public distributed fleet.
-
-`50052/tcp` and `50051/tcp` are different directions:
-
-- `50052/tcp` is the control-plane RPC endpoint that media nodes call for registration, heartbeat, and feedback.
-- `50051/tcp` is the media-node gRPC endpoint that the control plane calls for media-node operations.
-
-If direct Docker-published ports also time out on the standalone media-node host, run Tailscale Serve there too and advertise the forwarded endpoint:
-
-```bash
-# On the standalone media-node host.
-sudo tailscale serve --bg --tcp=50051 tcp://127.0.0.1:50051
-
-MEDIA_TS_HOST=media-node.tail380321.ts.net
-curl -fsSL https://install.fluxomni.io | \
-  FLUXOMNI_CONTROL_PLANE_RPC_ENDPOINT="http://${CONTROL_TS_HOST}:50052" \
-  FLUXOMNI_CONTROL_PLANE_INTERNAL_AUTH_TOKEN="$FLUXOMNI_CONTROL_PLANE_INTERNAL_AUTH_TOKEN" \
-  FLUXOMNI_MEDIA_NODE_PUBLIC_HOST="$MEDIA_TS_HOST" \
-  FLUXOMNI_MEDIA_NODE_ENDPOINT="http://${MEDIA_TS_HOST}:50051" \
-  FLUXOMNI_MEDIA_NODE_LABELS="selfhost,tailnet" \
-  FLUXOMNI_MEDIA_NODE_ZONE="tailnet" \
-  bash -s -- media-node
-```
-
-For distributed Fluxomni Studio over Tailscale, keep these TCP paths reachable:
-
-| Host | Port | Purpose |
-| --- | --- | --- |
-| Frontend host | `80/tcp` | Control Surface UI/API |
-| Control-plane host | `50052/tcp` | Control-plane gRPC for media-node registration |
-| Control-plane host with local media node | `1935/tcp` | RTMP ingest |
-| Control-plane host with local media node | `8000/tcp` | HLS playback |
-| Control-plane host with local media node | `8003/tcp` | WHIP signaling |
-| Standalone media-node host | `50051/tcp` | Media-node gRPC called by the control plane |
-| Standalone media-node host | `1935/tcp` | RTMP ingest |
-| Standalone media-node host | `8000/tcp` | HLS playback |
-| Standalone media-node host | `8003/tcp` | WHIP signaling |
-
-Tailscale Serve forwards TCP only. It does not cover SRT UDP (`10080/udp`) or RTC media UDP (`8000/udp`). WHIP signaling forwarding requires TCP `8003`, but WebRTC also needs direct UDP reachability to the advertised ICE candidate.
+Tailscale Serve forwards TCP. SRT and WebRTC media UDP still need their own reachable media path when those capabilities are advertised.
 
 ## Cloudflare Tunnel
 
