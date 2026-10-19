@@ -198,3 +198,9 @@ The launcher then resolves the same corrected stable bundle used by environment 
 ## Public proxy pin tests
 
 Worker tests execute returned scripts to verify URL pins, corrected-bundle launcher selection, unchanged default dispatch and failure responses.
+
+## Manual release pair tests
+
+The manual Bash example's asset and image assignments must resolve to the stable bundle and core image tag declared by release metadata.
+
+The regression executes those assignments and checks their resolved values. Separate manual command acceptance downloads the actual bundle and renders Compose to verify image tags, file limits and stable services.

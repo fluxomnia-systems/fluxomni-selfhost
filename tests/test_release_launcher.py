@@ -4,6 +4,7 @@ import importlib.util
 import json
 import os
 from pathlib import Path
+import re
 import subprocess
 import sys
 
@@ -159,3 +160,15 @@ def test_release_sync_preserves_old_installer_paths_and_new_releases_use_current
     assert "installerBundleRef" not in merged["releases"]["v26.4.0"]
     assert merged["releases"]["v26.4.0"]["installerPath"] == "scripts/install-runtime.sh"
     assert module.render_version_map(existing) == (ROOT / "scripts/generated-version-map.sh").read_text()
+
+
+# @lat: [[installation#Manual release pair tests]]
+def test_manual_installation_inputs_match_the_declared_stable_bundle():
+    manifest = json.loads((ROOT / "docs/src/release-manifest.json").read_text())
+    release = manifest["releases"][manifest["latestStable"]]
+    guide = (ROOT / "docs/src/getting-started/quick-start.md").read_text()
+    block = next(block for block in re.findall(r"```bash\n(.*?)```", guide, re.S) if block.startswith("ASSET_REF="))
+    assignments = "\n".join(line for line in block.splitlines() if line.startswith(("ASSET_REF=", "IMAGE_TAG=")))
+    command = assignments + '\nprintf "%s\\n" "$ASSET_REF" "$IMAGE_TAG"'
+    result = subprocess.run(["bash", "-euo", "pipefail", "-c", command], capture_output=True, text=True, check=True)
+    assert result.stdout.splitlines() == [release.get("installerBundleRef", release["selfhostRef"]), release["coreVersion"]]
