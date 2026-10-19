@@ -19,7 +19,7 @@ curl -fsSL https://install.fluxomni.io | bash
 
 By default, Fluxomni Studio installs to `~/fluxomni` and uses the newest stable release channel (`latest`).
 The installer creates one Docker Compose stack and stores data in `./data`.
-The web UI is included in the default install.
+The web UI is included in the default install. The public launcher selects the stable release's matching installer and Compose assets, including its file-limit repair. Existing installs keep their saved version unless you set `FLUXOMNI_VERSION` explicitly. A saved `latest` continues following stable.
 
 ## Install with Custom Values
 
@@ -37,6 +37,26 @@ To pin a stable release, set `FLUXOMNI_VERSION=v26.3.2` or another public `vYY.Q
 Use `FLUXOMNI_SELFHOST_REF` only when the config files must come from a different ref.
 
 ## Attach Another Media Node
+
+Use the procedure for the same release as your control plane. The `media-node` install target remains supported by the public command.
+
+### Stable v26.3.2
+
+The current stable release uses its published HTTP control and shared-token contract. Run this on the remote host after exposing the control listener only to trusted node IPs:
+
+```bash
+curl -fsSL https://install.fluxomni.io | \
+FLUXOMNI_CONTROL_PLANE_RPC_ENDPOINT=http://control.example.com:50052 \
+FLUXOMNI_CONTROL_PLANE_INTERNAL_AUTH_TOKEN=replace-with-shared-token \
+FLUXOMNI_MEDIA_NODE_PUBLIC_HOST=media2.example.com \
+  bash -s -- media-node
+```
+
+The launcher selects the stable installer and assets together. The current v26.3.2 bundle is pinned to an immutable self-host snapshot that keeps the 65,536 file limit and published media-port fixes. For a pin, set the same published version as the control plane on the `bash` side of the pipe. Repeating that command uses the saved release and the same release's update behavior.
+
+### Fleet enrollment on edge and supporting releases
+
+Fleet enrollment requires matching control-plane and media-node images that support it. Until a supporting stable release is published, use `edge` for both and select `edge` in the Fleet join command. Existing stable credentials are not imported into the new control protocol. Use the documented [replacement procedure](capacity-upgrades.md) when moving an existing node.
 
 Open Fleet → Add Node as an Admin. Choose the node ID and name, then select Generate join command. Copy the command and run it on the remote node host.
 
@@ -62,7 +82,7 @@ Current releases use these main pages:
 ## Manual Install
 
 ```bash
-ASSET_REF=main # or a published versioned self-host ref, for example v26.3.2
+ASSET_REF=v26.3.2 # Keep assets and images on the same published release.
 mkdir -p ~/fluxomni
 cd ~/fluxomni
 curl -fsSL "https://raw.githubusercontent.com/fluxomnia-systems/fluxomni-selfhost/${ASSET_REF}/docker-compose.yml" -o docker-compose.yml
@@ -70,7 +90,7 @@ curl -fsSL "https://raw.githubusercontent.com/fluxomnia-systems/fluxomni-selfhos
 AUTH_TOKEN="$(openssl rand -hex 24)"
 IMAGE_TAG="${ASSET_REF}"
 if [ "${IMAGE_TAG}" = "main" ]; then
-  IMAGE_TAG="latest"
+  IMAGE_TAG="edge"
 elif [[ "${IMAGE_TAG#v}" =~ ^[0-9]{2}\.[1-4]\.[0-9]+$ ]]; then
   VERSION_MAP="$(mktemp)"
   curl -fsSL "https://raw.githubusercontent.com/fluxomnia-systems/fluxomni-selfhost/${ASSET_REF}/scripts/generated-version-map.sh" -o "${VERSION_MAP}"

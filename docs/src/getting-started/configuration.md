@@ -40,6 +40,10 @@ If you deploy behind a domain or reverse proxy, set `FLUXOMNI_PUBLIC_HOST`, `FLU
 - `vX.Y.Z`: core image tag, accepted for direct image pinning, e.g. `v0.13.0`
 - `edge`: latest successful publish from `main`
 
+The public launcher resolves `latest` to the stable release's installer and assets while keeping `latest` as the saved image channel. Stable pins use their own installer and assets; missing releases fail before changing installation files. `edge` uses the current runtime installer and main assets.
+
+`FLUXOMNI_SELFHOST_REF` selects both installer code and assets for an explicit ref. `FLUXOMNI_REPO_RAW` selects a custom asset base that must provide `scripts/install-runtime.sh`; this is intended for release validation. Avoid mixing a stable image with main assets.
+
 The installer maps canonical public pins to the matching core image tag when native date image tags are not published.
 
 ## Optional Variables

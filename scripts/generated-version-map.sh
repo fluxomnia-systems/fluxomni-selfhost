@@ -59,3 +59,27 @@ generated_public_release_alias() {
       ;;
   esac
 }
+
+
+generated_installer_path() {
+  case "$1" in
+    f4a0b3b0c72da80dd889ef4a51f637537dd89406|v0.10.0|v0.10.1|v0.10.2|v0.11.0|v0.12.0|v0.13.0|v26.1.0|v26.2.0|v26.2.1|v26.2.2|v26.2.3|v26.2.4|v26.3.1|v26.3.2)
+      printf '%s\n' 'install.sh'
+      ;;
+    *)
+      printf '%s\n' 'scripts/install-runtime.sh'
+      ;;
+  esac
+}
+
+
+generated_installer_bundle_ref() {
+  case "$1" in
+    v26.3.2)
+      printf '%s\n' 'f4a0b3b0c72da80dd889ef4a51f637537dd89406'
+      ;;
+    *)
+      printf '%s\n' "$1"
+      ;;
+  esac
+}

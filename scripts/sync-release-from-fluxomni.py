@@ -80,7 +80,14 @@ def merge_manifest(existing: dict[str, Any] | None, incoming: dict[str, Any]) ->
             for key, release in releases.items()
             if not re.fullmatch(r"v\d{4}\.\d{2}\.\d+", key)
         }
-    releases.update(incoming_releases)
+    for version, release in incoming_releases.items():
+        release = dict(release)
+        installer_path = releases.get(version, {}).get("installerPath", "scripts/install-runtime.sh")
+        release.setdefault("installerPath", installer_path)
+        bundle_ref = releases.get(version, {}).get("installerBundleRef")
+        if bundle_ref:
+            release.setdefault("installerBundleRef", bundle_ref)
+        releases[version] = release
     return {
         "schemaVersion": incoming.get("schemaVersion", 1),
         "latestStable": incoming["latestStable"],
@@ -152,6 +159,23 @@ def render_version_map(manifest: dict[str, Any]) -> str:
             ]
         )
     lines.extend(["    *)", "      return 1", "      ;;", "  esac", "}", ""])
+    paths: dict[str, set[str]] = {}
+    for version, release in sorted(manifest["releases"].items()):
+        path = release.get("installerPath", "scripts/install-runtime.sh")
+        if path not in {"install.sh", "scripts/install-runtime.sh"}:
+            raise ValueError(f"Unsupported installer path: {path}")
+        paths.setdefault(path, set()).update({version, release["coreVersion"], release.get("installerBundleRef", release.get("selfhostRef", version))})
+    lines.extend(["", "generated_installer_path() {", '  case "$1" in'])
+    for path, refs in sorted(paths.items()):
+        lines.extend([f"    {'|'.join(sorted(refs))})", f"      printf '%s\\n' '{path}'", "      ;;"])
+    lines.extend(["    *)", "      printf '%s\\n' 'scripts/install-runtime.sh'", "      ;;", "  esac", "}", ""])
+    lines.extend(["", "generated_installer_bundle_ref() {", '  case "$1" in'])
+    for version, release in sorted(manifest["releases"].items()):
+        ref = release.get("installerBundleRef", release.get("selfhostRef", version))
+        if ref != version:
+            keys = "|".join(sorted({version, release["coreVersion"]}))
+            lines.extend([f"    {keys})", f"      printf '%s\\n' '{ref}'", "      ;;"])
+    lines.extend(["    *)", "      printf '%s\\n' \"$1\"", "      ;;", "  esac", "}", ""])
     return "\n".join(lines)
 
 

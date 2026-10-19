@@ -55,7 +55,15 @@ if name == "curl":
         print("200", end="")
         sys.exit(0)
     relative = "scripts/" + url.rsplit("/", 1)[1] if "/scripts/" in url else url.rsplit("/", 1)[1]
-    shutil.copyfile(Path(os.environ["TEST_ASSETS"]) / relative, args[args.index("-o") + 1])
+    source = Path(os.environ["TEST_ASSETS"]) / relative
+    if not source.exists():
+        if "--write-out" in args:
+            print("404", end="")
+            sys.exit(0)
+        sys.exit(22)
+    shutil.copyfile(source, args[args.index("-o") + 1])
+    if "--write-out" in args:
+        print("200", end="")
 elif name == "python3":
     if len(args) > 1 and Path(args[0]).name == "preparation-cgroup.py" and args[1] in ("install", "disable"):
         with open(Path(os.environ["TEST_ASSETS"]).parent / "preparation.jsonl", "a") as log:

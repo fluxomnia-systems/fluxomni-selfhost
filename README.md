@@ -49,7 +49,7 @@ Open Fleet → Add Node on the existing control plane as an Admin. Choose the no
 
 The installer exchanges a short-lived code over verified HTTPS and keeps the machine credential in owner-only `node-secrets/`. The node uses outbound TLS control; it needs no VPN, public address or inbound control port. Public media settings are optional.
 
-See [Attach Another Media Node](docs/src/getting-started/quick-start.md#attach-another-media-node) for TLS trust and interrupted-installation recovery.
+See [Attach Another Media Node](docs/src/getting-started/quick-start.md#attach-another-media-node) for the current stable setup and Fleet enrollment on supporting releases. Fleet enrollment uses matching edge images until a supporting stable release is published.
 
 ## Common Install Examples
 
@@ -110,6 +110,8 @@ The installer manages:
 | `vX.Y.Z` | Core image tag, accepted for direct image pinning |
 | `edge` | Latest successful publish from `main` |
 
+The public launcher selects installer code and assets from the same release. `latest` uses the published stable installer; `edge` uses the new runtime installer. Version pins and saved versions keep their release-specific workflow.
+
 Use `latest` unless you need a pinned release or a test build. The current stable public release is `v26.3.2`. Retained image tags are available for separately reviewed recovery; migrated state must not be restarted with predecessor images.
 
 See the What's New section above for recent changes.
@@ -124,7 +126,7 @@ cd ~/fluxomni
 # Troubleshooting (Connection & Health Doctor)
 ./doctor.sh
 
-# Updates require the capacity-ledger maintenance procedure below
+# Supporting newer releases require the capacity-ledger maintenance procedure below
 
 # Follow logs
 docker compose logs -f
@@ -135,7 +137,7 @@ docker compose --profile auto-update stop --timeout 30
 
 If you used a custom directory or installed only a media node, run these commands from that directory.
 
-Installer reruns preserve data and known `.env` settings, and require an explicit maintenance mode. Follow the [capacity upgrade guide](docs/src/getting-started/capacity-upgrades.md) for initial upgrades, later drained upgrades and standalone nodes.
+Installer reruns preserve data and known `.env` settings. Stable v26.3.2 keeps its release-specific rerun behavior; builds with the capacity ledger require an explicit maintenance mode. Follow the [capacity upgrade guide](docs/src/getting-started/capacity-upgrades.md) for initial upgrades, later drained upgrades and standalone nodes.
 
 For SRS open-file errors, rerun the latest installer; see [troubleshooting](docs/src/getting-started/troubleshooting.md#srs-reports-too-few-open-files).
 

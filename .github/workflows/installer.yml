@@ -5,6 +5,11 @@ on:
   pull_request:
     paths:
       - install.sh
+      - scripts/install-runtime.sh
+      - scripts/node-enrollment.sh
+      - scripts/generated-version-map.sh
+      - scripts/sync-release-from-fluxomni.py
+      - docs/src/release-manifest.json
       - docker-compose*.yml
       - .env.example
       - tests/**
@@ -17,6 +22,11 @@ on:
     branches: [main]
     paths:
       - install.sh
+      - scripts/install-runtime.sh
+      - scripts/node-enrollment.sh
+      - scripts/generated-version-map.sh
+      - scripts/sync-release-from-fluxomni.py
+      - docs/src/release-manifest.json
       - docker-compose*.yml
       - .env.example
       - tests/**
@@ -38,8 +48,8 @@ jobs:
       - uses: astral-sh/setup-uv@v7
       - name: Check installer syntax
         run: |
-          bash -n install.sh
-          shellcheck --severity=warning install.sh
+          for file in install.sh scripts/install-runtime.sh scripts/node-enrollment.sh; do bash -n "$file"; done
+          shellcheck --severity=warning install.sh scripts/install-runtime.sh scripts/node-enrollment.sh
       - name: Check capacity helper
         run: uvx ruff check scripts/capacity-upgrade.py tests/test_capacity_upgrade.py
       - name: Test fresh installs and upgrades

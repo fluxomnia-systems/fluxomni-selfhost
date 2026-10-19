@@ -8,16 +8,19 @@
   "releases": {
     "v26.1.0": {
       "coreVersion": "v0.10.0",
+      "installerPath": "install.sh",
       "releasedAt": "2026-04-14",
       "selfhostRef": "v26.1.0"
     },
     "v26.2.0": {
       "coreVersion": "v0.10.1",
+      "installerPath": "install.sh",
       "releasedAt": "2026-04-19",
       "selfhostRef": "v26.2.0"
     },
     "v26.2.1": {
       "coreVersion": "v0.10.2",
+      "installerPath": "install.sh",
       "releasedAt": "2026-04-26",
       "selfhostRef": "v26.2.1"
     },
@@ -65,6 +68,7 @@
         "frontend": "ghcr.io/fluxomnia-systems/fluxomni-frontend:v0.11.0",
         "mediaNode": "ghcr.io/fluxomnia-systems/fluxomni-media-node:v0.11.0"
       },
+      "installerPath": "install.sh",
       "releasedAt": "2026-05-06",
       "selfhostRef": "v26.2.2",
       "source": {
@@ -117,6 +121,7 @@
         "frontend": "ghcr.io/fluxomnia-systems/fluxomni-frontend:v0.12.0",
         "mediaNode": "ghcr.io/fluxomnia-systems/fluxomni-media-node:v0.12.0"
       },
+      "installerPath": "install.sh",
       "releasedAt": "2026-05-20",
       "selfhostRef": "v26.2.3",
       "source": {
@@ -174,6 +179,7 @@
         "frontend": "ghcr.io/fluxomnia-systems/fluxomni-frontend:v0.13.0",
         "mediaNode": "ghcr.io/fluxomnia-systems/fluxomni-media-node:v0.13.0"
       },
+      "installerPath": "install.sh",
       "releasedAt": "2026-05-29",
       "selfhostRef": "v26.2.4",
       "source": {
@@ -231,6 +237,7 @@
         "frontend": "ghcr.io/fluxomnia-systems/fluxomni-frontend:v26.3.1",
         "mediaNode": "ghcr.io/fluxomnia-systems/fluxomni-media-node:v26.3.1"
       },
+      "installerPath": "install.sh",
       "releasedAt": "2026-09-14",
       "selfhostRef": "v26.3.1",
       "source": {
@@ -288,6 +295,8 @@
         "frontend": "ghcr.io/fluxomnia-systems/fluxomni-frontend:v26.3.2",
         "mediaNode": "ghcr.io/fluxomnia-systems/fluxomni-media-node:v26.3.2"
       },
+      "installerBundleRef": "f4a0b3b0c72da80dd889ef4a51f637537dd89406",
+      "installerPath": "install.sh",
       "releasedAt": "2026-09-27",
       "selfhostRef": "v26.3.2",
       "source": {

@@ -4,7 +4,7 @@ Use a maintenance window when moving to builds with durable route/output admissi
 
 These builds preserve capacity until the previous execution has proved it stopped. A container restart or a new heartbeat does not clear old ownership. Fleet **Drain node** prevents new placement but keeps existing execution; it does not release reservations.
 
-The latest stable `v26.3.2` predates this contract. Select a tested build containing core PR #344, such as immutable `main-233a5d5`, and use the same tested build for the control plane, frontend and nodes. The installer rejects older candidates that cannot provide the admission API and initialization proof. Keep backups and record the enabled route IDs before maintenance.
+The latest stable `v26.3.2` predates this contract. Select a tested build containing the capacity ledger and Fleet enrollment, and use matching installer assets for the control plane, frontend and nodes. The examples use `edge` while these changes are unreleased. For an immutable image pin, set `FLUXOMNI_SELFHOST_REF` to the matching self-host snapshot, which must provide `scripts/install-runtime.sh`. The installer rejects older candidates that cannot provide the admission API and initialization proof. Keep backups and record the enabled route IDs before maintenance.
 
 ## First Capacity Upgrade
 
@@ -24,7 +24,7 @@ Stop every external execution container before initializing the control-plane le
 
    ```bash
    curl -fsSL https://install.fluxomni.io -o install.sh
-   FLUXOMNI_VERSION=main-233a5d5 \
+   FLUXOMNI_VERSION=edge \
      bash install.sh full --capacity-upgrade initial --confirm-execution-stopped
    ```
 
@@ -35,7 +35,7 @@ Stop every external execution container before initializing the control-plane le
 4. Update each already stopped standalone node only after the full-stack step succeeds:
 
    ```bash
-   FLUXOMNI_VERSION=main-233a5d5 \
+   FLUXOMNI_VERSION=edge \
      bash install.sh media-node --capacity-upgrade node --confirm-control-plane-ready
    ```
 
@@ -52,7 +52,7 @@ Release existing reservations while the old reporters are still alive.
 3. Upgrade the full-stack installation:
 
    ```bash
-   FLUXOMNI_VERSION=main-233a5d5 \
+   FLUXOMNI_VERSION=edge \
      bash install.sh full --capacity-upgrade drained
    ```
 
