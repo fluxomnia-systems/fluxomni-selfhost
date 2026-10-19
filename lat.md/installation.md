@@ -188,3 +188,13 @@ Release sync preserves declared historical installer paths and same-release bund
 Launcher tests verify stable and edge selection, saved versions, explicit overrides, argument and exit propagation, missing-bundle safety and generated release paths.
 
 Real release acceptance additionally runs downloaded stable installers with their published Compose bundles using a simulated Docker lifecycle and real Compose rendering. Matching-runtime Docker acceptance verifies the new enrollment protocol separately.
+
+## Versioned public installer URLs
+
+The install proxy serves the release-aware launcher for versioned URLs and passes the URL version explicitly to prevent latest-channel drift.
+
+The launcher then resolves the same corrected stable bundle used by environment pins. Historical alias fallback passes the core image tag as well as the core asset ref to installers that predate public tag normalization. Proxy responses stream the launcher after the version prefix; missing upstream launchers fail without a moving-version fallback.
+
+## Public proxy pin tests
+
+Worker tests execute returned scripts to verify URL pins, corrected-bundle launcher selection, unchanged default dispatch and failure responses.

@@ -32,7 +32,7 @@ FLUXOMNI_VERSION=edge \
   bash
 ```
 
-To pin a stable release, set `FLUXOMNI_VERSION=v26.3.2` or another public `vYY.Q.N` tag.
+To pin a stable release, set `FLUXOMNI_VERSION=v26.3.2` or another public `vYY.Q.N` tag. The versioned URL `https://install.fluxomni.io/v26.3.2` also pins that release and uses the same corrected installer bundle. Older public aliases pass the mapped core image tag to historical installers.
 
 Use `FLUXOMNI_SELFHOST_REF` only when the config files must come from a different ref.
 

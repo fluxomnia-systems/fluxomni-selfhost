@@ -5,6 +5,7 @@ on:
   pull_request:
     paths:
       - install.sh
+      - workers/install/**
       - scripts/install-runtime.sh
       - scripts/node-enrollment.sh
       - scripts/generated-version-map.sh
@@ -22,6 +23,7 @@ on:
     branches: [main]
     paths:
       - install.sh
+      - workers/install/**
       - scripts/install-runtime.sh
       - scripts/node-enrollment.sh
       - scripts/generated-version-map.sh
@@ -46,6 +48,11 @@ jobs:
     steps:
       - uses: actions/checkout@v6
       - uses: astral-sh/setup-uv@v7
+      - uses: actions/setup-node@v6
+        with:
+          node-version: "22"
+      - name: Test public installer proxy
+        run: node --test workers/install/test/*.test.mjs
       - name: Check installer syntax
         run: |
           for file in install.sh scripts/install-runtime.sh scripts/node-enrollment.sh; do bash -n "$file"; done

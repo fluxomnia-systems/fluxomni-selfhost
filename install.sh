@@ -77,6 +77,7 @@ if [ "$status" = 404 ] && [ "$installer_path" = install.sh ] && [ -z "${FLUXOMNI
   alias_ref=$(generated_public_release_alias "$ref" || true)
   if [ -n "$alias_ref" ] && [ "$alias_ref" != "$ref" ]; then
     ref="$alias_ref"
+    version="$alias_ref"
     asset_root="$raw_root/$ref"
     installer_path=$(generated_installer_path "$ref")
     status=$(curl -sSL --write-out '%{http_code}' "$asset_root/$installer_path" -o "$temporary/install.sh")

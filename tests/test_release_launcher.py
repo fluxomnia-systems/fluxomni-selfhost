@@ -126,6 +126,7 @@ def test_alias_uses_the_same_historical_release_bundle(launch):
     result = run(values={"FLUXOMNI_VERSION": "v26.2.4"})
     assert result.returncode == 0, result.stderr
     assert json.loads(result.stdout)["ref"] == "v0.13.0"
+    assert json.loads(result.stdout)["version"] == "v0.13.0"
 
 
 def test_custom_asset_root_requires_current_installer_without_version_map(launch):

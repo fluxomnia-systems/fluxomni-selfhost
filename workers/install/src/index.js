@@ -3,81 +3,55 @@ const SCRIPT_BASE = "https://raw.githubusercontent.com/fluxomnia-systems/fluxomn
 export default {
   async fetch(request) {
     const url = new URL(request.url);
-    const path = url.pathname;
-
-    // install.fluxomni.io/ or install.fluxomni.io/install.sh
-    // → latest stable from main
-    if (path === "/" || path === "/install.sh") {
-      const ref = url.searchParams.get("ref") || "main";
-      return proxyScript(ref);
+    if (url.pathname === "/" || url.pathname === "/install.sh") {
+      return proxyScript(url.searchParams.get("ref") || "main");
     }
 
-    // install.fluxomni.io/v1.2.3 → pinned version
-    const versionMatch = path.match(/^\/(v[\d.]+)$/);
-    if (versionMatch) {
-      return proxyScript(versionMatch[1], true);
+    const version = url.pathname.match(/^\/(v[\d.]+)$/)?.[1];
+    if (version) {
+      // Always use the release-aware launcher, including for historical tags.
+      return proxyScript("main", version);
     }
 
-    return new Response(
-      [
-        "Fluxomni Studio Installer",
-        "",
-        "Usage:",
-        "  curl -fsSL https://install.fluxomni.io | bash",
-        "",
-        "Pinned version:",
-        "  curl -fsSL https://install.fluxomni.io/v1.2.3 | bash",
-        "",
-        "Edge channel:",
-        '  curl -fsSL "https://install.fluxomni.io?ref=edge" | bash',
-        "",
-      ].join("\n"),
-      {
-        status: 404,
-        headers: { "Content-Type": "text/plain; charset=utf-8" },
-      }
-    );
+    return new Response([
+      "Fluxomni Studio Installer", "",
+      "Usage: curl -fsSL https://install.fluxomni.io | bash", "",
+      "Pinned version: curl -fsSL https://install.fluxomni.io/v26.3.2 | bash", "",
+      "Edge: curl -fsSL https://install.fluxomni.io | FLUXOMNI_VERSION=edge bash", "",
+    ].join("\n"), { status: 404, headers: { "Content-Type": "text/plain; charset=utf-8" } });
   },
 };
 
-async function proxyScript(ref, fallbackToMain = false) {
-  const upstream = `${SCRIPT_BASE}/${ref}/install.sh`;
-  const resp = await fetch(upstream, {
-    headers: { "User-Agent": "Fluxomni Studio-Install-Proxy/1.0" },
+async function proxyScript(ref, version) {
+  const upstream = await fetch(`${SCRIPT_BASE}/${ref}/install.sh`, {
+    headers: { "User-Agent": "Fluxomni-Install-Proxy/1.0" },
   });
-
-  if (!resp.ok && fallbackToMain) {
-    const fallback = await fetch(`${SCRIPT_BASE}/main/install.sh`, {
-      headers: { "User-Agent": "Fluxomni Studio-Install-Proxy/1.0" },
-    });
-    if (!fallback.ok) {
-      return new Response(`Failed to fetch install script (ref=${ref}, fallback=main)\n`, {
-        status: 502,
-        headers: { "Content-Type": "text/plain" },
-      });
-    }
-    return new Response(fallback.body, {
-      headers: {
-        "Content-Type": "text/plain; charset=utf-8",
-        "Cache-Control": "public, max-age=300",
-        "X-Fluxomni Studio-Ref": "main",
-        "X-Fluxomni Studio-Requested-Ref": ref,
-      },
+  if (!upstream.ok || !upstream.body) {
+    return new Response(`Failed to fetch install launcher (ref=${ref})\n`, {
+      status: 502, headers: { "Content-Type": "text/plain; charset=utf-8" },
     });
   }
 
-  if (!resp.ok) {
-    return new Response(`Failed to fetch install script (ref=${ref})\n`, {
-      status: 502,
-      headers: { "Content-Type": "text/plain" },
-    });
-  }
-
-  return new Response(resp.body, {
-    headers: {
-      "Content-Type": "text/plain; charset=utf-8",
-      "Cache-Control": ref === "main" ? "public, max-age=300" : "public, max-age=3600",
-      "X-Fluxomni Studio-Ref": ref,
+  const headers = {
+    "Content-Type": "text/plain; charset=utf-8",
+    "Cache-Control": ref === "main" ? "public, max-age=300" : "public, max-age=3600",
+    "X-Fluxomni-Ref": ref,
+  };
+  if (!version) return new Response(upstream.body, { headers });
+  headers["X-Fluxomni-Requested-Ref"] = version;
+  const reader = upstream.body.getReader();
+  let prefixSent = false;
+  const body = new ReadableStream({
+    async pull(controller) {
+      if (!prefixSent) {
+        controller.enqueue(new TextEncoder().encode(`#!/usr/bin/env bash\nexport FLUXOMNI_VERSION='${version}'\n`));
+        prefixSent = true;
+        return;
+      }
+      const { done, value } = await reader.read();
+      if (done) controller.close(); else controller.enqueue(value);
     },
+    cancel(reason) { return reader.cancel(reason); },
   });
+  return new Response(body, { headers });
 }
