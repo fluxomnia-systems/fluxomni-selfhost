@@ -87,7 +87,7 @@ if [ "$status" != 200 ] || grep -q '^# Fluxomni release launcher\.' "$temporary/
   echo "Error: matching installer is not published at $asset_root. No installation files were changed." >&2
   exit 1
 fi
-if [ "$installer_path" = install.sh ] && { [ -n "${FLUXOMNI_ENROLLMENT_CODE:-}${FLUXOMNI_ENROLLMENT_URL:-}" ] || [ -f "$install_dir/node-secrets/credential" ]; }; then
+if [ "$installer_path" = install.sh ] && { [ -n "${FLUXOMNI_ENROLLMENT_CODE:-}${FLUXOMNI_ENROLLMENT_URL:-}${FLUXOMNI_CREDENTIAL_MODE:-}" ] || [ -f "$install_dir/node-secrets/credential" ]; }; then
   echo 'Error: this release predates Fleet enrollment. Select a matching enrollment-capable release in Fleet; use edge while the feature is unreleased.' >&2
   exit 1
 fi

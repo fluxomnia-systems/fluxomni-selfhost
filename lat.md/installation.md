@@ -204,3 +204,17 @@ Worker tests execute returned scripts to verify URL pins, corrected-bundle launc
 The manual Bash example's asset and image assignments must resolve to the stable bundle and core image tag declared by release metadata.
 
 The regression executes those assignments and checks their resolved values. Separate manual command acceptance downloads the actual bundle and renders Compose to verify image tags, file limits and stable services.
+
+## Credential replacement
+
+Fleet rotation and recovery commands use the original installation directory and owner-only candidate files. The installer locks candidate changes and promotes only a confirmed generation commit.
+
+Disable affected routes and wait for zero reserved capacity while the old process can still prove withdrawal. Hold the node in maintenance, stop the old container, then run its Fleet command in the existing directory. Clear maintenance and enable routes only after registration succeeds.
+
+The helper sends the saved current credential only for rotation, over verified HTTPS with existing enrollment trust. Recovery supports a missing credential file. Invalid TLS, changed node/control identity, competing commands and unconfirmed responses leave the old file and candidate intact. Retry the original command after an ambiguous response. A fresh Admin grant can reuse a candidate after expiry or cancellation; it cannot change the node, endpoint or HTTPS URL. Never delete candidates to hide an error.
+
+Revocation may strand execution reservations. Restore the old identity to finish withdrawal where possible; the installer never edits capacity or reporter ledgers. Use matching edge runtime and self-host assets until the feature is released.
+
+## Credential retry coverage
+
+Tests verify saved-before-commit candidates, exact retries after lost responses, secret permissions, original identity binding, recovery without the old file, concurrent exclusion and the public installer rotation path.

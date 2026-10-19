@@ -51,6 +51,9 @@ if name == "curl":
         authority.write_text(json.dumps(saved))
         if os.environ.get("TEST_ENROLLMENT_LOST_RESPONSE"):
             sys.exit(28)
+        if "--output" not in args:
+            print('{"replaced":true}\n200', end="")
+            sys.exit(0)
         Path(args[args.index("--output") + 1]).write_text('{"enrolled":true}')
         print("200", end="")
         sys.exit(0)

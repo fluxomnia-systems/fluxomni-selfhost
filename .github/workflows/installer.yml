@@ -8,6 +8,7 @@ on:
       - workers/install/**
       - scripts/install-runtime.sh
       - scripts/node-enrollment.sh
+      - scripts/node-credentials.py
       - scripts/generated-version-map.sh
       - scripts/sync-release-from-fluxomni.py
       - docs/src/release-manifest.json
@@ -26,6 +27,7 @@ on:
       - workers/install/**
       - scripts/install-runtime.sh
       - scripts/node-enrollment.sh
+      - scripts/node-credentials.py
       - scripts/generated-version-map.sh
       - scripts/sync-release-from-fluxomni.py
       - docs/src/release-manifest.json
@@ -58,6 +60,6 @@ jobs:
           for file in install.sh scripts/install-runtime.sh scripts/node-enrollment.sh; do bash -n "$file"; done
           shellcheck --severity=warning install.sh scripts/install-runtime.sh scripts/node-enrollment.sh
       - name: Check capacity helper
-        run: uvx ruff check scripts/capacity-upgrade.py tests/test_capacity_upgrade.py
+        run: uvx ruff check scripts/capacity-upgrade.py tests/test_capacity_upgrade.py scripts/node-credentials.py tests/test_node_credentials.py
       - name: Test fresh installs and upgrades
         run: uv run --no-project --with-requirements scripts/requirements-test.txt pytest -q tests

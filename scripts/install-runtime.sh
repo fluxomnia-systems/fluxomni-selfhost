@@ -821,7 +821,7 @@ preflight_preparation_host() {
 begin_config_transaction() {
   INSTALL_BACKUP="$(mktemp -d)"
   INSTALL_CONFIG_COMMITTED=0
-  INSTALL_MANAGED_FILES=(node-enrollment.sh compose.node-media.yml .install-pending docker-compose.yml compose.release.yml compose.defaults.yml .env .env.example doctor.sh docker-compose.preparation-cgroup.yml preparation-cgroup.py verify-preparation-compose.py)
+  INSTALL_MANAGED_FILES=(node-credentials.py node-enrollment.sh compose.node-media.yml .install-pending docker-compose.yml compose.release.yml compose.defaults.yml .env .env.example doctor.sh docker-compose.preparation-cgroup.yml preparation-cgroup.py verify-preparation-compose.py)
   local file
   for file in "${INSTALL_MANAGED_FILES[@]}"; do
     if [ -e "${FLUXOMNI_DIR}/$file" ]; then cp -p "${FLUXOMNI_DIR}/$file" "$INSTALL_BACKUP/$file"; fi
@@ -1345,6 +1345,14 @@ if [ "$FLUXOMNI_INSTALL_TARGET" = "media-node" ]; then
   download_asset scripts/node-enrollment.sh "${FLUXOMNI_DIR}/node-enrollment.sh"
   bash -n "${FLUXOMNI_DIR}/node-enrollment.sh"
   source "${FLUXOMNI_DIR}/node-enrollment.sh"
+  if [ -n "${FLUXOMNI_CREDENTIAL_MODE:-}" ]; then
+    download_asset scripts/node-credentials.py "${FLUXOMNI_DIR}/node-credentials.py"
+    python3 "${FLUXOMNI_DIR}/node-credentials.py" --node "$MEDIA_NODE_ID_DEFAULT" --endpoint "$CONTROL_PLANE_RPC_ENDPOINT_DEFAULT"
+    unset FLUXOMNI_CREDENTIAL_CODE FLUXOMNI_CREDENTIAL_URL
+  elif [ -f "${FLUXOMNI_DIR}/node-secrets/.credential-operation" ]; then
+    echo 'Error: retry the original Fleet replacement command with its saved candidate.' >&2
+    exit 1
+  fi
   prepare_node_enrollment "$MEDIA_NODE_ID_DEFAULT" "$CONTROL_PLANE_RPC_ENDPOINT_DEFAULT"
 
   if [ ! -f "$ENV_FILE" ]; then
@@ -1570,6 +1578,10 @@ if [ "$FLUXOMNI_INSTALL_TARGET" = "media-node" ]; then
   fi
 
   confirm_node_enrollment
+  if [ -n "${FLUXOMNI_CREDENTIAL_MODE:-}" ]; then
+    python3 "${FLUXOMNI_DIR}/node-credentials.py" --node "$MEDIA_NODE_ID_DEFAULT" --endpoint "$CONTROL_PLANE_RPC_ENDPOINT_DEFAULT" --complete
+    unset FLUXOMNI_CREDENTIAL_MODE
+  fi
   verify_preparation_runtime
 
   MEDIA_HOST="$(read_env_file_value "FLUXOMNI_MEDIA_NODE_PUBLIC_HOST" .env)"

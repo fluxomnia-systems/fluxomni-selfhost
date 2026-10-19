@@ -219,3 +219,5 @@ See `screenshots/README.md` for the full image list and capture details.
 Playlist normalization can use explicit per-node preparation CPU/memory/thread budgets.
 See [preparation resource limits](docs/src/getting-started/configuration.md#offline-preparation-resource-limits)
 for installer enablement, reboot provisioning and manual Compose deployment.
+
+Media-node credential rotation, recovery and revocation are available from Fleet. Follow the [credential replacement procedure](docs/src/getting-started/quick-start.md#rotate-or-recover-a-node-credential) to preserve node identity and verified execution ownership.

@@ -161,3 +161,13 @@ An existing certificate must cover the advertised control host. Bootstrap reject
 Through the capacity maintenance procedure, stop execution, preserve the old certificate and key, install the replacement covering the control host and update every node trust file. Restart and verify Fleet before enabling routes. A stable issuing CA avoids replacing the trust anchor at each certificate renewal.
 
 Bootstrap also requires an explicit trust transition for expiring or incomplete certificate/key pairs. It preserves existing files and node trust instead of silently creating a new pin.
+
+## Rotate or recover a node credential
+
+Open the node in Fleet and expand **Machine credentials**. Disable its routes, wait for zero reserved capacity, enter maintenance and stop its container. Authorize rotation when the old credential is available, or recovery when it is lost. Run the copied command from the existing installation directory.
+
+The installer saves a replacement candidate before contacting the control plane. If the response is lost, keep the files and retry the same command. Successful registration keeps the same node ID and archive ownership. Clear maintenance before enabling routes again.
+
+**Revoke credential** immediately rejects authentication and closes the connection. It does not prove FFmpeg stopped or release reserved capacity. A live boot or unreleased old execution blocks recovery; restore the old identity and finish verified withdrawal where possible. There is no force-release option in this workflow.
+
+Use matching edge runtime and installer assets until credential replacement is included in a public release.
