@@ -82,13 +82,13 @@ Current releases use these main pages:
 ## Manual Install
 
 ```bash
-ASSET_REF=v26.3.2 # Keep assets and images on the same published release.
+ASSET_REF=f4a0b3b0c72da80dd889ef4a51f637537dd89406 # Corrected v26.3.2 assets.
 mkdir -p ~/fluxomni
 cd ~/fluxomni
 curl -fsSL "https://raw.githubusercontent.com/fluxomnia-systems/fluxomni-selfhost/${ASSET_REF}/docker-compose.yml" -o docker-compose.yml
 curl -fsSL "https://raw.githubusercontent.com/fluxomnia-systems/fluxomni-selfhost/${ASSET_REF}/.env.example" -o .env.example
 AUTH_TOKEN="$(openssl rand -hex 24)"
-IMAGE_TAG="${ASSET_REF}"
+IMAGE_TAG=v26.3.2
 if [ "${IMAGE_TAG}" = "main" ]; then
   IMAGE_TAG="edge"
 elif [[ "${IMAGE_TAG#v}" =~ ^[0-9]{2}\.[1-4]\.[0-9]+$ ]]; then
