@@ -3,11 +3,10 @@ import fcntl
 import hashlib
 import importlib.util
 import json
-from pathlib import Path
 import subprocess
+from pathlib import Path
 
 import pytest
-
 from test_install import installation  # noqa: F401
 
 SPEC = importlib.util.spec_from_file_location("node_credentials", Path(__file__).parents[1] / "scripts/node-credentials.py")
@@ -148,7 +147,7 @@ def test_retry_after_interrupted_cleanup_reuses_the_committed_secret(identity, m
 
 
 def test_new_grant_reuses_candidate_after_cancelled_or_expired_redemption(identity, monkeypatch):
-    root, directory = identity
+    root, _directory = identity
     hashes = []
     def post(args, **kwargs):
         hashes.append(json.loads(kwargs["input"])["credentialHash"])
