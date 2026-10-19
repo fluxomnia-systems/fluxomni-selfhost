@@ -127,3 +127,15 @@ For per-node playlist normalization CPU/memory/thread budgets, see
 [Offline Preparation Resource Limits](configuration.md#offline-preparation-resource-limits).
 
 If redemption loses its response, the installer keeps the same credential and confirms it through the outbound control connection. Rerun the original command after an interrupted install. Never delete `node-secrets/` to retry.
+
+## Legacy shared-token nodes
+
+Legacy shared-token nodes require replacement enrollment; the installer does not import shared tokens or retain the old HTTP control protocol.
+
+Drain legacy routes and prove predecessor execution stopped through [Capacity Ledger Upgrades](capacity-upgrades.md). Preserve the existing data, ownership ledger and configuration. With the current control plane running, create a fresh node ID in Fleet and run its join command with `FLUXOMNI_DIR` set to a new installation directory. Verify the new node before enabling routes. The in-place node upgrade command applies to installations that already have `node-secrets/`.
+
+## Changing the control certificate host
+
+An existing certificate must cover the advertised control host. Bootstrap rejects a missing name while preserving the existing certificate and key.
+
+Through the capacity maintenance procedure, stop execution, preserve the old certificate and key, install the replacement covering the control host and update every node trust file. Restart and verify Fleet before enabling routes. A stable issuing CA avoids replacing the trust anchor at each certificate renewal.

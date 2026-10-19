@@ -162,3 +162,9 @@ An installer-owned version/target marker permits retrying an incomplete bootstra
 ## Incomplete fresh installation retry tests
 
 Failed pulls and startup attempts before resource creation can retry; mismatched markers and runtime or durable-state evidence cannot bypass maintenance.
+
+## Independent HTTP relay selection
+
+An empty HTTP relay host stays empty even when public ingest is configured. The installer preserves that choice in the saved environment and does not publish port 8004 on retries.
+
+Legacy shared-token nodes use fresh enrollment after capacity maintenance; no shared-token import or old control protocol is preserved.

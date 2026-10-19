@@ -115,3 +115,17 @@ def test_invalid_ca_does_not_bind_an_unprovisioned_identity(installation):
     assert not (destination / "node-secrets/identity").exists()
     assert not (destination / "node-secrets/credential").exists()
     assert run("media-node").returncode == 0
+
+
+def test_public_ingest_can_disable_the_http_relay_and_keep_it_disabled_on_retry(installation):
+    _, destination, run = installation
+    result = run("media-node", {"FLUXOMNI_MEDIA_NODE_PUBLIC_HOST": "media.example.com", "FLUXOMNI_MEDIA_NODE_HTTP_HOST": ""})
+    assert result.returncode == 0, result.stdout + result.stderr
+    first = json.loads((destination / "started.json").read_text())["services"]["media-node"]
+    assert 1935 in {port["target"] for port in first["ports"]}
+    assert 8004 not in {port["target"] for port in first["ports"]}
+    assert first["environment"]["FLUXOMNI_MEDIA_NODE_HTTP_HOST"] == ""
+    retry = run("media-node", {"FLUXOMNI_ENROLLMENT_CODE": "", "FLUXOMNI_ENROLLMENT_URL": ""})
+    assert retry.returncode == 0, retry.stdout + retry.stderr
+    second = json.loads((destination / "started.json").read_text())["services"]["media-node"]
+    assert 8004 not in {port["target"] for port in second["ports"]}
