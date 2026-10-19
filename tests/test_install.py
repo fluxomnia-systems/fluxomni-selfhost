@@ -73,7 +73,8 @@ elif name == "stat":
 elif name == "hostname":
     print("127.0.0.1")
 elif name == "nc":
-    pass
+    with (Path(os.environ["TEST_ASSETS"]).parent / "connectivity.jsonl").open("a") as log:
+        log.write(json.dumps(args) + "\n")
 elif name == "sudo":
     sys.exit(subprocess.run(args).returncode)
 elif name in ("apt-get", "ufw", "firewall-cmd", "systemctl"):

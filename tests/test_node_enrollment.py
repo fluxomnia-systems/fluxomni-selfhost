@@ -5,6 +5,8 @@ import hashlib
 import json
 import subprocess
 
+import pytest
+
 from test_install import installation  # noqa: F401
 
 
@@ -129,3 +131,12 @@ def test_public_ingest_can_disable_the_http_relay_and_keep_it_disabled_on_retry(
     assert retry.returncode == 0, retry.stdout + retry.stderr
     second = json.loads((destination / "started.json").read_text())["services"]["media-node"]
     assert 8004 not in {port["target"] for port in second["ports"]}
+
+
+@pytest.mark.parametrize("endpoint,host", [("https://control.invalid", "control.invalid"), ("https://[2001:db8::1]", "2001:db8::1")])
+def test_portless_https_control_preflight_uses_443(installation, endpoint, host):
+    assets, _, run = installation
+    result = run("media-node", {"FLUXOMNI_CONTROL_PLANE_RPC_ENDPOINT": endpoint})
+    assert result.returncode == 0, result.stdout + result.stderr
+    probes = [json.loads(line) for line in (assets.parent / "connectivity.jsonl").read_text().splitlines()]
+    assert ["-z", "-w", "3", host, "443"] in probes

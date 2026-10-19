@@ -168,3 +168,7 @@ Failed pulls and startup attempts before resource creation can retry; mismatched
 An empty HTTP relay host stays empty even when public ingest is configured. The installer preserves that choice in the saved environment and does not publish port 8004 on retries.
 
 Legacy shared-token nodes use fresh enrollment after capacity maintenance; no shared-token import or old control protocol is preserved.
+
+## HTTPS control preflight defaults
+
+The connectivity preflight uses port 443 for HTTPS endpoints without an explicit port, including bracketed IPv6 hosts. Explicit endpoint ports stay unchanged.

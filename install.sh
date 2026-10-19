@@ -990,17 +990,23 @@ parse_http_endpoint() {
 
   authority="${endpoint#*://}"
   authority="${authority%%/*}"
+  case "$endpoint" in
+    https://*) port="443" ;;
+    *) port="80" ;;
+  esac
 
   if [[ "$authority" == \[*\]:* ]]; then
     host="${authority%%]*}"
     host="${host#[}"
     port="${authority##*\]:}"
+  elif [[ "$authority" == \[*\] ]]; then
+    host="${authority#[}"
+    host="${host%]}"
   elif [[ "$authority" == *:* ]]; then
     host="${authority%:*}"
     port="${authority##*:}"
   else
     host="$authority"
-    port="80"
   fi
 
   printf '%s\n%s\n' "$host" "$port"

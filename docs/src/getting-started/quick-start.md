@@ -139,3 +139,5 @@ Drain legacy routes and prove predecessor execution stopped through [Capacity Le
 An existing certificate must cover the advertised control host. Bootstrap rejects a missing name while preserving the existing certificate and key.
 
 Through the capacity maintenance procedure, stop execution, preserve the old certificate and key, install the replacement covering the control host and update every node trust file. Restart and verify Fleet before enabling routes. A stable issuing CA avoids replacing the trust anchor at each certificate renewal.
+
+Bootstrap also requires an explicit trust transition for expiring or incomplete certificate/key pairs. It preserves existing files and node trust instead of silently creating a new pin.
