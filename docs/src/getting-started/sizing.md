@@ -1,6 +1,23 @@
 # Server Sizing
 
-Size media nodes by active inputs, outputs, bitrate, and processing mode. A stored route, a live route without destinations, and a route sending twelve outputs have different costs. These measurements apply to specific workloads. They do not define a maximum for all servers.
+Use the relay table to plan media-node CPU, memory, and bandwidth. It starts with a measured workload and shows clear extrapolations for larger loads. Count active inputs and destinations separately.
+
+## Relay sizing table
+
+The measured workload sent one 720p30 H.264/AAC feed per route to twelve RTMP destinations without re-encoding. CPU and RAM below are media-container budgets.
+
+| Basis | Media CPU | Media RAM budget | Active routes | RTMP outputs | Media payload |
+| --- | --- | --- | --- | --- | --- |
+| Measured for one hour | 1 CPU | 2 GiB | 4 | 48 | ~127 Mbit/s |
+| 2× extrapolation | 2 CPUs | 4 GiB | 8 | 96 | ~254 Mbit/s |
+| 4× extrapolation | 4 CPUs | 8 GiB | 16 | 192 | ~508 Mbit/s |
+| 8× extrapolation | 8 CPUs | 16 GiB | 32 | 384 | ~1,016 Mbit/s |
+
+Only the first row was tested. The other rows multiply the measured workload and resource budgets by 2, 4, or 8. They assume comparable performance per core, the same bitrate and fan-out, and no new bottleneck. Use them as planning estimates to validate on your servers.
+
+Add capacity for the OS, Docker, frontend, control plane, and storage. At 8×, outgoing media payload alone is already about 1 Gbit/s, before input traffic and transport overhead. The measured payload stayed inside Docker networking; it was not a physical network-egress test. The full measurement and evidence are below.
+
+For a different bitrate, estimate outgoing media payload as **active routes × destinations per route × output bitrate**. One 6-Mbit/s stream sent to five destinations needs about 30 Mbit/s of outgoing media payload. CPU and RAM also change with input count, fan-out, and processing mode; transcoding, mixing, recording, and playlist playback need separate tests.
 
 ## Where to run each service
 

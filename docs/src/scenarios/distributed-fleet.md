@@ -25,7 +25,9 @@ Control plane (orchestration + UI)
 
 ## Cost and scale notes
 
-Each node processes its assigned routes. Adding nodes distributes media work, but does not prove linear scaling or remove shared control-plane and network limits. Use the [sizing guide](../getting-started/sizing.md) to plan a load test.
+Each node processes its assigned routes. As a planning example, two nodes each running the measured four-route, twelve-output workload would total eight routes, 96 outputs, and about 254 Mbit/s of aggregate media payload. This adds two per-node budgets; it is an extrapolation, not a measured fleet result.
+
+Use the [sizing table](../getting-started/sizing.md) to choose per-node budgets. Validate shared control-plane load, network limits, route placement, and recovery when testing the fleet.
 
 Automatic source failover selects an available source for a route. It does not by itself prove that publishers can reconnect after losing a node. Test node loss, media availability, and publisher connectivity in your own deployment.
 
