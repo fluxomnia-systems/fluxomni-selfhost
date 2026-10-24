@@ -21,7 +21,17 @@ OBS → Fluxomni Studio (single VM) → { YouTube, Twitch, Kick, Facebook, Custo
 
 ## Cost and scale notes
 
-Compare the full cost of the server, transfer allowance, storage, and any commercial license with the plan you use today. A low server price alone does not establish a saving. Use the [measured sizing guide](../getting-started/sizing.md) and test your bitrate and destinations.
+Plan outgoing bandwidth from your stream bitrate and destination count. For one 6-Mbit/s feed, these are payload estimates:
+
+| Destinations | Outgoing media payload | Basis |
+| --- | --- | --- |
+| 3 | ~18 Mbit/s | 3 × 6 Mbit/s |
+| 5 | ~30 Mbit/s | 5 × 6 Mbit/s |
+| 12 | ~72 Mbit/s | 12 × 6 Mbit/s |
+
+Add input traffic, protocol overhead, previews, and operating reserve. These are bandwidth calculations, not CPU measurements. Use the [relay sizing table](../getting-started/sizing.md) to compare media budgets, then test your input and destination count.
+
+Compare the server, transfer allowance, storage, and any commercial license with the plan you use today.
 
 For a custom domain and TLS, see [Reverse proxy & TLS](../getting-started/reverse-proxy.md). Check [licensing and support](https://fluxomni.io/#pricing) before using the installation for paid or client work.
 

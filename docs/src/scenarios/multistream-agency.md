@@ -22,7 +22,15 @@ A single-host Fluxomni Studio install with one route per client. The example rel
 
 ## Cost and scale notes
 
-Use the [measured sizing guide](../getting-started/sizing.md) as a starting point, then test your client workload. Count active inputs and destinations separately. Leave capacity for reconnects and other recovery work.
+For clients using the same copy-mode workload as the [sizing guide](../getting-started/sizing.md), these examples give a starting media budget:
+
+| Active client routes | Outputs per client | Total outputs | Media CPU / RAM budget | Basis |
+| --- | --- | --- | --- | --- |
+| 4 | 12 | 48 | 1 CPU / 2 GiB | Measured media workload |
+| 8 | 12 | 96 | 2 CPUs / 4 GiB | 2× extrapolation |
+| 16 | 12 | 192 | 4 CPUs / 8 GiB | 4× extrapolation |
+
+The measured workload used about 2.646 Mbit/s per output. The larger rows assume comparable CPU performance and the same bitrate and fan-out. Add resources for the rest of the stack, then test your client streams and recovery load before setting a client limit.
 
 Budget for the server, transfer allowance, storage, and any commercial license. [Contact the team](https://fluxomni.io/contact?intent=business) about licensing for client work. Adding media nodes can distribute work; test placement and publisher connectivity when expanding the fleet.
 
