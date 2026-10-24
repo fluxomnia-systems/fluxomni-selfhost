@@ -20,8 +20,9 @@ The default install path is `~/fluxomni`.
 - **Docker**: Engine with Compose v2 — the installer installs Docker automatically on Debian/Ubuntu
 - **Ports**: see the [Configuration](../getting-started/configuration.md) page for the full port list
 
-For the smallest restreaming workloads, a 1-vCPU / 1 GB instance is usually enough.
-Choose a larger server for many concurrent routes or transcoding.
+Choose a server for the full stack, not just its media container. Use the
+[measured sizing guide](../getting-started/sizing.md) to plan tests for your
+input count, outputs, bitrate, and processing mode.
 
 ## Cloud Provider Guides
 
@@ -37,7 +38,7 @@ Each guide ends with Fluxomni Studio running at `http://<server-ip>/routes`.
 ## Installer Variables
 
 The installer accepts environment variables to control its behavior.
-Pass them before the pipe, for example:
+Pass them to `bash` after the pipe, for example:
 
 ```bash
 curl -fsSL https://install.fluxomni.io | WITH_UFW=1 FLUXOMNI_VERSION=edge bash -s
@@ -84,7 +85,7 @@ The command sets `FLUXOMNI_ENROLLMENT_URL`, `FLUXOMNI_ENROLLMENT_CODE`, `FLUXOMN
 - `vX.Y.Z`: core image tag, accepted for direct image pinning, e.g. `v0.13.0`
 - `edge`: latest successful publish from `main`
 
-When `FLUXOMNI_VERSION` is pinned, the installer first tries the same self-host ref, then its public/core alias when applicable, and falls back to `main` if no versioned self-host assets are published yet.
+For a pinned release, the installer tries the matching self-host ref and then its public/core alias when one exists. If assets for a stable public pin are missing, installation fails. Core-image pins can fall back to `main` with a warning. Use `FLUXOMNI_SELFHOST_REF` or `FLUXOMNI_REPO_RAW` only when you intend to choose another config source.
 
 ## After Deployment
 

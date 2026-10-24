@@ -4,7 +4,7 @@
   <img src="images/logo.webp" alt="Fluxomni Studio Logo" width="10%">
 </p>
 
-Fluxomni Studio runs live streams on your own server. Send one stream to several destinations at the same time using RTMP, SRT, or Icecast.
+Fluxomni Studio runs live streams and file-based channels on your own servers. Send one feed to several destinations using RTMP, SRT, or Icecast. Use the browser UI to manage routes, playlists, outputs, and media nodes.
 
 This repository contains self-host installation and deployment documentation only.
 

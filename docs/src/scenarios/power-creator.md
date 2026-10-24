@@ -2,11 +2,11 @@
 
 ## Who this is for
 
-Individual creators and small teams streaming to 4+ platforms at once who face SaaS plan limits ($80–$300+/mo). Use your own server for a fixed monthly cost, unlimited destinations, and full control of your data.
+Creators and small teams that want to stream to several platforms from their own server. Fluxomni does not impose an output-count cap. The usable output count depends on bitrate, processing mode, and server and network capacity.
 
 ## What you'll build
 
-A single-host Fluxomni Studio install on a small cloud VM (Hetzner CPX21, €5–10/mo). OBS sends RTMP to Fluxomni Studio, which sends the stream to YouTube, Twitch, Kick, Facebook, and custom RTMP endpoints.
+A single-host Fluxomni Studio install. OBS sends one RTMP feed to Fluxomni Studio, which relays it to YouTube, Twitch, Kick, Facebook, or custom RTMP endpoints.
 
 ```text
 OBS → Fluxomni Studio (single VM) → { YouTube, Twitch, Kick, Facebook, Custom RTMP }
@@ -21,7 +21,9 @@ OBS → Fluxomni Studio (single VM) → { YouTube, Twitch, Kick, Facebook, Custo
 
 ## Cost and scale notes
 
-Infrastructure costs €5–15 per month instead of $100+/mo in SaaS fees. Sending copy-through streams to several outputs uses little CPU, so a small VM can handle all five destinations. For a custom domain and TLS, see [Reverse proxy & TLS](../getting-started/reverse-proxy.md).
+Compare the full cost of the server, transfer allowance, storage, and any commercial license with the plan you use today. A low server price alone does not establish a saving. Use the [measured sizing guide](../getting-started/sizing.md) and test your bitrate and destinations.
+
+For a custom domain and TLS, see [Reverse proxy & TLS](../getting-started/reverse-proxy.md). Check [licensing and support](https://fluxomni.io/#pricing) before using the installation for paid or client work.
 
 ## Next steps
 

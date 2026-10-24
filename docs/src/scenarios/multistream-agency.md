@@ -2,11 +2,11 @@
 
 ## Who this is for
 
-Agencies and teams that stream for clients, typically with 10–50 concurrent routes across YouTube, Twitch, Facebook, and custom RTMP destinations. Use a stable publish address for each client, keep clients separate, and control monthly costs without exposing internal infrastructure.
+Agencies and teams streaming for several clients to YouTube, Twitch, Facebook, or custom RTMP destinations. Use one route per client so you can label the work, control its outputs, and export its configuration.
 
 ## What you'll build
 
-A single-host Fluxomni Studio install on a small cloud VM with dozens of copy-through routes, one per client brand. Route labels and exported configurations let you move to a multi-node fleet when load grows.
+A single-host Fluxomni Studio install with one route per client. The example relays media without re-encoding it. Size the host for your actual inputs, output count, and bitrate before adding clients.
 
 ```text
 1 OBS per client → Fluxomni Studio single-host → fan-out to { YouTube, Twitch, Custom RTMP }
@@ -22,7 +22,9 @@ A single-host Fluxomni Studio install on a small cloud VM with dozens of copy-th
 
 ## Cost and scale notes
 
-A Hetzner CPX31 (4 vCPU / 8 GB / ~€15 per month) can run ~70 copy-through routes. A CPX41 (8 vCPU / 16 GB / ~€29 per month) handles 100+. Add media nodes for more capacity. You do not need to migrate routes or change client publish addresses.
+Use the [measured sizing guide](../getting-started/sizing.md) as a starting point, then test your client workload. Count active inputs and destinations separately. Leave capacity for reconnects and other recovery work.
+
+Budget for the server, transfer allowance, storage, and any commercial license. [Contact the team](https://fluxomni.io/contact?intent=business) about licensing for client work. Adding media nodes can distribute work; test placement and publisher connectivity when expanding the fleet.
 
 ## Next steps
 
