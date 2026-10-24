@@ -1,6 +1,6 @@
 # Roadmap
 
-Fluxomni Studio self-host helps teams run reliable live streams on their own servers. This roadmap describes planned improvements for operators and clients.
+This page separates current Fluxomni Studio features from planned work. Use the available features to assess the product today; planned items do not have delivery dates.
 
 We do not list dates because priorities change with customer deployments, Design Partner feedback, and production incidents. For current work, see the [fluxomni-selfhost issue tracker](https://github.com/fluxomnia-systems/fluxomni-selfhost/issues).
 
@@ -8,8 +8,8 @@ We do not list dates because priorities change with customer deployments, Design
 
 The current self-host release supports these production workflows:
 
-- **One source to every destination.** Ingest over RTMP, SRT, or WebRTC, then send the same program to RTMP, SRT, and Icecast destinations without software limits on the number of outputs.
-- **Per-destination audio control.** Keep program audio, select a source track or channel, mute origin audio, or apply mix-ins per output using one output contract managed by the backend.
+- **One source to every destination.** Ingest over RTMP, SRT, or WebRTC, then send the program to RTMP, SRT, and Icecast destinations. There is no software output-count cap; capacity depends on your servers and network.
+- **Per-destination audio control.** Keep program audio, select a source track or channel, mute origin audio, or apply mix-ins for each destination.
 - **Always-on channel playout.** Run 24/7 channels from local files, Google Drive assets, playlists, or fallback loops so a live route can recover without manual action.
 - **Scheduled playlist starts.** Arm one-shot sequential starts, replay completed queue rows, and keep played state visible without blocking playlist clearing or replay.
 - **Reusable media library.** Upload, import, tag, bulk tag, bulk delete, filter, and reuse artifacts across playlists, fallback loops, and route workflows from the operator UI.
@@ -28,7 +28,7 @@ We are planning these areas with active users and Design Partners.
 - **Event-driven automation.** Trigger route changes, output toggles, playlist boundaries, fallback behavior, and notifications from real stream events instead of one-off scripts.
 - **Client-ready media workspaces.** Organize media by client, show, campaign, and channel using existing artifact tags, bulk operations, route usage checks, and baseline compatibility status.
 - **Recording-to-reuse flow.** Save live recordings as managed artifacts. Review, tag, replay, or use them as fallback content within the platform.
-- **Operator handoff polish.** Improve guided setup, endpoint instructions, and status explanations so operators can manage daily work without development experience.
+- **Clearer operator handoffs.** Improve guided setup, endpoint instructions, and status explanations so operators can manage daily work without development experience.
 
 ## On the roadmap
 

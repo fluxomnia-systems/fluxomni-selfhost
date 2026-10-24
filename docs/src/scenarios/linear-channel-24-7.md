@@ -25,7 +25,9 @@ Files (local + Google Drive) → Playlist → Fluxomni Studio → { YouTube, Cus
 
 ## Cost and scale notes
 
-Each channel uses decoding and playback resources plus outgoing bandwidth. The playlist has priority. File-backup loops play if a file fails. With [distributed mode](../user-guide/fleet.md), the route can recover from losing one node.
+Each channel uses decoding and playback resources plus outgoing bandwidth. Active playlist playback has priority over file fallback. A configured fallback can cover unavailable sources.
+
+For a fleet, check that another node can access the required files and reach the destinations. Test recovery after node loss before relying on it for continuous delivery.
 
 ## Next steps
 

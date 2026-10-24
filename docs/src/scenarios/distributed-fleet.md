@@ -2,7 +2,7 @@
 
 ## Who this is for
 
-Broadcast teams that need regional redundancy, more total capacity, or data kept in specific regions, such as the EU or US. Use one control plane, several media nodes, and automatic ingress failover without manual action.
+Broadcast teams that need media nodes in several regions or more capacity than one server can provide. One control plane manages the fleet. Source failover and recovery after node loss are separate cases to test.
 
 ## What you'll build
 
@@ -25,7 +25,9 @@ Control plane (orchestration + UI)
 
 ## Cost and scale notes
 
-Capacity grows in proportion to the number of nodes. Each node processes its assigned routes. The control plane manages the fleet without running media pipelines. To add capacity, add a node, label it, and assign routes. Client publish addresses stay the same.
+Each node processes its assigned routes. Adding nodes distributes media work, but does not prove linear scaling or remove shared control-plane and network limits. Use the [sizing guide](../getting-started/sizing.md) to plan a load test.
+
+Automatic source failover selects an available source for a route. It does not by itself prove that publishers can reconnect after losing a node. Test node loss, media availability, and publisher connectivity in your own deployment.
 
 ## Next steps
 

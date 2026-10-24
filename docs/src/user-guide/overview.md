@@ -1,12 +1,12 @@
 # User Guide
 
-Fluxomni Studio sends one RTMP source to several destinations at the same time. Its operator interface, the **Control Surface**, runs in your browser. Use it to check route health and manage outputs, playlists, media nodes, and local users.
+Use the **Control Surface** in your browser to operate Fluxomni Studio. Check route health, see which source is on air, and manage outputs, playlists, media nodes, and local users.
 
 This guide covers daily use of the Control Surface after you install Fluxomni Studio. For installation and deployment, see the [Quick Start](../getting-started/quick-start.md) section.
 
 ## Key Concepts
 
-**Route** — a named streaming pipeline that connects one stream input to one or more output destinations. Each route has its own workspace where you manage execution, routing, playlists, and live playback.
+**Route** — a named streaming configuration that connects sources to destinations. Open its workspace to manage sources, outputs, playlists, and playback. The active source can be live media, a playlist, or a file fallback.
 
 **Input** — the endpoint that receives your source stream. Fluxomni Studio generates a unique URL for each route depending on the chosen protocol (RTMP, SRT, or WebRTC). Point your encoder (OBS, FFmpeg, hardware encoder) at this URL.
 

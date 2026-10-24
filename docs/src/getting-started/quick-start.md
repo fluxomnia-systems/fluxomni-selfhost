@@ -1,6 +1,6 @@
 # Quick Start
 
-Install Fluxomni Studio on your own server. Send one stream to several destinations at the same time using RTMP, SRT, or Icecast.
+Install Fluxomni Studio on your server, then create a route and send a stream to your destinations. This guide covers installation. Continue with [First Stream](first-stream.md) to publish and check playback.
 
 ## Prerequisites
 

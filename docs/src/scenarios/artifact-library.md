@@ -2,7 +2,7 @@
 
 ## Who this is for
 
-Operators who reuse the same source files across playlists, fallback loops, client channels, or regional media nodes. Use one persistent artifact catalog so you can find files without searching each route or node.
+Operators who reuse files across playlists, fallback loops, client channels, or media nodes. Keep the files in one catalog so you can find and reuse them without searching each route or node.
 
 ## What you'll build
 
@@ -18,7 +18,7 @@ Local files / folders / Google Drive → Artifacts → playlists and file-backup
 1. Install Fluxomni Studio: `curl -fsSL https://install.fluxomni.io | bash`.
 2. Open **Artifacts** from the Control Surface sidebar.
 3. Use **Add files** to upload a file, upload a folder, or import from Google Drive.
-4. Tag reusable files by campaign, client, show, or day-part.
+4. Tag reusable files by campaign, client, show, or time of day.
 5. Check the storage chip and expandable storage panel before large uploads.
 6. Open a route playlist and choose files from **From library** instead of importing the same file again.
 7. Use Fleet to confirm which media nodes have cached the required artifacts.
