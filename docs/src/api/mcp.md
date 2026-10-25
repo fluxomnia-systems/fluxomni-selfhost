@@ -144,6 +144,8 @@ For a fresh issuer, include `KC_BOOTSTRAP_ADMIN_USERNAME` and a strong `KC_BOOTS
 
 Copy the generated `FLUXOMNI_MCP_PROXY_PATHS` value into `MCP_PROXY_PATHS` in the environment used to render your override. It contains two literal matchers, for example `/mcp /mcp/*`. Set `MCP_SETUP_DIR` there too. Render the full Compose configuration before applying it. Preserve any installer-managed Compose includes and existing operator overrides.
 
+The matching frontend build already forwards `/.well-known/oauth-protected-resource*` to the control plane, separately from those generated resource matchers. Any outer or custom proxy must also forward `/mcp`, `/mcp/*`, `/.well-known/oauth-protected-resource` and `/.well-known/oauth-protected-resource/mcp` to that frontend or directly to the control plane. Replace `/mcp` with your chosen resource path. Check the public metadata URL through every proxy before starting client OAuth.
+
 Serve the issuer's loopback HTTPS listener at its configured public issuer origin through your existing gateway. Preserve the certificate hostname and normal TLS verification. The control plane must reach the issuer, and the issuer must reach the protected grant-service URL. The issuer must be ready before starting the configured control plane; unavailable discovery fails startup closed.
 
 For a private issuer CA, add `issuer_ca_file` to `mcp.json` with its path inside the control-plane container and mount that PEM CA file read-only. For a private control-plane CA, configure the issuer's trusted CA paths. A different backchannel URL can be selected with `--grant-service-url` when generating the bundle; use a fixed HTTPS endpoint reachable from the issuer. Never disable certificate or hostname verification.
