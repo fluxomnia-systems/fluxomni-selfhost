@@ -154,7 +154,7 @@ The public metadata URL for `/mcp` is `/.well-known/oauth-protected-resource/mcp
 
 ## Link and approve the local account
 
-Sign in to Fluxomni with your named local user, then open **MCP** in the sidebar.
+Sign in to Fluxomni with your named local user, then open **Settings → Connected apps**.
 
 1. Select **Link account** and complete the issuer login.
 2. Return to Fluxomni and select the client you want to approve.
