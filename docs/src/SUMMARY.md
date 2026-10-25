@@ -50,6 +50,7 @@
 
 - [API Automation](api/overview.md)
   - [Authentication](api/auth.md)
+  - [Native MCP Access](api/mcp.md)
   - [Raw GraphQL](api/graphql.md)
   - [TypeScript Client](api/typescript-client.md)
   - [Subscriptions](api/subscriptions.md)

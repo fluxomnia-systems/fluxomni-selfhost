@@ -2,6 +2,16 @@
 
 Installer contracts for full stacks and standalone media nodes.
 
+## Native MCP deployment
+
+Optional native MCP uses a private generated control-plane/issuer bundle, distinct registered clients and explicit frontend path forwarding.
+
+Users manage personal approvals under Settings → Connected apps, including Viewers. Public setup is documented in `docs/src/api/mcp.md`.
+
+The separate issuer uses pinned Keycloak interfaces, production PostgreSQL and verified HTTPS. The bundle and issuer database do not replace local SQLite approval ownership. Codex 0.162.0 requires its MCP 2026 feature; actual web-client acceptance remains separate.
+
+The matching frontend forwards protected-resource metadata independently of the generated MCP path matchers. Outer proxies must preserve both metadata paths and the configured resource paths before OAuth discovery can work.
+
 ## One-time node enrollment
 
 Fleet issues a fifteen-minute code for one fresh node. The installer saves its random machine credential before exchanging the code and credential hash over verified HTTPS.
