@@ -1,10 +1,16 @@
 # API Authentication
 
-API automation uses the same named-user sessions as the operator UI.
+GraphQL HTTP and WebSocket requests use named-user browser sessions. The configured sign-in mode determines how those sessions are created.
 
-Log in with `/api/auth/login`, keep the returned `fluxomni_session` cookie, and send it with GraphQL HTTP and WebSocket subscription requests.
+Without browser OIDC, `/api/auth/login` accepts the local username and password. Keep its returned `fluxomni_session` cookie and send it with GraphQL HTTP and WebSocket subscription requests.
+
+With browser OIDC configured, sign in through the configured issuer in the operator UI. `/api/auth/login` cannot create a password session in that mode. See [unified sign-in and account enrollment](mcp.md#enroll-an-existing-local-account). The verified callback creates an opaque Fluxomni browser cookie; issuer email and role claims do not choose the local account or its permissions.
+
+MCP OAuth credentials work only at the configured MCP resource. They cannot authorize ordinary GraphQL or WebSocket requests. This feature does not add a service-account credential or writable MCP tools.
 
 ## Login
+
+This password login example applies only when browser OIDC is not configured.
 
 ```bash
 curl -i \
@@ -34,7 +40,9 @@ Automation uses the same role permissions as the UI:
 
 Session lifetime is controlled by the server `sessionTtlSeconds` setting. A value of `0` or `null` disables expiry. Other values set the number of seconds from login until the in-memory session expires.
 
-Scripts should treat HTTP `401` or GraphQL `extensions.code: "UNAUTHORIZED"` as a signal to log in again.
+Treat HTTP `401` or GraphQL `extensions.code: "UNAUTHORIZED"` as a signal to authenticate again using the configured mode. Issuer sessions and browser cookies have separate lifetimes; an expired cookie needs a new verified browser sign-in. Provider account changes do not independently revoke an already issued Fluxomni cookie; local revision changes, configured expiry or explicit local sign-out do.
+
+Use explicit [MCP client approval](mcp.md#sign-in-and-approve-a-client) for read-only automation on an issuer-configured instance. Browser sign-in never creates that approval automatically.
 
 ## Internal Credentials
 

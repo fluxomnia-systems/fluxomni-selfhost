@@ -2,7 +2,7 @@
 
 Use native MCP to ask a client for your current user, visible routes and selected-flow readiness. Fluxomni keeps the client read-only and applies your current role plus an independent local approval.
 
-This is a preview integration. It requires a Fluxomni build containing [the native MCP runtime](https://github.com/fluxomnia-systems/fluxomni/pull/437), including its matching frontend. Stable 26.3.2 alone does not provide this feature. The isolated issuer and Codex CLI workflow are verified; an actual web-chat connection remains an acceptance gate.
+This is a preview integration. It requires a Fluxomni build containing [the native MCP runtime](https://github.com/fluxomnia-systems/fluxomni/pull/437), including its matching frontend and the [unified sign-in implementation](https://github.com/fluxomnia-systems/fluxomni/issues/439). Stable 26.3.2 alone does not provide this feature. The isolated issuer and Codex CLI workflow are verified; an actual web-chat connection remains an acceptance gate.
 
 ## Prepare the instance
 
@@ -12,7 +12,7 @@ You need:
 
 - A reviewed Fluxomni source checkout matching the deployed control plane and frontend.
 - PostgreSQL and the normal production TLS configuration for the separate issuer.
-- A local named Fluxomni user and a separate issuer account.
+- A local named Fluxomni user bound to a verified issuer account. New instances use the host setup below.
 - The exact callback URLs reported by the local client and web connection.
 - The inspection scope and three tool names agreed for your installation.
 
@@ -57,6 +57,8 @@ python3 /absolute/path/to/fluxomni/scripts/mcp_issuer_setup.py \
   --tool-names "$MCP_CONTEXT_TOOL" "$MCP_ROUTES_TOOL" "$MCP_READINESS_TOOL" \
   --local-client-id fluxomni-codex \
   --local-callback http://127.0.0.1:39155/callback \
+  --browser-client-id fluxomni-browser \
+  --issuer-label "Fluxomni accounts" \
   --web-client-id fluxomni-web \
   --web-callback "$MCP_WEB_CALLBACK" \
   --output "$MCP_SETUP_DIR"
@@ -66,7 +68,8 @@ Copy the web callback from the actual connection management page. The stable Cha
 
 The private bundle contains:
 
-- `mcp.json`: control-plane configuration, including confidential client secrets.
+- `mcp.json`: MCP resource configuration and its confidential introspection credential.
+- `oidc.json`: browser sign-in configuration, trusted issuer label and separate confidential browser client credential.
 - `realm.json`: the matching issuer realm and client registrations.
 - `issuer-grants.key`: the dedicated issuer-to-control-plane credential.
 - `issuer.env`: generated issuer settings and public proxy path matchers. It contains the credential file path, not the credential value.
@@ -75,7 +78,7 @@ Mount files individually and read-only. Keep the parent directory private. `real
 
 The generator creates no human account or password. Provision the issuer account through your normal identity administration process.
 
-Generate the bundle once for a new realm and preserve it. Startup import does not replace an existing realm. Regenerating confidential secrets without updating their issuer registrations will break linking and introspection.
+Generate the bundle once for a new realm and preserve it. Startup import does not replace an existing realm. Regenerating confidential secrets without updating their issuer registrations will break browser sign-in and introspection.
 
 ## Configure Compose and HTTPS
 
@@ -86,10 +89,17 @@ services:
   control-plane:
     environment:
       FLUXOMNI_MCP_CONFIG: /run/fluxomni-mcp/mcp.json
+      FLUXOMNI_OIDC_CONFIG: /run/fluxomni-mcp/oidc.json
     volumes:
       - type: bind
         source: ${MCP_SETUP_DIR}/mcp.json
         target: /run/fluxomni-mcp/mcp.json
+        read_only: true
+        bind:
+          create_host_path: false
+      - type: bind
+        source: ${MCP_SETUP_DIR}/oidc.json
+        target: /run/fluxomni-mcp/oidc.json
         read_only: true
         bind:
           create_host_path: false
@@ -146,23 +156,96 @@ Copy the generated `FLUXOMNI_MCP_PROXY_PATHS` value into `MCP_PROXY_PATHS` in th
 
 The matching frontend build already forwards `/.well-known/oauth-protected-resource*` to the control plane, separately from those generated resource matchers. Any outer or custom proxy must also forward `/mcp`, `/mcp/*`, `/.well-known/oauth-protected-resource` and `/.well-known/oauth-protected-resource/mcp` to that frontend or directly to the control plane. Replace `/mcp` with your chosen resource path. Check the public metadata URL through every proxy before starting client OAuth.
 
-Serve the issuer's loopback HTTPS listener at its configured public issuer origin through your existing gateway. Preserve the certificate hostname and normal TLS verification. The control plane must reach the issuer, and the issuer must reach the protected grant-service URL. The issuer must be ready before starting the configured control plane; unavailable discovery fails startup closed.
+Serve the issuer's loopback HTTPS listener at its configured public issuer origin through your existing gateway. Preserve the certificate hostname and normal TLS verification. The control plane must reach the issuer, and the issuer must reach the protected grant-service URL. Invalid local configuration stops startup. A temporarily unavailable issuer leaves the control plane and sign-in page running, but new identity verification and protected MCP calls fail closed. Retry after restoring the issuer; no password fallback opens.
 
-For a private issuer CA, add `issuer_ca_file` to `mcp.json` with its path inside the control-plane container and mount that PEM CA file read-only. For a private control-plane CA, configure the issuer's trusted CA paths. A different backchannel URL can be selected with `--grant-service-url` when generating the bundle; use a fixed HTTPS endpoint reachable from the issuer. Never disable certificate or hostname verification.
+For a private issuer CA, add `issuer_ca_file` to `oidc.json` with its path inside the control-plane container and mount that PEM CA file read-only. For a private control-plane CA, configure the issuer's trusted CA paths. A different backchannel URL can be selected with `--grant-service-url` when generating the bundle; use a fixed HTTPS endpoint reachable from the issuer. Never disable certificate or hostname verification.
 
 The public metadata URL for `/mcp` is `/.well-known/oauth-protected-resource/mcp`. It must return JSON with the exact configured resource and issuer. An unauthenticated request to the resource must return `401` with a Bearer challenge. HTML here means the MCP path reached a frontend fallback: check both the frontend and any outer proxy matchers.
 
-## Link and approve the local account
+## First-user setup
 
-Sign in to Fluxomni with your named local user, then open **Settings → Connected apps**.
+With issuer sign-in configured, an empty user directory does not open an anonymous Admin shell. A host operator creates the first named Admin and a ten-minute, single-use enrollment token while the control plane is stopped.
 
-1. Select **Link account** and complete the issuer login.
-2. Return to Fluxomni and select the client you want to approve.
-3. Select specific visible routes, or explicitly choose all routes you can view.
-4. Select **Approve read access**.
-5. Start OAuth login from that client using the displayed server address.
+Use the matched control-plane image and the same mounted data directory as your installation:
 
-Issuer login proves the subject. The local approval separately chooses the client and routes. The client's permissions are always limited by your current Fluxomni role, including when your local role is Admin.
+```bash
+docker compose stop control-plane
+docker compose run --rm --no-deps \
+  --volume "$MCP_SETUP_DIR:/run/fluxomni-setup" \
+  control-plane \
+  auth bootstrap-admin \
+  --username admin \
+  --token-file /run/fluxomni-setup/enrollment.token
+docker compose up -d control-plane
+```
+
+The command refuses a running database owner or an existing user directory. It creates the token file with owner-only permissions and never overwrites it. A failed token write or sync rolls back the account change.
+
+Open Fluxomni, select **Set up an existing account**, and enable **Use a host-issued setup token**. Enter the local username and token from the private file. Continue to the issuer, then confirm the displayed local account and verified issuer identity. The host token cannot access GraphQL or MCP and is consumed when setup starts. If that flow expires or the server restarts, use administrator recovery to issue a fresh token.
+
+The generator does not create an issuer account. Provision that account through your identity administration process before completing enrollment. Issuer roles and matching email addresses never create a local Admin.
+
+## Enroll an existing local account
+
+Existing verified issuer bindings are preserved. Their users can select **Continue with** the configured issuer immediately, using their existing issuer session where possible.
+
+An unbound local user selects **Set up an existing account**, proves their local username and password, and completes issuer verification. That local password only starts restricted setup; it does not open the application. Confirm both displayed identities before the binding is saved. Select **Use a different issuer account** if the wrong issuer session is open.
+
+With OIDC configured, local passwords no longer create normal browser sessions. A local password cannot replace an existing binding. Admins still create local users and assign local roles under **Settings → Users**; the initial local password is only setup proof for an unbound user.
+
+Browser OIDC can run without MCP by loading only `oidc.json`. MCP requires browser OIDC for the exact same issuer and public origin. The MCP resource, browser client and introspection client keep separate credentials and audiences.
+
+## Sign in and approve a client
+
+Select **Continue with** the configured issuer to sign in to Fluxomni, then open **Settings → Connected apps**. A valid issuer browser session can satisfy this redirect without another password entry. The callback returns to the original application page.
+
+1. Select **Approve a client** and choose the registered client.
+2. Select specific visible routes, or explicitly choose all routes you can view.
+3. Select **Approve read access**.
+4. Start OAuth login from that client using the displayed server address and the same issuer account.
+
+Connected apps uses the identity verified by your browser sign-in. No normal **Link account** step remains. Sign-in does not approve a client. Your current local role and route ownership limit every client request, including requests from Admin users.
+
+## Administrator recovery
+
+Restore issuer availability before completing recovery. Existing unexpired local sessions retain their configured lifetime and local revision checks during an issuer outage; the outage does not renew them. No public password fallback is enabled.
+
+For a lost Admin identity, stop the control plane and take a consistent backup of its data and private configuration. Run the matched image against that same data directory:
+
+```bash
+docker compose stop control-plane
+docker compose run --rm --no-deps \
+  --volume "$MCP_SETUP_DIR:/run/fluxomni-setup" \
+  control-plane \
+  auth recover-admin \
+  --username admin \
+  --issuer "$MCP_ISSUER" \
+  --remove-subject exact-subject-being-repaired \
+  --token-file /run/fluxomni-setup/recovery.token
+docker compose up -d control-plane
+```
+
+The command displays the target local account and selected subject. Repeat `--remove-subject` only for verified bindings being repaired; omit it when issuing a fresh setup token without removing a binding. Recovery keeps the local role, rotates its security revision and invalidates its old sessions and delegated grants. Removed identities' approvals are retired in the same transaction. Another user's bindings stay unchanged.
+
+Enter the recovery token through **Set up an existing account**, verify the restored issuer identity, and confirm it. Old access and refresh credentials stay denied after recovery, binding recreation and reapproval. A failed token write, sync or database commit does not claim recovery success.
+
+This command targets existing local Admins. For an Operator or Viewer, recover the existing issuer account and stable subject through issuer administration; replacing their issuer subject is outside this Admin recovery command.
+
+## Cut over an existing deployment
+
+Schedule a maintenance window and stop authentication changes. Preserve a consistent SQLite data-directory backup and the matching private bundle, issuer database backup and application image refs before changing the schema or clients.
+
+Preserve the existing `issuer`, `resource`, `scope`, tool names, public client IDs, `introspection_secret` and `issuer_service_key` in `mcp.json`. Do not rerun the new-realm generator over an existing installation: it generates new secrets.
+
+Register a new confidential browser client in the existing issuer with standard code flow and S256. Put its actual registered client ID and secret in a new `oidc.json` as `client_id` and `client_secret`. Set `issuer` to the same issuer as `mcp.json`, `origin` to the application HTTPS origin without a trailing slash, and `issuer_label` to your chosen display label. Move any private `issuer_ca_file` setting from `mcp.json` to `oidc.json`; its path must exist inside the control-plane container.
+
+Remove `link_client_id` and `link_client_secret` from `mcp.json`. These old fields are not accepted by the new binary. The original issuer/subject bindings stay intact because they belong to local users, independently of the browser client ID. Retire the old account-link client after verifying the new sign-in flow; do not replace the public MCP clients or their introspection registration.
+
+Update the separate confidential browser client's exact callback to `/api/auth/oidc/callback` on the configured application origin, and register that origin's `/?auth=signed-out` as its post-logout redirect. Existing realm import does not update client registrations: use issuer administration for an existing realm. Keep local/public MCP clients and the resource introspection client separate.
+
+Deploy the matched control-plane/frontend build and the new `mcp.json` plus `oidc.json` mounts together. Remove the old account-link fields and callback registration; no compatibility alias is retained. All browsers sign in again. Verify first-user or existing-user enrollment, return paths, client/route approval and revoke/reapproval before reopening access.
+
+Rollback uses the prior matched images, configuration and pre-cutover database snapshot together. Do not run an old binary against the upgraded schema. If credentials were issued or revoked after the snapshot, invalidate affected issuer sessions and recovered account authority before reopening access; a restored backup may contain earlier approvals. Prefer forward recovery once security state has changed.
 
 ## Connect Codex CLI
 
@@ -199,6 +282,8 @@ The web client needs public HTTPS resource and issuer endpoints, a registered cl
 
 Use **Revoke** in Fluxomni to remove one client's local approval. Other clients remain independent. Approving it again creates a new generation; old access and refresh credentials stay denied. Sign in again from the client for a new credential.
 
-Password resets, role changes and user deletion invalidate existing local delegations. Browser sign-out removes the browser session; it does not revoke an independent client approval. Signing-key caching does not cache permission. Issuer or local-store failure denies protected output.
+Local role/security changes and user deletion invalidate existing local delegations. **Sign out of Fluxomni** removes the selected local browser session and pending sign-in/setup actions; it keeps issuer SSO and independent client approvals. A later sign-in requires an explicit click.
+
+**Sign out of identity provider** first signs out locally, then redirects to the configured issuer's logout endpoint. If the issuer is unavailable, local sign-out still succeeds and Fluxomni reports that issuer sign-out was not confirmed. Provider logout can invalidate MCP credentials through issuer activity checks, but does not rewrite local approval history. It does not promise logout from other applications or browsers. Signing-key caching does not cache permission. Issuer or local-store failure denies protected output.
 
 Back up the control-plane SQLite database and issuer PostgreSQL database together with their private deployment configuration. Restoring or rotating issuer secrets is an operator maintenance action; restarting must never recreate a missing approval.
