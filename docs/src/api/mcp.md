@@ -1,6 +1,6 @@
 # Native MCP access
 
-Use native MCP to ask a client for your current user, visible routes and selected-flow readiness. Fluxomni keeps the client read-only and applies your current role plus an independent local approval.
+Use native MCP to inspect the instance and optionally manage routes, library files, playlists and outputs. Each client needs a local approval, and every request remains limited by your current account permissions.
 
 This is a preview integration. It requires a Fluxomni build containing [the native MCP runtime](https://github.com/fluxomnia-systems/fluxomni/pull/437), including its matching frontend and the [unified sign-in implementation](https://github.com/fluxomnia-systems/fluxomni/issues/439). Stable 26.3.2 alone does not provide this feature. The isolated issuer and Codex CLI workflow are verified; an actual web-chat connection remains an acceptance gate.
 
@@ -275,6 +275,51 @@ Let resource metadata supply the OAuth resource. With this client version, addin
 For a private CA, set `CODEX_CA_CERTIFICATE` to its PEM bundle for the client command. Keep normal verification enabled. Use `codex mcp login fluxomni --no-browser` if you need to complete the callback manually.
 
 Ask Codex for your current user, visible routes and playlist readiness for one listed route. Confirm the result includes current `evaluatedAt`, `validUntil`, `readyToAttempt` and findings. Missing media or node facts must remain blocked or unknown. A successful check permits an attempt; it does not prove playback.
+
+## Enable management access
+
+Management requires a build containing [the MCP management implementation](https://github.com/fluxomnia-systems/fluxomni/issues/440). Deploy the matching frontend and control plane. It is disabled unless private MCP settings name a separate management scope.
+
+For a new realm, add `--management-scope your-approved-management-scope` to the generator command above. Keep it distinct from the inspection scope. The generator registers both as optional scopes for each public client and writes `management_scope` into `mcp.json`. The ten management tool names below are reserved; do not use them as the three configurable inspection names.
+
+For an existing realm, do not regenerate its secrets. Add the separate optional client scope through issuer administration and assign it to both registered public clients. Add the same exact value as `management_scope` in the existing private `mcp.json`, preserve the other settings, and restart the control plane. Removing this setting disables the management catalog.
+
+In **Settings → Connected apps**, select the client and routes, then enable **Allow management of routes, playlists and outputs**. Review the permissions and approve. Management is off by default. Approval is once per client; permitted changes do not require returning to this page each time.
+
+Set `MCP_MANAGEMENT_SCOPE` to the exact registered value and sign in again requesting both scopes:
+
+```bash
+codex mcp login fluxomni --scopes "$MCP_SCOPE,$MCP_MANAGEMENT_SCOPE"
+```
+
+Also include both scopes in the client's saved `scopes` list. Approving management locally does not add a scope to an existing token. Existing read approvals remain read-only, and approving again does not revive earlier credentials.
+
+### Management tools
+
+The catalog contains typed tools around the normal application services:
+
+- `fluxomni_route` inspects a route, its sources and paginated outputs.
+- `fluxomni_save_route` creates or updates a route; `fluxomni_route_action` enables, disables or deletes it.
+- `fluxomni_files` lists or inspects library processing state. `fluxomni_import_file` queues a Google Drive file ID through the configured integration. It does not upload local files or fetch arbitrary URLs.
+- `fluxomni_delete_files` deletes unused library files using existing reference safeguards. It never forces removal from playlists or saved programs.
+- `fluxomni_playlist` reads ordered placements and the queue revision. `fluxomni_set_playlist` replaces the complete ordered queue to add, remove or reorder files.
+- `fluxomni_save_output` adds or edits an output; `fluxomni_output_action` enables, disables or deletes it.
+
+Tools return identifiers and bounded state without stored source/destination credentials, private paths or raw processing errors. A queued import is not a completed download. Saved configuration is not evidence of playback or destination acceptance.
+
+### Permission limits
+
+A selected-route approval can manage only those existing routes and their playlists and outputs. Creating routes and changing the shared library require an **all routes** management approval. Normal role and ownership rules still apply: Operators create routes they own, Viewers cannot manage configuration, and only Admins can delete library files. File-backed sources and playlists also obey library visibility rules.
+
+Revoke the approval to prevent further admission. Queued route writes recheck authority after their owning lock wait. An accepted library cleanup or import may finish after revocation. Revocation does not undo completed changes.
+
+### Readback and retries
+
+Read the complete playlist, including every page, before replacing it. Supply its current `expectedQueueRevision` and preserve placement IDs for existing entries. On a revision conflict, reload before saving. Existing entries whose catalog row is missing can still be removed or reordered; new missing media and hidden files are rejected.
+
+Route edits preserve omitted sources and node pin. Output edits preserve an omitted destination plus existing audio and mixins. Omitted labels clear the label. Source IDs retain unchanged credentials; omitted pull URLs and SRT passphrases retain their existing values. Pull sources require RTMP(S) or HTTP(S) network URLs; use managed file IDs for file sources.
+
+Creates are not automatically retryable. After a timeout, disconnect or uncertain response, inspect the current routes, outputs, files or playlist before retrying. A response withheld after revocation does not prove an earlier admitted change failed. There is no separate preview, plan or apply tool.
 
 ## Web chat and lifecycle checks
 
