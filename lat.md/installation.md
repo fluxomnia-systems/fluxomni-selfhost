@@ -4,9 +4,9 @@ Installer contracts for full stacks and standalone media nodes.
 
 ## Native MCP deployment
 
-Optional native MCP uses a private generated control-plane/issuer bundle, distinct registered clients and explicit frontend path forwarding.
+Optional native MCP requires browser OIDC for the same issuer, private generated resource/browser settings, distinct registered clients and explicit frontend path forwarding.
 
-Users manage personal approvals under Settings → Connected apps, including Viewers. Public setup is documented in `docs/src/api/mcp.md`.
+Browser sign-in supplies the verified issuer identity. Users manage personal client/route approvals under Settings → Connected apps, including Viewers. No normal manual-link step remains. Public setup is documented in `docs/src/api/mcp.md`.
 
 The separate issuer uses pinned Keycloak interfaces, production PostgreSQL and verified HTTPS. The bundle and issuer database do not replace local SQLite approval ownership. Codex 0.162.0 requires its MCP 2026 feature; actual web-client acceptance remains separate.
 
@@ -228,3 +228,21 @@ Revocation may strand execution reservations. Restore the old identity to finish
 ## Credential retry coverage
 
 Tests verify saved-before-commit candidates, exact retries after lost responses, secret permissions, original identity binding, recovery without the old file, concurrent exclusion and the public installer rotation path.
+
+## Unified browser sign-in
+
+A configured issuer closes anonymous bootstrap and normal password sessions. Existing verified bindings keep their local owners; new enrollment proves local ownership and explicitly confirms the issuer identity.
+
+Public setup in `docs/src/api/mcp.md` mounts both `mcp.json` and `oidc.json`, registers exact browser callback/logout URIs and keeps local roles authoritative. OIDC can run alone; MCP requires the same browser issuer and origin.
+
+## Browser enrollment and recovery
+
+First-user setup and Admin recovery run against the stopped service's canonical database and deliver an owner-only single-use token before committing authority changes.
+
+The running database lease excludes recovery. Tokens start restricted browser enrollment only. Recovery rotates account authority and retires removed identities' approvals atomically. Local sign-out, provider logout and MCP revocation have separate effects.
+
+## Authentication cutover
+
+Existing deployments update matched images, issuer registrations and both private settings files together after a consistent database/configuration snapshot.
+
+No old account-link callback or fields remain. Public instructions require browser reauthentication and lifecycle checks before reopening access, with matched-snapshot rollback and explicit handling of security changes after that snapshot.
