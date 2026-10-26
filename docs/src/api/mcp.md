@@ -328,7 +328,11 @@ Revoke the approval to prevent further admission. Queued route writes recheck au
 
 Read the complete playlist, including every page, before replacing it. Supply its current `expectedQueueRevision` and preserve placement IDs for existing entries. On a revision conflict, reload before saving. Existing entries whose catalog row is missing can still be removed or reordered; new missing media and hidden files are rejected.
 
-Route edits preserve omitted sources and node pin. Send `"pinnedMediaNodeId": null` to clear an existing pin and restore automatic placement. Output saves require RTMP(S), SRT or Icecast network URLs with a host; file destinations are rejected. Output edits preserve an omitted network destination plus existing volume, audio and mixins. Omitted labels clear the label. Source IDs retain unchanged credentials; omitted pull URLs and SRT passphrases retain their existing values. Pull sources require RTMP(S) or HTTP(S) network URLs; use managed file IDs for file sources.
+Route edits preserve omitted sources and node pin. Send `"pinnedMediaNodeId": null` to clear an existing pin and restore automatic placement. Stable source IDs preserve credentials and omitted enable/order settings. Repeated source IDs are rejected. Omitted pull URLs and SRT passphrases retain their existing values. Pull sources require RTMP(S) or HTTP(S) network URLs; use managed file IDs for file sources.
+
+Output saves require RTMP(S), SRT or Icecast network URLs with a host; file destinations are rejected. Output edits preserve an omitted network destination plus existing volume, audio and mixins. Existing managed recording outputs can still be enabled, disabled or deleted by ID; MCP cannot configure their file destination.
+
+Omitted route, source and output labels clear the label.
 
 Creates are not automatically retryable. After a timeout, disconnect or uncertain response, inspect the current routes, outputs, files or playlist before retrying. A response withheld after revocation does not prove an earlier admitted change failed. There is no separate preview, plan or apply tool.
 
