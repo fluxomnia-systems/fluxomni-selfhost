@@ -1,6 +1,6 @@
 # Native MCP access
 
-Use native MCP to ask a client for your current user, visible routes and selected-flow readiness. Fluxomni keeps the client read-only and applies your current role plus an independent local approval.
+Use native MCP to inspect the instance and optionally manage routes, library files, playlists and outputs. Each client needs a local approval, and every request remains limited by your current account permissions.
 
 This is a preview integration. It requires a Fluxomni build containing [the native MCP runtime](https://github.com/fluxomnia-systems/fluxomni/pull/437), including its matching frontend and the [unified sign-in implementation](https://github.com/fluxomnia-systems/fluxomni/issues/439). Stable 26.3.2 alone does not provide this feature. The isolated issuer and Codex CLI workflow are verified; an actual web-chat connection remains an acceptance gate.
 
@@ -38,22 +38,30 @@ Use Keycloak's production PostgreSQL configuration. Preserve and back up that da
 
 Choose an absolute output directory outside the Fluxomni checkout. The directory must not already exist. The generator creates it with owner-only access.
 
-Set the values below to your actual installation. The three tool names are ordered as context, route listing and readiness. For Codex, an explicit loopback callback port must match its configured listener port.
+Set the values below to your actual installation. Choose management access before generating this new realm: leave `MCP_MANAGEMENT_SCOPE` empty for read-only access, or set a distinct management scope. The optional flag is included only when that value is set.
+
+The three tool names are ordered as context, route listing and readiness. For Codex, an explicit loopback callback port must match its configured listener port.
 
 ```bash
 MCP_ISSUER=https://auth.example.com/realms/fluxomni
 MCP_RESOURCE=https://stream.example.com/mcp
 MCP_SETUP_DIR=/absolute/private/path/fluxomni-mcp
 MCP_SCOPE=your-approved-inspection-scope
+MCP_MANAGEMENT_SCOPE=""
 MCP_CONTEXT_TOOL=your_context_tool
 MCP_ROUTES_TOOL=your_routes_tool
 MCP_READINESS_TOOL=your_readiness_tool
 MCP_WEB_CALLBACK=https://chatgpt.com/connector_platform_oauth_redirect
+MCP_MANAGEMENT_ARGS=()
+if [[ -n "$MCP_MANAGEMENT_SCOPE" ]]; then
+  MCP_MANAGEMENT_ARGS=(--management-scope "$MCP_MANAGEMENT_SCOPE")
+fi
 
 python3 /absolute/path/to/fluxomni/scripts/mcp_issuer_setup.py \
   --issuer "$MCP_ISSUER" \
   --resource "$MCP_RESOURCE" \
   --scope "$MCP_SCOPE" \
+  "${MCP_MANAGEMENT_ARGS[@]}" \
   --tool-names "$MCP_CONTEXT_TOOL" "$MCP_ROUTES_TOOL" "$MCP_READINESS_TOOL" \
   --local-client-id fluxomni-codex \
   --local-callback http://127.0.0.1:39155/callback \
@@ -257,6 +265,7 @@ mcp_2026_07_28 = true
 
 [mcp_servers.fluxomni]
 url = "https://stream.example.com/mcp"
+scopes = ["your-approved-inspection-scope"]
 
 [mcp_servers.fluxomni.oauth]
 client_id = "fluxomni-codex"
@@ -275,6 +284,64 @@ Let resource metadata supply the OAuth resource. With this client version, addin
 For a private CA, set `CODEX_CA_CERTIFICATE` to its PEM bundle for the client command. Keep normal verification enabled. Use `codex mcp login fluxomni --no-browser` if you need to complete the callback manually.
 
 Ask Codex for your current user, visible routes and playlist readiness for one listed route. Confirm the result includes current `evaluatedAt`, `validUntil`, `readyToAttempt` and findings. Missing media or node facts must remain blocked or unknown. A successful check permits an attempt; it does not prove playback.
+
+## Enable management access
+
+Management requires a build containing [the MCP management implementation](https://github.com/fluxomnia-systems/fluxomni/issues/440). Deploy the matching frontend and control plane. It is disabled unless private MCP settings name a separate management scope.
+
+For a new realm, choose the optional management scope in [Generate private settings](#generate-private-settings) before the first generator run. Keep it distinct from the inspection scope. The generator registers both as optional scopes for each public client and writes `management_scope` into `mcp.json`. If the realm is already generated, use the existing-realm procedure below; do not discard its secrets. The ten management tool names below are reserved; do not use them as the three configurable inspection names.
+
+For an existing realm, do not regenerate its secrets. Add the separate optional client scope through issuer administration and assign it to both registered public clients. Add the same exact value as `management_scope` in the existing private `mcp.json`, preserve the other settings, and restart the control plane. Removing this setting disables the management catalog.
+
+In **Settings → Connected apps**, select the client and routes, then enable **Allow management of routes, playlists and outputs**. Review the permissions and approve. Management is off by default. Approval is once per client; permitted changes do not require returning to this page each time.
+
+Set `MCP_MANAGEMENT_SCOPE` to the exact registered value and sign in again requesting both scopes:
+
+```bash
+codex mcp login fluxomni --scopes "$MCP_SCOPE,$MCP_MANAGEMENT_SCOPE"
+```
+
+Your MCP client can also require its own tool approvals. Those are separate from Fluxomni permissions. If you trust this specific server and want to approve its tools once, Codex 0.162.0 supports a server-scoped setting. Edit the existing `[mcp_servers.fluxomni]` table from the earlier example: replace its `scopes` line and add `default_tools_approval_mode` before `[mcp_servers.fluxomni.oauth]`. Do not add another server table:
+
+```toml
+scopes = ["your-approved-inspection-scope", "your-approved-management-scope"]
+default_tools_approval_mode = "approve"
+```
+
+Use your actual scope values. This only changes Codex prompts for that server; it does not bypass Fluxomni's current role, scope, approval or route checks. You can keep prompting or set individual tool approval rules instead. See the [official configuration reference](https://learn.chatgpt.com/docs/config-file/config-reference).
+
+Also include both scopes in the client's saved `scopes` list. Approving management locally does not add a scope to an existing token. Existing read approvals remain read-only, and approving again does not revive earlier credentials.
+
+### Management tools
+
+The catalog contains typed tools around the normal application services:
+
+- `fluxomni_route` inspects a route, its sources and paginated outputs.
+- `fluxomni_save_route` creates or updates a route; `fluxomni_route_action` enables, disables or deletes it.
+- `fluxomni_files` lists or inspects library processing state. `fluxomni_import_file` queues a Google Drive file ID through the configured integration. It does not upload local files or fetch arbitrary URLs.
+- `fluxomni_delete_files` deletes unused library files using existing reference safeguards. It never forces removal from playlists or saved programs.
+- `fluxomni_playlist` reads ordered placements and the queue revision. `fluxomni_set_playlist` replaces the complete ordered queue to add, remove or reorder files.
+- `fluxomni_save_output` adds or edits an output; `fluxomni_output_action` enables, disables or deletes it.
+
+Tools return identifiers and bounded state without stored source/destination credentials, private paths or raw processing errors. A queued import is not a completed download. Saved configuration is not evidence of playback or destination acceptance.
+
+### Permission limits
+
+A selected-route approval can manage only those existing routes and their playlists and outputs. Creating routes and changing the shared library require an **all routes** management approval. Normal role and ownership rules still apply: Operators create routes they own, Viewers cannot manage configuration, and only Admins can delete library files. File-backed sources and playlists also obey library visibility rules.
+
+Revoke the approval to prevent further admission. Queued route writes recheck authority after their owning lock wait. An accepted library cleanup or import may finish after revocation. Revocation does not undo completed changes.
+
+### Readback and retries
+
+Read the complete playlist, including every page, before replacing it. Supply its current `expectedQueueRevision` and preserve placement IDs for existing entries. On a revision conflict, reload before saving. Existing entries whose catalog row is missing can still be removed or reordered; new missing media and hidden files are rejected.
+
+Route edits preserve omitted sources and node pin. Send `"pinnedMediaNodeId": null` to clear an existing pin and restore automatic placement. Stable source IDs preserve credentials and omitted enable/order settings. Repeated source IDs are rejected. Omitted pull URLs, SRT passphrases and SRT latency retain their existing values. Send explicit `null` to clear an SRT passphrase or restore default latency without replacing the source. Pull sources require RTMP(S) or HTTP(S) network URLs; use managed file IDs for file sources.
+
+Output saves require RTMP(S), SRT or Icecast network URLs with a host; file destinations are rejected. Output edits preserve an omitted network destination plus existing volume, audio and mixins. Existing managed recording outputs can still be enabled, disabled or deleted by ID; MCP cannot configure their file destination.
+
+Omitted route, source and output labels clear the label.
+
+Creates are not automatically retryable. After a timeout, disconnect or uncertain response, inspect the current routes, outputs, files or playlist before retrying. A response withheld after revocation does not prove an earlier admitted change failed. There is no separate preview, plan or apply tool.
 
 ## Web chat and lifecycle checks
 

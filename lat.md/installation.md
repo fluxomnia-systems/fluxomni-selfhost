@@ -246,3 +246,12 @@ The running database lease excludes recovery. Tokens start restricted browser en
 Existing deployments update matched images, issuer registrations and both private settings files together after a consistent database/configuration snapshot.
 
 No old account-link callback or fields remain. Public instructions require browser reauthentication and lifecycle checks before reopening access, with matched-snapshot rollback and explicit handling of security changes after that snapshot.
+
+
+## MCP management setup
+
+Optional management needs a separate issuer scope and explicit permission on the client's original local approval. Public instructions describe typed route, library, playlist and output tools and their existing role limits.
+
+The generator uses `--management-scope` for new realms; existing installations add the optional issuer scope and matching private `management_scope` without regenerating secrets. Client login requests both scopes. Selected-route approvals cannot create routes or change the shared library; library deletion remains Admin-only.
+
+The guide distinguishes saved state from playback, accepted imports from completion, playlist conflicts and uncertain create responses. Accepted cleanup can finish after revocation. No per-change approval journal or general GraphQL/shell access is introduced.
