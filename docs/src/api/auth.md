@@ -6,7 +6,7 @@ Without browser OIDC, `/api/auth/login` accepts the local username and password.
 
 With browser OIDC configured, sign in through the configured issuer in the operator UI. `/api/auth/login` cannot create a password session in that mode. See [unified sign-in and account enrollment](mcp.md#enroll-an-existing-local-account). The verified callback creates an opaque Fluxomni browser cookie; issuer email and role claims do not choose the local account or its permissions.
 
-MCP OAuth credentials work only at the configured MCP resource. They cannot authorize ordinary GraphQL or WebSocket requests. MCP approvals are read-only by default. An optional management scope and explicit client management approval allow [route, library, playlist and output changes](mcp.md#optional-management-access) within the current user and route permissions. No service-account credential is added.
+MCP OAuth credentials work only at the configured MCP resource. They cannot authorize ordinary GraphQL or WebSocket requests. MCP approvals are read-only by default. An optional management scope and explicit client management approval allow [route, library, playlist and output changes](mcp.md#enable-management-access) within the current user and route permissions. No service-account credential is added.
 
 ## Login
 
