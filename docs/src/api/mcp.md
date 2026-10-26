@@ -80,6 +80,16 @@ The generator creates no human account or password. Provision the issuer account
 
 Generate the bundle once for a new realm and preserve it. Startup import does not replace an existing realm. Regenerating confidential secrets without updating their issuer registrations will break browser sign-in and introspection.
 
+### Online refresh and existing realms
+
+MCP uses rotating online refresh tokens. New bundles exclude `offline_access` from issuer discovery and leave it unassigned to clients. Choose inspection and management scope names other than `openid`, `basic` or `offline_access`.
+
+For a realm created before this correction, use Keycloak Admin Console to select the deployment realm, then **Client scopes → offline_access**. Turn off **Include in OpenID Provider Metadata** and save. Keep `offline_access` absent from both default and optional scopes of the registered MCP clients. Preserve existing users, sessions, client secrets and private bundle files. A startup import will not update an existing realm.
+
+Check the realm's `/.well-known/openid-configuration`: `scopes_supported` must omit `offline_access`, while `grant_types_supported` must still include `refresh_token`. Reconnect clients that cached old discovery. Codex CLI 0.162.0 can otherwise add the advertised but ungranted scope during refresh and fail with `invalid_scope`; the [upstream SDK issue](https://github.com/modelcontextprotocol/rust-sdk/issues/1330) tracks that behavior.
+
+Renewal keeps the original local approval and route restrictions. Provider logout ends online refresh authority. Do not assign offline access or extend session lifetimes to bypass a refresh failure.
+
 ## Configure Compose and HTTPS
 
 Add an operator-owned Compose override to your existing installation. It enables the control-plane resource and forwards its exact paths through the frontend:
