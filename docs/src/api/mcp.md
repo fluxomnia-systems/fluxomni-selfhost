@@ -292,6 +292,17 @@ Set `MCP_MANAGEMENT_SCOPE` to the exact registered value and sign in again reque
 codex mcp login fluxomni --scopes "$MCP_SCOPE,$MCP_MANAGEMENT_SCOPE"
 ```
 
+Your MCP client can also require its own tool approvals. Those are separate from Fluxomni permissions. If you trust this specific server and want to approve its tools once, Codex 0.162.0 supports this server-scoped setting in the existing configuration:
+
+```toml
+[mcp_servers.fluxomni]
+url = "https://stream.example.com/mcp"
+scopes = ["your-approved-inspection-scope", "your-approved-management-scope"]
+default_tools_approval_mode = "approve"
+```
+
+Use your actual scope values. This only changes Codex prompts for that server; it does not bypass Fluxomni's current role, scope, approval or route checks. You can keep prompting or set individual tool approval rules instead. See the [official configuration reference](https://learn.chatgpt.com/docs/config-file/config-reference).
+
 Also include both scopes in the client's saved `scopes` list. Approving management locally does not add a scope to an existing token. Existing read approvals remain read-only, and approving again does not revive earlier credentials.
 
 ### Management tools
