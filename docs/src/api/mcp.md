@@ -38,22 +38,30 @@ Use Keycloak's production PostgreSQL configuration. Preserve and back up that da
 
 Choose an absolute output directory outside the Fluxomni checkout. The directory must not already exist. The generator creates it with owner-only access.
 
-Set the values below to your actual installation. The three tool names are ordered as context, route listing and readiness. For Codex, an explicit loopback callback port must match its configured listener port.
+Set the values below to your actual installation. Choose management access before generating this new realm: leave `MCP_MANAGEMENT_SCOPE` empty for read-only access, or set a distinct management scope. The optional flag is included only when that value is set.
+
+The three tool names are ordered as context, route listing and readiness. For Codex, an explicit loopback callback port must match its configured listener port.
 
 ```bash
 MCP_ISSUER=https://auth.example.com/realms/fluxomni
 MCP_RESOURCE=https://stream.example.com/mcp
 MCP_SETUP_DIR=/absolute/private/path/fluxomni-mcp
 MCP_SCOPE=your-approved-inspection-scope
+MCP_MANAGEMENT_SCOPE=""
 MCP_CONTEXT_TOOL=your_context_tool
 MCP_ROUTES_TOOL=your_routes_tool
 MCP_READINESS_TOOL=your_readiness_tool
 MCP_WEB_CALLBACK=https://chatgpt.com/connector_platform_oauth_redirect
+MCP_MANAGEMENT_ARGS=()
+if [[ -n "$MCP_MANAGEMENT_SCOPE" ]]; then
+  MCP_MANAGEMENT_ARGS=(--management-scope "$MCP_MANAGEMENT_SCOPE")
+fi
 
 python3 /absolute/path/to/fluxomni/scripts/mcp_issuer_setup.py \
   --issuer "$MCP_ISSUER" \
   --resource "$MCP_RESOURCE" \
   --scope "$MCP_SCOPE" \
+  "${MCP_MANAGEMENT_ARGS[@]}" \
   --tool-names "$MCP_CONTEXT_TOOL" "$MCP_ROUTES_TOOL" "$MCP_READINESS_TOOL" \
   --local-client-id fluxomni-codex \
   --local-callback http://127.0.0.1:39155/callback \
@@ -257,6 +265,7 @@ mcp_2026_07_28 = true
 
 [mcp_servers.fluxomni]
 url = "https://stream.example.com/mcp"
+scopes = ["your-approved-inspection-scope"]
 
 [mcp_servers.fluxomni.oauth]
 client_id = "fluxomni-codex"
@@ -280,7 +289,7 @@ Ask Codex for your current user, visible routes and playlist readiness for one l
 
 Management requires a build containing [the MCP management implementation](https://github.com/fluxomnia-systems/fluxomni/issues/440). Deploy the matching frontend and control plane. It is disabled unless private MCP settings name a separate management scope.
 
-For a new realm, add `--management-scope your-approved-management-scope` to the generator command above. Keep it distinct from the inspection scope. The generator registers both as optional scopes for each public client and writes `management_scope` into `mcp.json`. The ten management tool names below are reserved; do not use them as the three configurable inspection names.
+For a new realm, choose the optional management scope in [Generate private settings](#generate-private-settings) before the first generator run. Keep it distinct from the inspection scope. The generator registers both as optional scopes for each public client and writes `management_scope` into `mcp.json`. If the realm is already generated, use the existing-realm procedure below; do not discard its secrets. The ten management tool names below are reserved; do not use them as the three configurable inspection names.
 
 For an existing realm, do not regenerate its secrets. Add the separate optional client scope through issuer administration and assign it to both registered public clients. Add the same exact value as `management_scope` in the existing private `mcp.json`, preserve the other settings, and restart the control plane. Removing this setting disables the management catalog.
 
@@ -292,11 +301,9 @@ Set `MCP_MANAGEMENT_SCOPE` to the exact registered value and sign in again reque
 codex mcp login fluxomni --scopes "$MCP_SCOPE,$MCP_MANAGEMENT_SCOPE"
 ```
 
-Your MCP client can also require its own tool approvals. Those are separate from Fluxomni permissions. If you trust this specific server and want to approve its tools once, Codex 0.162.0 supports this server-scoped setting in the existing configuration:
+Your MCP client can also require its own tool approvals. Those are separate from Fluxomni permissions. If you trust this specific server and want to approve its tools once, Codex 0.162.0 supports a server-scoped setting. Edit the existing `[mcp_servers.fluxomni]` table from the earlier example: replace its `scopes` line and add `default_tools_approval_mode` before `[mcp_servers.fluxomni.oauth]`. Do not add another server table:
 
 ```toml
-[mcp_servers.fluxomni]
-url = "https://stream.example.com/mcp"
 scopes = ["your-approved-inspection-scope", "your-approved-management-scope"]
 default_tools_approval_mode = "approve"
 ```
@@ -328,7 +335,7 @@ Revoke the approval to prevent further admission. Queued route writes recheck au
 
 Read the complete playlist, including every page, before replacing it. Supply its current `expectedQueueRevision` and preserve placement IDs for existing entries. On a revision conflict, reload before saving. Existing entries whose catalog row is missing can still be removed or reordered; new missing media and hidden files are rejected.
 
-Route edits preserve omitted sources and node pin. Send `"pinnedMediaNodeId": null` to clear an existing pin and restore automatic placement. Stable source IDs preserve credentials and omitted enable/order settings. Repeated source IDs are rejected. Omitted pull URLs and SRT passphrases retain their existing values. Pull sources require RTMP(S) or HTTP(S) network URLs; use managed file IDs for file sources.
+Route edits preserve omitted sources and node pin. Send `"pinnedMediaNodeId": null` to clear an existing pin and restore automatic placement. Stable source IDs preserve credentials and omitted enable/order settings. Repeated source IDs are rejected. Omitted pull URLs, SRT passphrases and SRT latency retain their existing values. Send explicit `null` to clear an SRT passphrase or restore default latency without replacing the source. Pull sources require RTMP(S) or HTTP(S) network URLs; use managed file IDs for file sources.
 
 Output saves require RTMP(S), SRT or Icecast network URLs with a host; file destinations are rejected. Output edits preserve an omitted network destination plus existing volume, audio and mixins. Existing managed recording outputs can still be enabled, disabled or deleted by ID; MCP cannot configure their file destination.
 
