@@ -19,6 +19,8 @@ Put its SHA-256 hex digest in a JSON object keyed by the exact media-node ID. Mo
 
 Set `FLUXOMNI_CONTROL_PLANE_RPC_BIND=0.0.0.0:50052` inside the private Compose network. Keep RPC off public host ports. Mount a server certificate and key through `FLUXOMNI_CONTROL_TLS_CERT` and `FLUXOMNI_CONTROL_TLS_KEY`. The leaf certificate must have `CA:FALSE`, server authentication usage, and a DNS SAN matching the Compose service name `control-plane`. Mount its issuing CA on the media node through `FLUXOMNI_CONTROL_TLS_CA` and set `FLUXOMNI_CONTROL_PLANE_RPC_ENDPOINT=https://control-plane:50052`. Confirm that the media node logs `Registered media node with control plane`.
 
+The single-node RPC override uses `!reset` and requires Docker Compose 2.24.4 or later. Run `docker compose version --short` and upgrade Compose before applying this override if your version is older.
+
 For a single media node, put the files under `./rpc` and save this example as `docker-compose.rpc.yml`. In `credential-hashes.json`, use the same node ID as `FLUXOMNI_MEDIA_NODE_ID` in `.env`. Make the files readable by the process in each container and restrict host access to the private key and node credential.
 
 ```yaml
