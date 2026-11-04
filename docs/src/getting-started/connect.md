@@ -81,12 +81,14 @@ services:
 
 Set `FLUXOMNI_PUBLIC_URL` in `.env` to the same origin as `gateway.json`. If you already proxy a native MCP path, retain its existing literal matchers and add `/mcp-gateway/*` to the same space-separated value.
 
-Validate the Compose files and apply them to the frontend and control plane:
+For a fresh installation with no active or previously reserved routes, validate the Compose files and start the stack:
 
 ```sh
 docker compose -f docker-compose.yml -f docker-compose.rpc.yml -f docker-compose.connect.yml config --quiet
 docker compose -f docker-compose.yml -f docker-compose.rpc.yml -f docker-compose.connect.yml up -d
 ```
+
+For an existing installation, follow [Drained maintenance](capacity-upgrades.md) before applying these overrides. Disable affected routes and wait for reservations to reach zero. Apply the Compose changes during the drained maintenance window and follow the guide to restore routes. Adding the RPC override can recreate the media node as well as the control plane.
 
 If your deployment does not use the single-node RPC override above, omit that file or use your existing RPC override. Include any existing site override files in both commands. Pin the image version during verification and record the resolved image digests.
 
