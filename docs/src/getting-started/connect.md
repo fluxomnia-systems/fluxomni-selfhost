@@ -4,7 +4,18 @@ Use this guide to enroll a public HTTPS Installation and approve read access fro
 
 Start with the distributed Compose installation. Confirm the control plane is healthy and that a named local Admin can sign in. A password-only Installation can use Connect. Local OIDC remains an independent option.
 
-For an edge build that requires a node credential, assign each media node its own random credential file. Create it with `openssl rand -hex 32 | tr -d '\n'` under `umask 077`. Put its SHA-256 hex digest in a JSON object keyed by the exact media-node ID. Mount the digest map read-only on the control plane and set `FLUXOMNI_NODE_CREDENTIALS_FILE` to the mounted path. Mount each original credential read-only only on its media node and set `FLUXOMNI_NODE_CREDENTIAL_FILE`.
+For an edge build that requires a node credential, assign each media node its own random credential file. Create the credential file from the Compose project directory:
+
+```sh
+(
+  umask 077
+  mkdir -p ./rpc
+  set -C
+  openssl rand -hex 32 | tr -d '\n' > ./rpc/node-credential
+)
+```
+
+Put its SHA-256 hex digest in a JSON object keyed by the exact media-node ID. Mount the digest map read-only on the control plane and set `FLUXOMNI_NODE_CREDENTIALS_FILE` to the mounted path. Mount each original credential read-only only on its media node and set `FLUXOMNI_NODE_CREDENTIAL_FILE`.
 
 Set `FLUXOMNI_CONTROL_PLANE_RPC_BIND=0.0.0.0:50052` inside the private Compose network. Keep RPC off public host ports. Mount a server certificate and key through `FLUXOMNI_CONTROL_TLS_CERT` and `FLUXOMNI_CONTROL_TLS_KEY`. The leaf certificate must have `CA:FALSE`, server authentication usage, and a DNS SAN matching the Compose service name `control-plane`. Mount its issuing CA on the media node through `FLUXOMNI_CONTROL_TLS_CA` and set `FLUXOMNI_CONTROL_PLANE_RPC_ENDPOINT=https://control-plane:50052`. Confirm that the media node logs `Registered media node with control plane`.
 
