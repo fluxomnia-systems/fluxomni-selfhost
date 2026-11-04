@@ -82,11 +82,11 @@ Set `FLUXOMNI_PUBLIC_URL` in `.env` to the same origin as `gateway.json`. If you
 Validate the Compose files and apply them to the frontend and control plane:
 
 ```sh
-docker compose -f docker-compose.yml -f docker-compose.connect.yml config --quiet
-docker compose -f docker-compose.yml -f docker-compose.connect.yml up -d
+docker compose -f docker-compose.yml -f docker-compose.rpc.yml -f docker-compose.connect.yml config --quiet
+docker compose -f docker-compose.yml -f docker-compose.rpc.yml -f docker-compose.connect.yml up -d
 ```
 
-Include any existing site override files in both commands. Pin the image version during verification and record the resolved image digests.
+If your deployment does not use the single-node RPC override above, omit that file or use your existing RPC override. Include any existing site override files in both commands. Pin the image version during verification and record the resolved image digests.
 
 In Settings → Connected Apps, start registration and copy the registration details. Sign in to Fluxomni Connect and submit them in Installations. Return to the local screen to review and confirm the account. Submit the same registration again. The portal reports Installation registered when the registry activates it.
 
