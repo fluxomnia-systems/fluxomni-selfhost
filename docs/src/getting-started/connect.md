@@ -1,6 +1,6 @@
 # Connect a self-hosted Fluxomni Installation
 
-Use this guide to enroll a public HTTPS Installation and approve read access from Codex. A named local Admin must complete ownership registration.
+Use this guide to enroll a public HTTPS Installation and approve read access for an AI agent. A named local Admin must complete ownership registration.
 
 Start with the distributed Compose installation. Confirm the control plane is healthy and that a named local Admin can sign in. A password-only Installation can use Connect. Local OIDC remains an independent option.
 
@@ -90,14 +90,14 @@ Include any existing site override files in both commands. Pin the image version
 
 In Settings → Connected Apps, start registration and copy the registration details. Sign in to Fluxomni Connect and submit them in Installations. Return to the local screen to review and confirm the account. Submit the same registration again. The portal reports Installation registered when the registry activates it.
 
-Use the MCP URL supplied for your Connect environment. In Codex, add the server and sign in:
+Use an AI agent that supports remote MCP over HTTPS with OAuth. Add the MCP URL supplied for your Connect environment and sign in using the agent’s setup flow. For example, in Codex CLI:
 
 ```sh
 codex mcp add fluxomni --url https://connect.example/mcp
 codex mcp login fluxomni
 ```
 
-Replace the example URL with your environment's MCP endpoint. In a Codex conversation, ask it to call `fluxomni_begin_link`. Paste the handoff token and the local linking details into the portal, then prepare the request. Review and approve read access locally. Submit the signed receipt in the portal and ask the same Codex client to call `fluxomni_complete_link` with the displayed generation. Repeat the approval for each client.
+Replace the example URL with your environment's MCP endpoint. In a conversation with your AI agent, ask it to call `fluxomni_begin_link`. Paste the handoff token and the local linking details into the portal, then prepare the request. Review and approve read access locally. Submit the signed receipt in the portal and ask the same AI agent connection to call `fluxomni_complete_link` with the displayed generation. Repeat the approval for each agent connection.
 
 To remove access, revoke the specific approval locally and submit the revocation notification. Verify that a new read is denied. If the Installation ownership key is lost, register with a new Installation ID and approve each client again.
 
@@ -107,7 +107,7 @@ To remove access, revoke the specific approval locally and submit the revocation
 - If starting registration fails after sign-in, check that the control-plane process owns its data directory and that the gateway key directory has mode 0700. This can fail when a host user creates a bind mount and the container runs under a different UID.
 - If registration cannot verify the Installation, check that the public HTTPS origin is reachable, matches the JSON exactly and serves the gateway ownership endpoint without a redirect or browser challenge.
 - Keep the local browser session that started registration until you finish local confirmation. If the portal response is lost, submit the same registration again with the same Connect account. When the portal has already retained a signed callback, it reserves that registration for exact retry until 24 hours after the challenge expires. A fresh registration for that Installation or origin may be rejected during this window. If you can no longer confirm the original registration, wait for the reservation to expire before creating a replacement.
-- If an AI client can sign in but cannot inspect an Installation, check that the same client completed the link and that its local approval is active. Review the local role and route scope before changing the approval.
+- If an AI agent can sign in but cannot inspect an Installation, check that the same agent connection completed the link and that its local approval is active. Review the local role and route scope before changing the approval.
 
 ## Clean-install evidence
 
