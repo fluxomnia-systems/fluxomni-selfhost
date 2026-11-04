@@ -1,16 +1,16 @@
 # User Guide
 
-Use the **Control Surface** in your browser to operate Fluxomni Studio. Check route health, see which source is on air, and manage outputs, playlists, media nodes, and local users.
+Use the **Control Surface** in your browser to operate Fluxomni. Check route health, see which source is on air, and manage outputs, playlists, media nodes, and local users.
 
-This guide covers daily use of the Control Surface after you install Fluxomni Studio. For installation and deployment, see the [Quick Start](../getting-started/quick-start.md) section.
+This guide covers daily use of the Control Surface after you install Fluxomni. For installation and deployment, see the [Quick Start](../getting-started/quick-start.md) section.
 
 ## Key Concepts
 
 **Route** — a named streaming configuration that connects sources to destinations. Open its workspace to manage sources, outputs, playlists, and playback. The active source can be live media, a playlist, or a file fallback.
 
-**Input** — the endpoint that receives your source stream. Fluxomni Studio generates a unique URL for each route depending on the chosen protocol (RTMP, SRT, or WebRTC). Point your encoder (OBS, FFmpeg, hardware encoder) at this URL.
+**Input** — the endpoint that receives your source stream. Fluxomni generates a unique URL for each route depending on the chosen protocol (RTMP, SRT, or WebRTC). Point your encoder (OBS, FFmpeg, hardware encoder) at this URL.
 
-**Output** — a destination where Fluxomni Studio sends the incoming stream. Outputs are typically RTMP URLs for platforms like YouTube, Twitch, Facebook Live, or custom CDN endpoints.
+**Output** — a destination where Fluxomni sends the incoming stream. Outputs are typically RTMP URLs for platforms like YouTube, Twitch, Facebook Live, or custom CDN endpoints.
 
 **Media Node** — a server that processes media (transcoding, relaying, file playback). A single-host install runs one media node automatically. Larger deployments can attach multiple media nodes across different servers.
 
@@ -24,7 +24,7 @@ This guide covers daily use of the Control Surface after you install Fluxomni St
 
 ![Routes list with the navigation menu visible](../images/user-guide/routes-list.jpg)
 
-The Control Surface has a sidebar on the left. It shows the Fluxomni Studio logo, version badge, theme toggle, navigation menu, sign-out action, and live system metrics. The area on the right shows the current page.
+The Control Surface has a sidebar on the left. It shows the Fluxomni logo, version badge, theme toggle, navigation menu, sign-out action, and live system metrics. The area on the right shows the current page.
 
 ### Operate
 
@@ -51,5 +51,5 @@ The bottom of the sidebar shows real-time CPU, memory, and network usage for the
 - [Routes](routes.md) — learn how to create and operate routes
 - [Artifacts](artifacts.md) — upload and reuse source files across routes
 - [Fleet](fleet.md) — understand media node management
-- [Settings](settings.md) — configure your Fluxomni Studio instance
+- [Settings](settings.md) — configure your Fluxomni instance
 - [Export / Import](export-import.md) — move or restore route definitions

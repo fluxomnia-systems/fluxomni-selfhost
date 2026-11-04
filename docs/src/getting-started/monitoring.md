@@ -1,6 +1,6 @@
 # Monitoring
 
-Fluxomni Studio provides built-in system metrics in the Control Surface sidebar
+Fluxomni provides built-in system metrics in the Control Surface sidebar
 and supports exporting traces via OpenTelemetry (OTLP).
 
 ## Built-in metrics
@@ -41,7 +41,7 @@ and fleet nodes. Alert severity levels:
 
 ## OpenTelemetry (OTLP)
 
-Fluxomni Studio can export traces to an OpenTelemetry collector. Set the
+Fluxomni can export traces to an OpenTelemetry collector. Set the
 endpoint in `.env`:
 
 ```bash
@@ -84,7 +84,7 @@ Point `FLUXOMNI_OTLP_ENDPOINT` at the collector's HTTP receiver.
 
 ## Log management
 
-By default, Fluxomni Studio writes logs to stdout. Docker captures these logs. View logs
+By default, Fluxomni writes logs to stdout. Docker captures these logs. View logs
 with:
 
 ```bash

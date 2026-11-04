@@ -1,6 +1,6 @@
 # Roadmap
 
-This page separates current Fluxomni Studio features from planned work. Use the available features to assess the product today; planned items do not have delivery dates.
+This page separates current Fluxomni features from planned work. Use the available features to assess the product today; planned items do not have delivery dates.
 
 We do not list dates because priorities change with customer deployments, Design Partner feedback, and production incidents. For current work, see the [fluxomni-selfhost issue tracker](https://github.com/fluxomnia-systems/fluxomni-selfhost/issues).
 

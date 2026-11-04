@@ -14,7 +14,7 @@ export default {
     }
 
     return new Response([
-      "Fluxomni Studio Installer", "",
+      "Fluxomni Installer", "",
       "Usage: curl -fsSL https://install.fluxomni.io | bash", "",
       "Pinned version: curl -fsSL https://install.fluxomni.io/v26.3.2 | bash", "",
       "Edge: curl -fsSL https://install.fluxomni.io | FLUXOMNI_VERSION=edge bash", "",

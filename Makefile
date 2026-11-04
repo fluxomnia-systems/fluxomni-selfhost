@@ -12,7 +12,7 @@ MARKDOWNLINT ?= markdownlint-cli2
 .PHONY: help check.tools.docs build serve clean lint lint.ci screenshots api.docs.sync.check api.docs.sync.update release.sync.check release.sync.update docs.build docs.serve docs.clean docs.lint.links docs.lint docs.lint.ci
 
 help:
-	@echo "Fluxomni Studio Self-Hosted: common targets"
+	@echo "Fluxomni Self-Hosted: common targets"
 	@echo ""
 	@echo "  make build          Build mdBook docs"
 	@echo "  make serve          Serve docs locally (PORT=3000 by default)"

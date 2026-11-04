@@ -1,6 +1,6 @@
-# How to Deploy Fluxomni Studio to VScale/Selectel Cloud
+# How to Deploy Fluxomni to VScale/Selectel Cloud
 
-This guide shows the recommended setup for Fluxomni Studio on [VScale/Selectel Cloud].
+This guide shows the recommended setup for Fluxomni on [VScale/Selectel Cloud].
 
 This provider is a good option for users who need servers in Moscow or St. Petersburg.
 
@@ -58,7 +58,7 @@ If you did not provide an SSH key, you will be given a username and password. Yo
 
 ![Server Login and Password](../images/vscale_1.5.1.png)
 
-### 1.6. Install Fluxomni Studio
+### 1.6. Install Fluxomni
 
 Connect to the server with an [SSH] client and run the installation script.
 
@@ -74,7 +74,7 @@ ssh root@your_server_ip "curl -fsSL https://install.fluxomni.io | WITH_INITIAL_U
 
 If you are using password authentication, you will be prompted to enter the password from the previous step.
 
-## 2. Access Fluxomni Studio
+## 2. Access Fluxomni
 
 Installation may take 5-15 minutes. When it finishes, open the server's IP address in your browser.
 
@@ -83,7 +83,7 @@ Installation may take 5-15 minutes. When it finishes, open the server's IP addre
 Current releases serve the operator UI from the `frontend` container.
 Use `/routes` for route management and `/fleet` to inspect attached media nodes.
 
-> **NOTE**: Fluxomni Studio uses `http://` by default. For production, we strongly recommend a domain name and a reverse proxy, such as Nginx or Caddy, to provide secure access over `https://`.
+> **NOTE**: Fluxomni uses `http://` by default. For production, we strongly recommend a domain name and a reverse proxy, such as Nginx or Caddy, to provide secure access over `https://`.
 
 Next, complete [First Stream](../getting-started/first-stream.md) to create a protected operator account and verify one live route.
 

@@ -1,22 +1,22 @@
-# Fluxomni Studio
+# Fluxomni
 
 <p align="center">
-  <img src="images/logo.webp" alt="Fluxomni Studio Logo" width="10%">
+  <img src="images/logo.webp" alt="Fluxomni Logo" width="10%">
 </p>
 
-Fluxomni Studio runs live streams and file-based channels on your own servers. Send one feed to several destinations using RTMP, SRT, or Icecast. Use the browser UI to manage routes, playlists, outputs, and media nodes.
+Fluxomni runs live streams and file-based channels on your own servers. Send one feed to several destinations using RTMP, SRT, or Icecast. Use the Fluxomni web app to manage routes, playlists, outputs, and media nodes.
 
 This repository contains self-host installation and deployment documentation only.
 
 ## Install in one command
 
-Install Fluxomni Studio:
+Install Fluxomni:
 
 ```bash
 curl -fsSL https://install.fluxomni.io | bash
 ```
 
-By default, the installer uses the newest stable release and installs Fluxomni Studio on one server.
+By default, the installer uses the newest stable release and installs Fluxomni on one server.
 
 Use `FLUXOMNI_VERSION=edge` only when you want the newest main-branch build. Use a canonical public tag like `v26.3.2` when you need a pinned stable release. Retained image tags require a separately reviewed recovery procedure when state has migrated.
 
@@ -38,7 +38,7 @@ Read the [release notes](changelog.md) and [upgrade guide](getting-started/upgra
 
 ## Documentation Sections
 
-- [Quick Start](getting-started/quick-start.md) — install Fluxomni Studio
+- [Quick Start](getting-started/quick-start.md) — install Fluxomni
 - [First Stream](getting-started/first-stream.md) — create your first route, publish a stream, check playback, and back up your setup
 - [Deployment](deployment/overview.md) — cloud provider guides and server setup
 - [User Guide](user-guide/overview.md) — operate the Control Surface, including Attention, Routes, Fleet, and settings

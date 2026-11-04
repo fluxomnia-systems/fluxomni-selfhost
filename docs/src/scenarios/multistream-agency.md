@@ -6,10 +6,10 @@ Agencies and teams streaming for several clients to YouTube, Twitch, Facebook, o
 
 ## What you'll build
 
-A single-host Fluxomni Studio install with one route per client. The example relays media without re-encoding it. Size the host for your actual inputs, output count, and bitrate before adding clients.
+A single-host Fluxomni install with one route per client. The example relays media without re-encoding it. Size the host for your actual inputs, output count, and bitrate before adding clients.
 
 ```text
-1 OBS per client → Fluxomni Studio single-host → fan-out to { YouTube, Twitch, Custom RTMP }
+1 OBS per client → Fluxomni single-host → fan-out to { YouTube, Twitch, Custom RTMP }
 ```
 
 ## Setup

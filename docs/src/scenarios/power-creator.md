@@ -6,10 +6,10 @@ Creators and small teams that want to stream to several platforms from their own
 
 ## What you'll build
 
-A single-host Fluxomni Studio install. OBS sends one RTMP feed to Fluxomni Studio, which relays it to YouTube, Twitch, Kick, Facebook, or custom RTMP endpoints.
+A single-host Fluxomni install. OBS sends one RTMP feed to Fluxomni, which relays it to YouTube, Twitch, Kick, Facebook, or custom RTMP endpoints.
 
 ```text
-OBS → Fluxomni Studio (single VM) → { YouTube, Twitch, Kick, Facebook, Custom RTMP }
+OBS → Fluxomni (single VM) → { YouTube, Twitch, Kick, Facebook, Custom RTMP }
 ```
 
 ## Setup
@@ -17,7 +17,7 @@ OBS → Fluxomni Studio (single VM) → { YouTube, Twitch, Kick, Facebook, Custo
 1. Provision a small cloud VM. See [Deployment guides](../deployment/overview.md).
 2. Install: `curl -fsSL https://install.fluxomni.io | bash`.
 3. Complete [First Stream](../getting-started/first-stream.md) to create a protected operator account, route, and first output.
-4. Set OBS to use the route's publish URL. Fluxomni Studio sends the stream to every platform.
+4. Set OBS to use the route's publish URL. Fluxomni sends the stream to every platform.
 
 ## Cost and scale notes
 

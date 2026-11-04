@@ -1,7 +1,7 @@
 import { expect, type Page } from '@playwright/test';
 
 /**
- * Waits until the Fluxomni Studio shell is fully rendered.
+ * Waits until the Fluxomni web app is fully rendered.
  *
  * Use this before screenshots and before any recorded video action. It checks
  * the sidebar, branding, primary nav, main area, fonts, and stable layout so

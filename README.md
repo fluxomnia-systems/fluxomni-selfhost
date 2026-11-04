@@ -1,10 +1,10 @@
-# Fluxomni Studio Self-Hosted
+# Fluxomni Self-Hosted
 
 <p align="center">
-  <img src="docs/src/images/logo.webp" alt="Fluxomni Studio Logo" width="10%">
+  <img src="docs/src/images/logo.webp" alt="Fluxomni Logo" width="10%">
 </p>
 
-Fluxomni Studio runs live streams and file-based channels on your own servers. Send one feed to several destinations using RTMP, SRT, or Icecast. Use the browser UI to manage routes, playlists, outputs, and media nodes.
+Fluxomni runs live streams and file-based channels on your own servers. Send one feed to several destinations using RTMP, SRT, or Icecast. Use the Fluxomni web app to manage routes, playlists, outputs, and media nodes.
 
 This repository contains the files for self-hosted installs. Linux and macOS are supported on x64 and ARM64. Windows is supported through WSL2 with Ubuntu.
 
@@ -37,7 +37,7 @@ After installation:
 
 ### Self-Hosted Stack
 
-Best for most users. Installs Fluxomni Studio on one server.
+Best for most users. Installs Fluxomni on one server.
 
 ```bash
 curl -fsSL https://install.fluxomni.io | bash
@@ -82,7 +82,7 @@ For the default self-host setup, the installer:
 - installs Docker automatically on supported Debian and Ubuntu hosts if needed
 - downloads the correct `docker-compose.yml` and `.env.example`
 - creates or updates `.env` in place
-- pulls and starts Fluxomni Studio
+- pulls and starts Fluxomni
 - preserves your existing `data/` directory on reruns
 - checks that the local services start before reporting success
 
@@ -92,7 +92,7 @@ The web UI is included in the default install.
 
 | Install type | Default directory | Main services |
 | --- | --- | --- |
-| Self-hosted stack | `~/fluxomni` | Fluxomni Studio |
+| Self-hosted stack | `~/fluxomni` | Fluxomni |
 | Standalone media node | `~/fluxomni-media-node` | `media-node` |
 
 The installer manages:
@@ -197,7 +197,7 @@ Useful local commands:
 - `make serve` - serve the docs locally
 - `make lint` - build docs, check local Markdown links, and run markdownlint when available
 - `make lint.ci` - strict CI docs lint; requires `markdownlint-cli2`
-- `make screenshots` - refresh user-guide page and guided-flow screenshots from a running Fluxomni Studio instance
+- `make screenshots` - refresh user-guide page and guided-flow screenshots from a running Fluxomni instance
 
 Compatibility aliases still exist for the older `make docs.build`, `make docs.serve`, `make docs.lint`, and `make docs.lint.ci` targets.
 

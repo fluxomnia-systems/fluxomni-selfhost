@@ -1,6 +1,6 @@
 # Fleet
 
-The Fleet page (`/fleet`) lists all media nodes attached to your Fluxomni Studio instance. Use it to check node health, capacity, and cached artifacts.
+The Fleet page (`/fleet`) lists all media nodes attached to your Fluxomni instance. Use it to check node health, capacity, and cached artifacts.
 
 ## Fleet Overview
 

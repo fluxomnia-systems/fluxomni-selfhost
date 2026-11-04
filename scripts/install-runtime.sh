@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Fluxomni Studio self-host installer.
+# Fluxomni self-host installer.
 # Downloads compose assets from this repository and starts the stack.
 
 set -euo pipefail
@@ -1216,7 +1216,7 @@ stop_capacity_updater() {
   fi
 }
 
-echo "Installing Fluxomni Studio (${FLUXOMNI_INSTALL_TARGET}) to ${FLUXOMNI_DIR}"
+echo "Installing Fluxomni (${FLUXOMNI_INSTALL_TARGET}) to ${FLUXOMNI_DIR}"
 
 validate_install_target
 validate_capacity_maintenance
@@ -1631,7 +1631,7 @@ HTTP_PORT="${HTTP_PORT:-80}"
 
 echo
 rm -f "${FLUXOMNI_DIR}/.install-pending"
-echo "Fluxomni Studio is ready"
+echo "Fluxomni is ready"
 echo "Web UI: $(derive_browser_http_url "$HOST" "$HTTP_PORT")"
 echo "RTMP : rtmp://${MEDIA_HOST}:1935/app"
 echo "Data : ${FLUXOMNI_DIR}/data"

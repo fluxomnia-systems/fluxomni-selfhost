@@ -1,6 +1,6 @@
 # Export / Import
 
-Use **Export / Import** to move route definitions between Fluxomni Studio instances, restore route settings you have reviewed, or save a copy before major changes.
+Use **Export / Import** to move route definitions between Fluxomni instances, restore route settings you have reviewed, or save a copy before major changes.
 
 **Export / Import** is a sidebar action under **Control**, not a separate page. Select it to open the modal.
 
@@ -17,7 +17,7 @@ Use an export before changing many routes or when preparing a migration. The exp
 3. Select the import options, then preview the proposed changes.
 4. Review every route, settings change, warning, and error before applying.
 
-The preview simulates changes before Fluxomni Studio saves them. Outputs are matched by destination URL, so changing a destination can appear as one output removed and another created.
+The preview simulates changes before Fluxomni saves them. Outputs are matched by destination URL, so changing a destination can appear as one output removed and another created.
 
 ## Apply changes safely
 

@@ -1,6 +1,6 @@
 # First Stream
 
-Use this tutorial after [installing Fluxomni Studio](quick-start.md) to create a protected operator account, accept one RTMP stream, send it to one destination, and confirm that it is live.
+Use this tutorial after [installing Fluxomni](quick-start.md) to create a protected operator account, accept one RTMP stream, send it to one destination, and confirm that it is live.
 
 ## Before you begin
 
@@ -27,7 +27,7 @@ The first saved user becomes an Admin and enables named-user sign-in. Keep the c
 
 ![The Create Route dialog](../images/user-guide/create-route.jpg)
 
-After Fluxomni Studio assigns the route to its media node, open the route workspace. In **Routing**, use the copy control in the input lane to copy the generated RTMP publish address.
+After Fluxomni assigns the route to its media node, open the route workspace. In **Routing**, use the copy control in the input lane to copy the generated RTMP publish address.
 
 ## Publish from OBS
 
@@ -78,7 +78,7 @@ A real platform destination can begin receiving the stream as soon as the encode
 
 ![The route workspace after an output has been added](../images/user-guide/flows/add-output-3-added.jpg)
 
-Fluxomni Studio supports RTMP/RTMPS, SRT, Icecast, and file output destinations. Use an RTMP or RTMPS destination for a typical streaming platform.
+Fluxomni supports RTMP/RTMPS, SRT, Icecast, and file output destinations. Use an RTMP or RTMPS destination for a typical streaming platform.
 
 ## Verify the stream
 

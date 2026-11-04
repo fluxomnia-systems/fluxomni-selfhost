@@ -1,6 +1,6 @@
 # Architecture
 
-Fluxomni Studio runs as separate services: the **frontend**, the
+Fluxomni runs as separate services: the **frontend**, the
 **control-plane**, and one or more **media nodes**.
 
 ## Components
@@ -41,7 +41,7 @@ back to the control-plane over its published gRPC port (TCP 50052).
 ### SRS (Simple Realtime Server)
 
 Each media node includes an [SRS](https://ossrs.io) instance that handles
-the RTMP, HLS, SRT, and WebRTC protocols. Fluxomni Studio
+the RTMP, HLS, SRT, and WebRTC protocols. Fluxomni
 manages SRS configuration and lifecycle automatically. Operators do not
 interact with SRS directly.
 
