@@ -28,6 +28,7 @@
 
 - [Configuration](getting-started/configuration.md)
   - [Reverse Proxy & TLS](getting-started/reverse-proxy.md)
+  - [Fluxomni Connect](getting-started/connect.md)
   - [Private Access & Tunnels](getting-started/private-access.md)
 - [Capacity Ledger Upgrades](getting-started/capacity-upgrades.md)
 - [Upgrade to 26.3.2](getting-started/upgrade-26.3.2.md)
