@@ -58,7 +58,17 @@ The launcher selects the stable installer and assets together. The current v26.3
 
 Fleet enrollment requires matching control-plane and media-node images that support it. Until a supporting stable release is published, use `edge` for both and select `edge` in the Fleet join command. Existing stable credentials are not imported into the new control protocol. Use the documented [replacement procedure](capacity-upgrades.md) when moving an existing node.
 
-Open Fleet → Add Node as an Admin. Choose the node ID and name, then select Generate join command. Copy the command and run it on the remote node host.
+Open Fleet → Add Node as an Admin and choose the node ID and name. You can open
+Fleet over HTTP, but the remote installer needs HTTPS to redeem the join code.
+If the form prefills an HTTP address, **Generate join command** stays disabled.
+In **Enrollment URL**, enter the control plane's trusted HTTPS address with
+`/api/node-enrollment/redeem`, for example
+`https://control.example.com/api/node-enrollment/redeem`. Use an address the new
+node can reach.
+
+The control-plane RPC address is separate. The node uses it for its TLS
+connection after enrollment. Select **Generate join command**, then copy the
+command and run it on the remote node host.
 
 The command contains a fifteen-minute, single-use enrollment code. The installer creates and saves a machine credential before redeeming the code over verified HTTPS. The control plane stores its hash; the machine secret never passes through the browser.
 
