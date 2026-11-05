@@ -66,6 +66,27 @@ def test_initialized_empty_ledger_omits_claims_and_reads_committed_wal(database)
             upgrade.require_mode(database, "initial")
 
 
+def test_normalized_ledger_takes_precedence_over_legacy_payload(database):
+    with sqlite3.connect(database) as connection:
+        connection.execute("CREATE TABLE execution_control(singleton INTEGER, capacity_initialized INTEGER)")
+        connection.execute("CREATE TABLE capacity_claims(claim_id TEXT)")
+        connection.execute("INSERT INTO execution_control VALUES(1, 1)")
+    upgrade.require_mode(database, "drained")
+    with pytest.raises(upgrade.UpgradeError, match="already initialized"):
+        upgrade.require_mode(database, "initial")
+    with sqlite3.connect(database) as connection:
+        connection.execute("INSERT INTO capacity_claims VALUES('retiring')")
+    with pytest.raises(upgrade.UpgradeError, match="zero reservations"):
+        upgrade.require_mode(database, "drained")
+
+
+def test_partial_normalized_ledger_fails_closed(database):
+    with sqlite3.connect(database) as connection:
+        connection.execute("CREATE TABLE capacity_claims(claim_id TEXT)")
+    with pytest.raises(upgrade.UpgradeError, match="Incomplete capacity ledger"):
+        upgrade.require_mode(database, "initial")
+
+
 @pytest.mark.parametrize("payload", ['null', '[]', '{bad', '{"capacity_initialized":"true"}', '{"capacity_reservations":{}}'])
 def test_malformed_state_is_never_an_empty_ledger(database, payload):
     with sqlite3.connect(database) as connection:

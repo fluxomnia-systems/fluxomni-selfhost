@@ -112,7 +112,9 @@ The helper reads the actual control-plane bind-mounted SQLite through a WAL-awar
 
 [[scripts/capacity-upgrade.py#read_ledger]] never edits SQLite. Initialized ledgers always reject initial mode. Drained mode requires disabled routes and no capacity reservations. Storage resolution compares candidate Compose and actual owner mounts; custom commands, ambiguous mounts, symlinks and remote Docker fail closed.
 
-The runtime serializer omits `capacity_reservations` when empty, even with `capacity_initialized: true`. The helper follows that persisted schema: an omitted field means empty; a present malformed value or any retained claim is rejected.
+When the SQLx execution tables exist, the helper reads initialization from `execution_control` and checks for any row in `capacity_claims`. A partial schema or invalid singleton fails closed.
+
+The legacy runtime serializer omits `capacity_reservations` when empty, even with `capacity_initialized: true`. The helper follows that persisted schema: an omitted field means empty; a present malformed value or any retained claim is rejected.
 
 ## Capacity upgrade service ordering
 
