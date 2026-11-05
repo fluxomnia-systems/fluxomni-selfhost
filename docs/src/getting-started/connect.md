@@ -18,14 +18,20 @@ After setup, proceed to [Register the Installation](#register-the-installation).
 
 ## Custom Compose setup
 
-Obtain the public verification key and key ID for your Connect environment. Run the helper from the Compose project directory. Pass the public key as 32 raw Ed25519 bytes encoded in unpadded base64url.
+Create `gateway.json` with the canonical HTTPS origin, a UUID v4 and your Connect environment's verification key. Encode the 32 raw Ed25519 public-key bytes as unpadded base64url.
 
-```sh
-python3 /path/to/fluxomni-selfhost/scripts/connect-config.py \
-  https://installation.example "$CONNECT_GATEWAY_KEY_ID" "$CONNECT_GATEWAY_PUBLIC_KEY"
+```json
+{
+  "origin": "https://installation.example",
+  "installationId": "11111111-1111-4111-8111-111111111111",
+  "initialGatewayKey": {
+    "keyId": "REPLACE_WITH_GATEWAY_KEY_ID",
+    "publicKey": "REPLACE_WITH_GATEWAY_PUBLIC_KEY"
+  }
+}
 ```
 
-The helper creates `gateway.json` with a new Installation ID. Repeating the command with the same settings preserves the file. The Installation generates its own ownership key.
+Keep the Installation ID on reruns. The Installation generates its own ownership key.
 
 Add a Compose override such as docker-compose.connect.yml:
 

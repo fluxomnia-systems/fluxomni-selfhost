@@ -821,7 +821,7 @@ preflight_preparation_host() {
 begin_config_transaction() {
   INSTALL_BACKUP="$(mktemp -d)"
   INSTALL_CONFIG_COMMITTED=0
-  INSTALL_MANAGED_FILES=(connect-config.py compose.connect.yml gateway.json node-credentials.py node-enrollment.sh compose.node-media.yml .install-pending docker-compose.yml compose.release.yml compose.defaults.yml .env .env.example doctor.sh docker-compose.preparation-cgroup.yml preparation-cgroup.py verify-preparation-compose.py)
+  INSTALL_MANAGED_FILES=(compose.connect.yml gateway.json node-credentials.py node-enrollment.sh compose.node-media.yml .install-pending docker-compose.yml compose.release.yml compose.defaults.yml .env .env.example doctor.sh docker-compose.preparation-cgroup.yml preparation-cgroup.py verify-preparation-compose.py)
   local file
   for file in "${INSTALL_MANAGED_FILES[@]}"; do
     if [ -e "${FLUXOMNI_DIR}/$file" ]; then cp -p "${FLUXOMNI_DIR}/$file" "$INSTALL_BACKUP/$file"; fi
@@ -1539,8 +1539,30 @@ if [ "$FLUXOMNI_INSTALL_TARGET" = full ]; then
       echo "Error: enabling Connect on an existing installation requires drained maintenance." >&2
       exit 1
     fi
-    download_asset scripts/connect-config.py connect-config.py
-    python3 connect-config.py "$PUBLIC_URL_DEFAULT" "$connect_key_id" "$connect_public_key"
+    if [[ ! "$PUBLIC_URL_DEFAULT" =~ ^https://[a-z0-9]+([.-][a-z0-9]+)*$ ]] ||
+       [[ ! "$connect_key_id" =~ ^[A-Za-z0-9._-]{1,64}$ ]] ||
+       [[ ! "$connect_public_key" =~ ^[A-Za-z0-9_-]{42}[AEIMQUYcgkosw048]$ ]]; then
+      echo "Error: supply a canonical HTTPS hostname and a valid Connect verification key." >&2
+      exit 1
+    fi
+    if [ ! -f compose.connect.yml ]; then
+      if [ -e gateway.json ] || [ -L gateway.json ]; then
+        echo "Error: gateway.json already exists. Keep the existing Connect configuration." >&2
+        exit 1
+      fi
+      if [ -r /proc/sys/kernel/random/uuid ]; then
+        read -r connect_installation_id < /proc/sys/kernel/random/uuid
+      else
+        require_cmd uuidgen
+        connect_installation_id="$(uuidgen | tr '[:upper:]' '[:lower:]')"
+      fi
+      (
+        umask 077
+        set -C
+        printf '{"origin":"%s","installationId":"%s","initialGatewayKey":{"keyId":"%s","publicKey":"%s"}}\n' \
+          "$PUBLIC_URL_DEFAULT" "$connect_installation_id" "$connect_key_id" "$connect_public_key" > gateway.json
+      )
+    fi
     cat > compose.connect.yml <<'YAML'
 services:
   frontend:
@@ -1554,17 +1576,17 @@ services:
 YAML
   fi
   if [ -f compose.connect.yml ]; then
-    python3 - "$PUBLIC_URL_DEFAULT" <<'PYTHON'
-import json
-import sys
-from pathlib import Path
-
-path = Path("gateway.json")
-if path.is_symlink() or not path.is_file():
-    sys.exit("Error: restore gateway.json before restarting Connect.")
-if json.loads(path.read_text()).get("origin") != sys.argv[1]:
-    sys.exit("Error: Connect requires the same HTTPS origin as gateway.json.")
-PYTHON
+    connect_config="$(cat gateway.json)"
+    connect_format='^\{"origin":"([^"]+)","installationId":"([0-9a-f-]+)","initialGatewayKey":\{"keyId":"([A-Za-z0-9._-]+)","publicKey":"([A-Za-z0-9_-]+)"\}\}$'
+    if [[ ! "$connect_config" =~ $connect_format ]] || [ "${BASH_REMATCH[1]}" != "$PUBLIC_URL_DEFAULT" ]; then
+      echo "Error: restore the original gateway.json and HTTPS origin before restarting Connect." >&2
+      exit 1
+    fi
+    if [ -n "$connect_key_id$connect_public_key" ] &&
+       { [ "${BASH_REMATCH[3]}" != "$connect_key_id" ] || [ "${BASH_REMATCH[4]}" != "$connect_public_key" ]; }; then
+      echo "Error: Connect verification key changed. Use the documented key rotation procedure." >&2
+      exit 1
+    fi
     printf '      - compose.connect.yml\n' >> docker-compose.yml
     "${DOCKER_CMD[@]}" compose config --quiet
   fi
