@@ -246,3 +246,13 @@ The running database lease excludes recovery. Tokens start restricted browser en
 Existing deployments update matched images, issuer registrations and both private settings files together after a consistent database/configuration snapshot.
 
 No old account-link callback or fields remain. Public instructions require browser reauthentication and lifecycle checks before reopening access, with matched-snapshot rollback and explicit handling of security changes after that snapshot.
+
+## Connect configuration
+
+The full installer can enable Connect when the operator supplies the canonical HTTPS origin and the gateway verification key. It keeps the Installation ID across reruns.
+
+The installer prepares the gateway configuration and validates the Compose model before services start. The control-init service supplies private RPC credentials independently. Existing installations need drained maintenance when first enabling Connect. A missing gateway configuration on an enabled installation requires restoration before restart.
+
+Upgrades leave custom Compose overrides and gateway configuration under operator ownership. Connect stays opt-in for installations that lack an installer-managed override.
+
+Before starting, the installer checks that the rendered frontend environment includes the gateway route and the control plane retains the read-only gateway configuration mount after operator overrides are applied.

@@ -648,3 +648,80 @@ def test_pending_marker_cannot_bypass_an_established_deployment(installation, ma
     # the failed bootstrap marker only after successful verification.
     assert run('full', arguments=['--capacity-upgrade', 'drained']).returncode == 0
     assert not pending.exists()
+
+
+@pytest.mark.parametrize("origin", ["https://installation.example", "https://installation.example:8443", "https://[2001:db8::1]:8443", "https://xn--bcher-kva.example"])
+def test_connect_install_preserves_identity_and_rejects_missing_config(installation, origin):
+    _, destination, run = installation
+    settings = {
+        "FLUXOMNI_PUBLIC_URL": origin,
+        "FLUXOMNI_CONNECT_GATEWAY_KEY_ID": "staging-key",
+        "FLUXOMNI_CONNECT_GATEWAY_PUBLIC_KEY": "A" * 43,
+    }
+    result = run("full", settings)
+    assert result.returncode == 0, result.stdout + result.stderr
+    config = destination / "gateway.json"
+    original = config.read_bytes()
+    assert json.loads(original)["origin"] == settings["FLUXOMNI_PUBLIC_URL"]
+    assert "compose.installer-connect.yml" in (destination / "docker-compose.yml").read_text()
+    result = run("full")
+    assert result.returncode == 0, result.stdout + result.stderr
+    assert config.read_bytes() == original
+
+    damaged = json.loads(original)
+    damaged["installationId"] = "-"
+    config.write_text(json.dumps(damaged, separators=(",", ":")))
+    result = run("full")
+    assert result.returncode != 0
+    assert "restore the original gateway.json" in result.stderr
+
+    config.unlink()
+    result = run("full", settings)
+    assert result.returncode != 0
+    assert "restore gateway.json" in result.stderr
+    assert not config.exists()
+
+
+def test_legacy_install_does_not_adopt_custom_connect_files(installation):
+    _, destination, run = installation
+    result = run("full")
+    assert result.returncode == 0, result.stdout + result.stderr
+    files = {
+        "compose.connect.yml": "services: {}\n",
+        "gateway.json": '{"custom": true}\n',
+    }
+    for name, content in files.items():
+        (destination / name).write_text(content)
+
+    result = run("full")
+    assert result.returncode == 0, result.stdout + result.stderr
+    for name, content in files.items():
+        assert (destination / name).read_text() == content
+    compose = (destination / "docker-compose.yml").read_text()
+    assert "compose.connect.yml" not in compose
+    assert "compose.installer-connect.yml" not in compose
+
+
+@pytest.mark.parametrize("override_yaml,error", [
+    ("services:\n  frontend:\n    environment:\n      FLUXOMNI_MCP_PROXY_PATHS: /mcp /mcp/*\n",
+     "must retain /mcp-gateway/*"),
+    ("services:\n  control-plane:\n    environment:\n      FLUXOMNI_MCP_GATEWAY_CONFIG: /other.json\n",
+     "must point to the installer gateway.json"),
+    ("services:\n  control-plane:\n    volumes:\n      - ./other.json:/run/fluxomni/gateway.json:ro\n",
+     "must point to the installer gateway.json"),
+])
+def test_connect_rejects_operator_override_that_breaks_gateway(installation, override_yaml, error):
+    _, destination, run = installation
+    settings = {
+        "FLUXOMNI_PUBLIC_URL": "https://installation.example",
+        "FLUXOMNI_CONNECT_GATEWAY_KEY_ID": "staging-key",
+        "FLUXOMNI_CONNECT_GATEWAY_PUBLIC_KEY": "A" * 43,
+    }
+    result = run("full", settings)
+    assert result.returncode == 0, result.stdout + result.stderr
+    override = destination / "docker-compose.override.yml"
+    override.write_text(override_yaml)
+    result = run("full")
+    assert result.returncode != 0
+    assert error in result.stderr
+    assert override.read_text() == override_yaml

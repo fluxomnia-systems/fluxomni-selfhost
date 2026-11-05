@@ -822,6 +822,14 @@ begin_config_transaction() {
   INSTALL_BACKUP="$(mktemp -d)"
   INSTALL_CONFIG_COMMITTED=0
   INSTALL_MANAGED_FILES=(node-credentials.py node-enrollment.sh compose.node-media.yml .install-pending docker-compose.yml compose.release.yml compose.defaults.yml .env .env.example doctor.sh docker-compose.preparation-cgroup.yml preparation-cgroup.py verify-preparation-compose.py)
+  if [ "$FLUXOMNI_INSTALL_TARGET" = full ] &&
+     { [ -f "${FLUXOMNI_DIR}/compose.installer-connect.yml" ] ||
+       [ -n "${FLUXOMNI_CONNECT_GATEWAY_KEY_ID:-}${FLUXOMNI_CONNECT_GATEWAY_PUBLIC_KEY:-}" ]; }; then
+    INSTALL_MANAGED_FILES+=(compose.installer-connect.yml)
+    if [ ! -e "${FLUXOMNI_DIR}/gateway.json" ] && [ ! -L "${FLUXOMNI_DIR}/gateway.json" ]; then
+      INSTALL_MANAGED_FILES+=(gateway.json)
+    fi
+  fi
   local file
   for file in "${INSTALL_MANAGED_FILES[@]}"; do
     if [ -e "${FLUXOMNI_DIR}/$file" ]; then cp -p "${FLUXOMNI_DIR}/$file" "$INSTALL_BACKUP/$file"; fi
@@ -1522,6 +1530,145 @@ fi
 touch "${FLUXOMNI_DIR}/data/state.db"
 
 cd "${FLUXOMNI_DIR}"
+
+validate_connect_origin() {
+  local origin_format='^https://([a-z0-9]([a-z0-9-]*[a-z0-9])?(\.[a-z0-9]([a-z0-9-]*[a-z0-9])?)*|\[[0-9a-f]*:[0-9a-f:]*\])(:([1-9][0-9]{0,4}))?$'
+  local host port part remainder
+  local -a parts
+  [[ "$1" =~ $origin_format ]] || return 1
+  host="${BASH_REMATCH[1]}"
+  port="${BASH_REMATCH[6]}"
+  if [ -n "$port" ]; then
+    (( port != 443 && port <= 65535 )) || return 1
+  fi
+  if [[ "$host" == \[*\] ]]; then
+    host="${host:1:${#host}-2}"
+    [[ "$host" != *:::* ]] || return 1
+    remainder="${host#*::}"
+    [[ "$remainder" != *::* ]] || return 1
+    [[ "$host" != :* || "$host" == ::* ]] || return 1
+    [[ "$host" != *: || "$host" == *:: ]] || return 1
+    IFS=: read -r -a parts <<< "$host"
+    local groups=0
+    for part in "${parts[@]}"; do
+      [ -n "$part" ] || continue
+      [ "${#part}" -le 4 ] || return 1
+      groups=$((groups + 1))
+    done
+    if [[ "$host" == *::* ]]; then
+      (( groups < 8 ))
+    else
+      (( groups == 8 ))
+    fi
+  else
+    [ "${#host}" -le 253 ] || return 1
+    IFS=. read -r -a parts <<< "$host"
+    for part in "${parts[@]}"; do
+      [ "${#part}" -le 63 ] || return 1
+    done
+  fi
+}
+
+if [ "$FLUXOMNI_INSTALL_TARGET" = full ]; then
+  connect_key_id_format='[A-Za-z0-9._-]{1,64}'
+  connect_public_key_format='[A-Za-z0-9_-]{42}[AEIMQUYcgkosw048]'
+  connect_id_format='[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}'
+  connect_key_id="${FLUXOMNI_CONNECT_GATEWAY_KEY_ID:-}"
+  connect_public_key="${FLUXOMNI_CONNECT_GATEWAY_PUBLIC_KEY:-}"
+  if [ -f compose.installer-connect.yml ] && { [ -L gateway.json ] || [ ! -f gateway.json ]; }; then
+    echo "Error: restore gateway.json before restarting Connect." >&2
+    exit 1
+  fi
+  if [ -n "$connect_key_id$connect_public_key" ]; then
+    if [ -z "$connect_key_id" ] || [ -z "$connect_public_key" ]; then
+      echo "Error: supply both Connect gateway public key settings." >&2
+      exit 1
+    fi
+    if [ ! -f compose.installer-connect.yml ] && [ -f "$INSTALL_BACKUP/.env" ] && [ "$FRESH_RETRY" != 1 ] && [ "$CAPACITY_UPGRADE_MODE" != drained ]; then
+      echo "Error: enabling Connect on an existing installation requires drained maintenance." >&2
+      exit 1
+    fi
+    if ! validate_connect_origin "$PUBLIC_URL_DEFAULT" ||
+       [[ ! "$connect_key_id" =~ ^${connect_key_id_format}$ ]] ||
+       [[ ! "$connect_public_key" =~ ^${connect_public_key_format}$ ]]; then
+      echo "Error: supply a canonical HTTPS hostname and a valid Connect verification key." >&2
+      exit 1
+    fi
+    if [ ! -f compose.installer-connect.yml ]; then
+      if [ -e gateway.json ] || [ -L gateway.json ]; then
+        echo "Error: gateway.json already exists. Keep the existing Connect configuration." >&2
+        exit 1
+      fi
+      if [ -r /proc/sys/kernel/random/uuid ]; then
+        read -r connect_installation_id < /proc/sys/kernel/random/uuid
+      else
+        require_cmd uuidgen
+        connect_installation_id="$(uuidgen | tr '[:upper:]' '[:lower:]')"
+      fi
+      (
+        umask 077
+        set -C
+        printf '{"origin":"%s","installationId":"%s","initialGatewayKey":{"keyId":"%s","publicKey":"%s"}}\n' \
+          "$PUBLIC_URL_DEFAULT" "$connect_installation_id" "$connect_key_id" "$connect_public_key" > gateway.json
+      )
+    fi
+    cat > compose.installer-connect.yml <<'YAML'
+services:
+  frontend:
+    environment:
+      FLUXOMNI_MCP_PROXY_PATHS: "${FLUXOMNI_MCP_PROXY_PATHS:+${FLUXOMNI_MCP_PROXY_PATHS} }/mcp-gateway/*"
+  control-plane:
+    environment:
+      FLUXOMNI_MCP_GATEWAY_CONFIG: /run/fluxomni/gateway.json
+    volumes:
+      - ./gateway.json:/run/fluxomni/gateway.json:ro
+YAML
+  fi
+  if [ -f compose.installer-connect.yml ]; then
+    connect_config="$(cat gateway.json)"
+    connect_format='^\{"origin":"([^"]+)","installationId":"('"${connect_id_format}"')","initialGatewayKey":\{"keyId":"('"${connect_key_id_format}"')","publicKey":"('"${connect_public_key_format}"')"\}\}$'
+    if [[ ! "$connect_config" =~ $connect_format ]] || [ "${BASH_REMATCH[1]}" != "$PUBLIC_URL_DEFAULT" ]; then
+      echo "Error: restore the original gateway.json and HTTPS origin before restarting Connect." >&2
+      exit 1
+    fi
+    if [ -n "$connect_key_id$connect_public_key" ] &&
+       { [ "${BASH_REMATCH[3]}" != "$connect_key_id" ] || [ "${BASH_REMATCH[4]}" != "$connect_public_key" ]; }; then
+      echo "Error: Connect verification key changed. Use the documented key rotation procedure." >&2
+      exit 1
+    fi
+    if ! validate_connect_origin "$PUBLIC_URL_DEFAULT"; then
+      echo "Error: Connect requires a canonical HTTPS origin." >&2
+      exit 1
+    fi
+    printf '      - compose.installer-connect.yml\n' >> docker-compose.yml
+    if ! "${DOCKER_CMD[@]}" compose config frontend | awk '
+      $1 == "FLUXOMNI_MCP_PROXY_PATHS:" {
+        for (i = 2; i <= NF; i++) {
+          value = $i
+          gsub(/^[\047"]|[\047"]$/, "", value)
+          if (value == "/mcp-gateway/*") found = 1
+        }
+      }
+      END { exit !found }
+    '; then
+      echo "Error: frontend Compose configuration must retain /mcp-gateway/* in FLUXOMNI_MCP_PROXY_PATHS." >&2
+      exit 1
+    fi
+    if ! "${DOCKER_CMD[@]}" compose config control-plane | awk -v source="$(pwd -P)/gateway.json" '
+      /^  control-plane:$/ { service = 1; next }
+      /^  [^ ]/ { service = 0 }
+      service && /^      FLUXOMNI_MCP_GATEWAY_CONFIG: \/run\/fluxomni\/gateway\.json$/ { config = 1 }
+      service && /^      - type:/ { bind = ($3 == "bind"); local_file = target = 0 }
+      service && /^        source:/ { local_file = (substr($0, 17) == source) }
+      service && /^        target:/ { target = ($2 == "/run/fluxomni/gateway.json") }
+      service && /^        read_only: true$/ && bind && local_file && target { mount = 1 }
+      END { exit !(config && mount) }
+    '; then
+      echo "Error: control-plane Compose configuration must point to the installer gateway.json read-only mount." >&2
+      exit 1
+    fi
+  fi
+fi
 
 assert_compose_services_match_target
 verify_preparation_compose
