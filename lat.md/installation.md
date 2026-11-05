@@ -267,6 +267,6 @@ A new Compose project creates new named credential volumes. Reusing an existing 
 
 ## Capacity helper source
 
-Maintenance uses the helper shipped beside a directly run runtime script, or downloads it from the explicitly selected installer asset source.
+Maintenance uses the helper shipped beside a directly run runtime script, or downloads it from the resolved installer asset source.
 
-A custom asset source applies to the capacity helper as well as deployment files. The helper must understand the same database contract as the selected installer. Falling back to main can incorrectly refuse an upgrade of a drained SQLx database.
+Release selection, aliases and custom asset sources apply to the capacity helper as well as deployment files. The helper must understand the same database contract as the selected installer. Falling back to main can incorrectly refuse an upgrade of a drained SQLx database.

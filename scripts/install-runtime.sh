@@ -1168,14 +1168,13 @@ validate_capacity_maintenance() {
 load_capacity_helper() {
   require_cmd python3
   CAPACITY_HELPER="$(mktemp)"
-  # The helper belongs to this installer, independently of the selected runtime
-  # release assets (older stable bundles do not contain it).
+  # Use the helper beside this runtime or from its resolved asset source.
   local local_helper
   local_helper="$(dirname -- "${BASH_SOURCE[0]}")/capacity-upgrade.py"
   if [ -f "$local_helper" ]; then
     cp "$local_helper" "$CAPACITY_HELPER"
   else
-    curl -fsSL "${FLUXOMNI_REPO_RAW:-$(repo_raw_for_ref "${SELFHOST_REF_OVERRIDE:-main}")}/scripts/capacity-upgrade.py" -o "$CAPACITY_HELPER"
+    curl -fsSL "${REPO_RAW}/scripts/capacity-upgrade.py" -o "$CAPACITY_HELPER"
   fi
 }
 
