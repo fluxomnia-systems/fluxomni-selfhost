@@ -57,6 +57,9 @@ if name == "curl":
         Path(args[args.index("--output") + 1]).write_text('{"enrolled":true}')
         print("200", end="")
         sys.exit(0)
+    if os.environ.get("TEST_STRICT_CAPACITY_SOURCE") and url.endswith("/scripts/capacity-upgrade.py"):
+        if not url.startswith(os.environ["FLUXOMNI_REPO_RAW"] + "/"):
+            sys.exit(22)
     relative = "scripts/" + url.rsplit("/", 1)[1] if "/scripts/" in url else url.rsplit("/", 1)[1]
     source = Path(os.environ["TEST_ASSETS"]) / relative
     if not source.exists():
@@ -725,3 +728,12 @@ def test_connect_rejects_operator_override_that_breaks_gateway(installation, ove
     assert result.returncode != 0
     assert error in result.stderr
     assert override.read_text() == override_yaml
+
+
+# @lat: [[installation#Capacity helper source]]
+def test_capacity_upgrade_uses_selected_installer_assets(installation):
+    _, _, run = installation
+    first = run("full")
+    assert first.returncode == 0, first.stdout + first.stderr
+    repeated = run("full", {"TEST_STRICT_CAPACITY_SOURCE": "1"})
+    assert repeated.returncode == 0, repeated.stdout + repeated.stderr

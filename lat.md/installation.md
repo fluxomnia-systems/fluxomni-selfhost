@@ -258,3 +258,15 @@ The installer prepares the gateway configuration and validates the Compose model
 Upgrades leave custom Compose overrides and gateway configuration under operator ownership. Connect stays opt-in for installations that lack an installer-managed override.
 
 Before starting, the installer checks that the rendered frontend environment includes the gateway route and the control plane retains the read-only gateway configuration mount after operator overrides are applied.
+
+## Credential volumes and database identity
+
+The database and private credential volumes belong to the same installation. Preserve both when restarting or moving a deployment.
+
+A new Compose project creates new named credential volumes. Reusing an existing database with those fresh volumes causes node credential provisioning to fail. A fresh test installation needs separate empty state; a restart must retain its original volumes.
+
+## Capacity helper source
+
+Maintenance uses the helper shipped beside a directly run runtime script, or downloads it from the explicitly selected installer asset source.
+
+A custom asset source applies to the capacity helper as well as deployment files. The helper must understand the same database contract as the selected installer. Falling back to main can incorrectly refuse an upgrade of a drained SQLx database.

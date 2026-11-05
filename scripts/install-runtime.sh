@@ -1171,11 +1171,11 @@ load_capacity_helper() {
   # The helper belongs to this installer, independently of the selected runtime
   # release assets (older stable bundles do not contain it).
   local local_helper
-  local_helper="$(dirname -- "${BASH_SOURCE[0]}")/scripts/capacity-upgrade.py"
+  local_helper="$(dirname -- "${BASH_SOURCE[0]}")/capacity-upgrade.py"
   if [ -f "$local_helper" ]; then
     cp "$local_helper" "$CAPACITY_HELPER"
   else
-    curl -fsSL "$(repo_raw_for_ref "${SELFHOST_REF_OVERRIDE:-main}")/scripts/capacity-upgrade.py" -o "$CAPACITY_HELPER"
+    curl -fsSL "${FLUXOMNI_REPO_RAW:-$(repo_raw_for_ref "${SELFHOST_REF_OVERRIDE:-main}")}/scripts/capacity-upgrade.py" -o "$CAPACITY_HELPER"
   fi
 }
 
