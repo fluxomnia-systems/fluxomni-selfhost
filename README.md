@@ -175,9 +175,34 @@ Use these guides for setup and operation:
 - [Oracle guide](./docs/src/deployment/oracle.md)
 - [Vscale guide](./docs/src/deployment/vscale.md)
 
+The published site opens the latest stable release. Use **Docs version** to
+open the same guide for a tagged release or switch to **Edge** for the guides
+on `main`. If the selected version has no matching page, the switcher opens
+that version's introduction.
+
 ## Working on This Repository
 
 This repository builds the published docs website from the `docs/` mdBook.
+Changes on `main` appear under `/edge/`. The site root comes from the
+`latestStable` entry in `docs/src/release-manifest.json` and its matching
+self-host tag. Each listed release with a tagged book also gets a permanent
+path, such as `/v26.3.2/`. Releases without a tagged book are omitted from
+the switcher.
+
+To publish stable docs, merge the release sync, tag the self-host commit
+that contains the matching docs and install assets, and publish the GitHub
+release. Until the matching tag exists, Pages keeps serving the previous
+tagged release at the root.
+
+To preview all versions locally, fetch the release tags and build into an
+empty directory with Python 3.12 or newer:
+
+```bash
+git fetch --tags
+docs_preview="$(mktemp -d)"
+python3 scripts/build-versioned-docs.py --output "$docs_preview"
+python3 -m http.server 8000 --directory "$docs_preview"
+```
 
 Before opening a PR that changes docs or the installer, run:
 

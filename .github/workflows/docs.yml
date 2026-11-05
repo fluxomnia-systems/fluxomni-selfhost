@@ -2,6 +2,8 @@ name: Docs
 
 on:
   workflow_dispatch:
+  release:
+    types: [published]
   pull_request:
     paths:
       - "README.md"
@@ -21,6 +23,9 @@ on:
       - ".markdownlint-cli2.yaml"
       - ".github/workflows/docs.yml"
 
+concurrency:
+  group: docs-${{ github.event.pull_request.number || 'site' }}
+
 permissions:
   contents: read
 
@@ -35,6 +40,13 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v5
+        with:
+          ref: ${{ github.event_name == 'pull_request' && github.ref || 'refs/heads/main' }}
+          fetch-depth: 0
+
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
 
       - uses: cargo-bins/cargo-binstall@main
 
@@ -57,9 +69,14 @@ jobs:
       - name: Run docs lint
         run: make docs.lint.ci
 
+      - name: Verify versioned build
+        run: python3 scripts/build-versioned-docs.py --output "$RUNNER_TEMP/docs-check"
+
   publish:
     name: Publish Docs
-    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    if: |
+      (github.event_name == 'release' && !github.event.release.prerelease) ||
+      ((github.event_name == 'push' || github.event_name == 'workflow_dispatch') && github.ref == 'refs/heads/main')
     needs:
       - lint
     runs-on: ubuntu-latest
@@ -76,6 +93,13 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v5
+        with:
+          ref: ${{ github.event_name == 'pull_request' && github.ref || 'refs/heads/main' }}
+          fetch-depth: 0
+
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
 
       - uses: cargo-bins/cargo-binstall@main
 
@@ -84,16 +108,21 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ github.token }}
 
-      - name: Build docs
-        run: make docs.build
-
       - name: Setup GitHub Pages
+        id: pages
         uses: actions/configure-pages@v5
+
+      - name: Build versioned docs
+        env:
+          DOCS_BASE_PATH: ${{ steps.pages.outputs.base_path }}
+        run: |
+          python3 scripts/build-versioned-docs.py \
+            --output "$RUNNER_TEMP/docs-site" --base-path "$DOCS_BASE_PATH"
 
       - name: Upload Pages artifact
         uses: actions/upload-pages-artifact@v3
         with:
-          path: docs/book
+          path: ${{ runner.temp }}/docs-site
 
       - name: Deploy to GitHub Pages
         id: deployment
