@@ -1,6 +1,6 @@
 # Raw GraphQL
 
-Fluxomni Studio accepts GraphQL HTTP POST requests at `/api`.
+Fluxomni accepts GraphQL HTTP POST requests at `/api`.
 
 Raw GraphQL uses the release schema directly and works across languages and clients.
 
@@ -47,7 +47,7 @@ curl -b "fluxomni_session=$SESSION" \
   http://<your-server>/api/schema.graphql
 ```
 
-Use the release-tagged `api/schema.graphql` from GitHub when pinning automation to a specific Fluxomni Studio release.
+Use the release-tagged `api/schema.graphql` from GitHub when pinning automation to a specific Fluxomni release.
 
 ## Library Pagination
 

@@ -1,6 +1,6 @@
 # Scenarios
 
-Step-by-step guides for common ways to run Fluxomni Studio.
+Step-by-step guides for common ways to run Fluxomni.
 
 Choose the guide closest to your work. Each explains the setup and the limits you need to consider. Use the [User Guide](../user-guide/overview.md) for daily operation and the [sizing guide](../getting-started/sizing.md) for measurements.
 

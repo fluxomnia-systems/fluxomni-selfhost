@@ -14,7 +14,7 @@
   - [Oracle Cloud](deployment/oracle.md)
   - [VScale](deployment/vscale.md)
 
-## Operate Fluxomni Studio
+## Operate Fluxomni
 
 - [User Guide](user-guide/overview.md)
   - [Attention](user-guide/attention.md)

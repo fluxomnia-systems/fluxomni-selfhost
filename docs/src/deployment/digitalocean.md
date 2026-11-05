@@ -1,7 +1,7 @@
-How to Deploy Fluxomni Studio to DigitalOcean
+How to Deploy Fluxomni to DigitalOcean
 =======================================
 
-This guide shows the recommended setup for Fluxomni Studio on one [DigitalOcean] droplet.
+This guide shows the recommended setup for Fluxomni on one [DigitalOcean] droplet.
 
 ## 0. Prerequisites
 
@@ -36,7 +36,7 @@ Recording live streams may need more disk space than the default disk provides. 
 ![Add volume](../images/do_1.3.1.jpg)
 ![Setup volume](../images/do_1.3.2.jpg)
 
-The installer will automatically detect and use the attached volume for Fluxomni Studio.
+The installer will automatically detect and use the attached volume for Fluxomni.
 
 ### 1.4. Choose a Datacenter Region
 
@@ -46,7 +46,7 @@ Choose a region near both your stream source and destinations to reduce latency.
 
 ### 1.5. Add User Data
 
-To automatically install Fluxomni Studio on the new droplet, paste the following script into the `User data` field. The script runs once when the droplet is created. It also configures a firewall with the required ports.
+To automatically install Fluxomni on the new droplet, paste the following script into the `User data` field. The script runs once when the droplet is created. It also configures a firewall with the required ports.
 
 ```bash
 #!/bin/bash
@@ -57,7 +57,7 @@ curl -fsSL https://install.fluxomni.io | WITH_UFW=1 bash -s
 
 ### 1.6. Select Authentication Method
 
-[DigitalOcean] requires an authentication method to access the droplet. You can use an [SSH] key (recommended) or set a root password. These credentials are for server management. You do not need them to use Fluxomni Studio.
+[DigitalOcean] requires an authentication method to access the droplet. You can use an [SSH] key (recommended) or set a root password. These credentials are for server management. You do not need them to use the Fluxomni web app.
 
 ![SSH access](../images/do_1.6.jpg)
 
@@ -69,7 +69,7 @@ Choose a hostname for your droplet to easily identify it later. You can leave th
 
 Click **Create Droplet** to begin provisioning.
 
-## 2. Access Fluxomni Studio
+## 2. Access Fluxomni
 
 After you create the droplet, wait 5-15 minutes for server setup and installation.
 
@@ -84,7 +84,7 @@ Open the droplet's IP address in your browser.
 Current releases serve the operator UI from the `frontend` container.
 Use `/routes` for route management and `/fleet` to inspect attached media nodes.
 
-> __NOTE__: Fluxomni Studio uses `http://` by default. For production, we strongly recommend a domain name and a reverse proxy, such as Nginx or Caddy, to provide secure access over `https://`.
+> __NOTE__: Fluxomni uses `http://` by default. For production, we strongly recommend a domain name and a reverse proxy, such as Nginx or Caddy, to provide secure access over `https://`.
 
 Next, complete [First Stream](../getting-started/first-stream.md) to create a protected operator account and verify one live route.
 

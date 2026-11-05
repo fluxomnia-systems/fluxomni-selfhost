@@ -1,6 +1,6 @@
 # Changelog
 
-Operator-facing highlights from recent Fluxomni Studio releases.
+Operator-facing highlights from recent Fluxomni releases.
 
 The changelog is editorial release copy. Use `release-manifest.json` as the factual inventory for dates, module versions, images, and API client refs, but write the latest changelog entry by hand so it reads as operator-facing release notes instead of generated metadata.
 

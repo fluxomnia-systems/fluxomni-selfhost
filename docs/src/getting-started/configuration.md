@@ -1,6 +1,6 @@
 # Configuration
 
-Configure Fluxomni Studio with environment variables in `.env`.
+Configure Fluxomni with environment variables in `.env`.
 
 ## Core Variables
 

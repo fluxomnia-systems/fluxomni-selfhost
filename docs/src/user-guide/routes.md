@@ -1,6 +1,6 @@
 # Routes
 
-Each route in Fluxomni Studio is a separate streaming pipeline. It has its own stream input, one or more outputs, an optional playlist, and a live playback monitor.
+Each route in Fluxomni is a separate streaming pipeline. It has its own stream input, one or more outputs, an optional playlist, and a live playback monitor.
 
 ## Flow Overview
 
@@ -64,8 +64,8 @@ Choose the ingest protocol for the route:
 
 Then choose the source mode:
 
-- **Accept publish** — Fluxomni Studio generates an ingest address and waits for a publisher to push into it.
-- **Pull from remote** — Fluxomni Studio fetches a remote source URL itself.
+- **Accept publish** — Fluxomni generates an ingest address and waits for a publisher to push into it.
+- **Pull from remote** — Fluxomni fetches a remote source URL itself.
 
 You can use **Generated publish address** after the route is saved and assigned to a media node.
 
@@ -169,7 +169,7 @@ The **Live playback** tab embeds the HLS monitor for the route's output. When a 
 
 ## Output Protocols
 
-When adding an output destination, Fluxomni Studio supports several destination URL families:
+When adding an output destination, Fluxomni supports several destination URL families:
 
 - **RTMP / RTMPS** — the common choice for YouTube, Twitch, Facebook Live, and custom RTMP servers.
 - **SRT** — useful for contribution or delivery over less predictable networks.
@@ -193,7 +193,7 @@ Route and fleet issues appear on the [Attention](attention.md) page.
 
 ![The Attention page showing the all-clear state when no active alerts exist](../images/user-guide/attention.jpg)
 
-When active issues exist, Fluxomni Studio groups them into **Route alerts** and **Fleet alerts**. Operators can mark items as **Known** to move them to the muted known-issues area and remove them from the sidebar urgency badge. When no issues are active, the page shows the all-clear state above.
+When active issues exist, Fluxomni groups them into **Route alerts** and **Fleet alerts**. Operators can mark items as **Known** to move them to the muted known-issues area and remove them from the sidebar urgency badge. When no issues are active, the page shows the all-clear state above.
 
 Alert severity levels include:
 

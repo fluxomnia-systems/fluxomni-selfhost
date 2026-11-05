@@ -1,13 +1,13 @@
 # API Automation
 
-Fluxomni Studio provides a public API preview for automating routes, playlists, artifacts, settings, and Fleet tasks.
+Fluxomni provides a public API preview for automating routes, playlists, artifacts, settings, and Fleet tasks.
 
 Use GraphQL at `/api` and subscriptions at `/api/subscriptions`. The API also provides the generated SDL at `/api/schema.graphql`, a bundled [release schema](schema.graphql), [automation recipes](automation-recipes.json), [LLM metadata](llms.txt), and the `@fluxomni/api-client` TypeScript package.
 
 Use the API for control-plane automation:
 
 - read route, source, output, playlist, artifact, settings, and Fleet state
-- compute the desired state outside Fluxomni Studio
+- compute the desired state outside Fluxomni
 - apply mutations with explicit result payloads
 - handle no-op, missing-target, validation, forbidden, and runtime-unavailable outcomes
 - use follow-up queries or subscriptions to check when the expected state is reached

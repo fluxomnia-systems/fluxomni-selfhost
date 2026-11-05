@@ -48,7 +48,7 @@ Google Drive settings control imports into the artifact library and route playli
 
 #### Get an API key
 
-Fluxomni Studio uses a Google Drive **API key**, not an OAuth user token. The key lets the control plane list and download files that are already shared with link access.
+Fluxomni uses a Google Drive **API key**, not an OAuth user token. The key lets the control plane list and download files that are already shared with link access.
 
 To create one:
 
@@ -56,7 +56,7 @@ To create one:
 2. In Google Cloud Console, create or select a project.
 3. Open **APIs & Services → Library**, search for **Google Drive API**, and enable it for the project.
 4. Open **APIs & Services → Credentials** and choose **Create credentials → API key**.
-5. Copy the generated key into **Settings → Artifacts → Google Drive → Google API Key** in Fluxomni Studio.
+5. Copy the generated key into **Settings → Artifacts → Google Drive → Google API Key** in the Fluxomni web app.
 6. Recommended: restrict the key to the **Google Drive API** in Google Cloud Console. If your deployment has a stable public egress IP, also restrict usage to that IP.
 
 Drive files and folders must be shared so the key can read them. Use link sharing such as **Anyone with the link can view** for the folders/files you import. Private files that require a signed-in Google account are not available through this API-key flow.
@@ -72,11 +72,11 @@ The remaining cards describe how artifacts work. You cannot edit these cards:
 
 ## Media Profiles
 
-The **Media profiles** settings section is admin-only and lists the baseline presets Fluxomni Studio uses when checking route playlist compatibility.
+The **Media profiles** settings section is admin-only and lists the baseline presets Fluxomni uses when checking route playlist compatibility.
 
 ![The Media profiles settings section showing baseline preset definitions](../images/user-guide/settings-media-profiles.jpg)
 
-Profiles define the video and audio properties a route expects. Fluxomni Studio checks them before playlist playback and during health checks. They do not control the encoder. The current presets use H.264 video and AAC stereo audio at 48 kHz:
+Profiles define the video and audio properties a route expects. Fluxomni checks them before playlist playback and during health checks. They do not control the encoder. The current presets use H.264 video and AAC stereo audio at 48 kHz:
 
 - `1080p30`
 - `1080p60`
@@ -85,7 +85,7 @@ Profiles define the video and audio properties a route expects. Fluxomni Studio 
 - `720p60`
 - `720p25`
 
-Each row shows the fields Fluxomni Studio compares:
+Each row shows the fields Fluxomni compares:
 
 - video codec
 - width and height
@@ -112,7 +112,7 @@ The top card shows how this session is authenticated:
 
 ### Change my password
 
-When you are signed in as a named local user, use the password form to change that account's password. Fluxomni Studio invalidates the current session and signs the browser back in with the new password once the change succeeds.
+When you are signed in as a named local user, use the password form to change that account's password. Fluxomni invalidates the current session and signs the browser back in with the new password once the change succeeds.
 
 ### Sign-in screen
 
@@ -152,7 +152,7 @@ Changing your own role or deleting your own account reloads the interface with t
 
 ### Route ownership
 
-Fluxomni Studio routes can be either **Shared** or owned by a single named user.
+Fluxomni routes can be either **Shared** or owned by a single named user.
 
 - **Shared routes** remain visible to every signed-in user.
 - **Owned routes** are visible only to their assigned user and admins.
@@ -163,7 +163,7 @@ The Users page has a **Route ownership** panel for each user and a **Shared rout
 
 ### User roles
 
-Fluxomni Studio has three built-in roles:
+Fluxomni has three built-in roles:
 
 | Role | Access |
 | ---- | ------ |

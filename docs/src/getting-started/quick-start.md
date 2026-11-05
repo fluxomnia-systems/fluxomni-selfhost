@@ -1,6 +1,6 @@
 # Quick Start
 
-Install Fluxomni Studio on your server, then create a route and send a stream to your destinations. This guide covers installation. Continue with [First Stream](first-stream.md) to publish and check playback.
+Install Fluxomni on your server, then create a route and send a stream to your destinations. This guide covers installation. Continue with [First Stream](first-stream.md) to publish and check playback.
 
 ## Prerequisites
 
@@ -17,7 +17,7 @@ If Docker is already installed, the installer uses it. Installer deployments req
 curl -fsSL https://install.fluxomni.io | bash
 ```
 
-By default, Fluxomni Studio installs to `~/fluxomni` and uses the newest stable release channel (`latest`).
+By default, Fluxomni installs to `~/fluxomni` and uses the newest stable release channel (`latest`).
 The installer creates one Docker Compose stack and stores data in `./data`.
 The web UI is included in the default install. The public launcher selects the stable release's matching installer and Compose assets, including its file-limit repair. Existing installs keep their saved version unless you set `FLUXOMNI_VERSION` explicitly. A saved `latest` continues following stable.
 
@@ -82,7 +82,7 @@ The installer keeps credentials in owner-only `node-secrets/` under `~/fluxomni-
 
 ## Access the Operator UI
 
-After Fluxomni Studio starts, open `http://<your-server-ip>`.
+After Fluxomni starts, open `http://<your-server-ip>`.
 Current releases use these main pages:
 
 - `/routes` for the route list
