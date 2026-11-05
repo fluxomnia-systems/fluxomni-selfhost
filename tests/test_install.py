@@ -650,7 +650,7 @@ def test_pending_marker_cannot_bypass_an_established_deployment(installation, ma
     assert not pending.exists()
 
 
-@pytest.mark.parametrize("origin", ["https://installation.example", "https://installation.example:8443"])
+@pytest.mark.parametrize("origin", ["https://installation.example", "https://installation.example:8443", "https://[2001:db8::1]:8443"])
 def test_connect_install_preserves_identity_and_rejects_missing_config(installation, origin):
     _, destination, run = installation
     settings = {
@@ -667,6 +667,13 @@ def test_connect_install_preserves_identity_and_rejects_missing_config(installat
     result = run("full")
     assert result.returncode == 0, result.stdout + result.stderr
     assert config.read_bytes() == original
+
+    damaged = json.loads(original)
+    damaged["installationId"] = "-"
+    config.write_text(json.dumps(damaged, separators=(",", ":")))
+    result = run("full")
+    assert result.returncode != 0
+    assert "restore the original gateway.json" in result.stderr
 
     config.unlink()
     result = run("full", settings)

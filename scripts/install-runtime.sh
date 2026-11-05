@@ -1532,6 +1532,10 @@ touch "${FLUXOMNI_DIR}/data/state.db"
 cd "${FLUXOMNI_DIR}"
 
 if [ "$FLUXOMNI_INSTALL_TARGET" = full ]; then
+  connect_key_id_format='[A-Za-z0-9._-]{1,64}'
+  connect_public_key_format='[A-Za-z0-9_-]{42}[AEIMQUYcgkosw048]'
+  connect_id_format='[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}'
+  connect_origin_format='^https://([a-z0-9]+([.-][a-z0-9]+)*|\[[0-9a-f]*:[0-9a-f:]*\])(:([1-9][0-9]{0,4}))?$'
   connect_key_id="${FLUXOMNI_CONNECT_GATEWAY_KEY_ID:-}"
   connect_public_key="${FLUXOMNI_CONNECT_GATEWAY_PUBLIC_KEY:-}"
   if [ -f compose.installer-connect.yml ] && { [ -L gateway.json ] || [ ! -f gateway.json ]; }; then
@@ -1547,15 +1551,15 @@ if [ "$FLUXOMNI_INSTALL_TARGET" = full ]; then
       echo "Error: enabling Connect on an existing installation requires drained maintenance." >&2
       exit 1
     fi
-    if [[ ! "$PUBLIC_URL_DEFAULT" =~ ^https://[a-z0-9]+([.-][a-z0-9]+)*(:[1-9][0-9]{0,4})?$ ]] ||
-       [[ ! "$connect_key_id" =~ ^[A-Za-z0-9._-]{1,64}$ ]] ||
-       [[ ! "$connect_public_key" =~ ^[A-Za-z0-9_-]{42}[AEIMQUYcgkosw048]$ ]]; then
+    if [[ ! "$PUBLIC_URL_DEFAULT" =~ $connect_origin_format ]] ||
+       [[ ! "$connect_key_id" =~ ^${connect_key_id_format}$ ]] ||
+       [[ ! "$connect_public_key" =~ ^${connect_public_key_format}$ ]]; then
       echo "Error: supply a canonical HTTPS hostname and a valid Connect verification key." >&2
       exit 1
     fi
-    connect_authority="${PUBLIC_URL_DEFAULT#https://}"
-    if [[ "$connect_authority" == *:* ]]; then
-      connect_port="${connect_authority##*:}"
+    [[ "$PUBLIC_URL_DEFAULT" =~ $connect_origin_format ]]
+    connect_port="${BASH_REMATCH[4]}"
+    if [ -n "$connect_port" ]; then
       if (( connect_port == 443 || connect_port > 65535 )); then
         echo "Error: use a valid non-default HTTPS port or omit the port." >&2
         exit 1
@@ -1593,7 +1597,7 @@ YAML
   fi
   if [ -f compose.installer-connect.yml ]; then
     connect_config="$(cat gateway.json)"
-    connect_format='^\{"origin":"([^"]+)","installationId":"([0-9a-f-]+)","initialGatewayKey":\{"keyId":"([A-Za-z0-9._-]+)","publicKey":"([A-Za-z0-9_-]+)"\}\}$'
+    connect_format='^\{"origin":"([^"]+)","installationId":"('"${connect_id_format}"')","initialGatewayKey":\{"keyId":"('"${connect_key_id_format}"')","publicKey":"('"${connect_public_key_format}"')"\}\}$'
     if [[ ! "$connect_config" =~ $connect_format ]] || [ "${BASH_REMATCH[1]}" != "$PUBLIC_URL_DEFAULT" ]; then
       echo "Error: restore the original gateway.json and HTTPS origin before restarting Connect." >&2
       exit 1
