@@ -821,7 +821,7 @@ preflight_preparation_host() {
 begin_config_transaction() {
   INSTALL_BACKUP="$(mktemp -d)"
   INSTALL_CONFIG_COMMITTED=0
-  INSTALL_MANAGED_FILES=(node-credentials.py node-enrollment.sh compose.node-media.yml .install-pending docker-compose.yml compose.release.yml compose.defaults.yml .env .env.example doctor.sh docker-compose.preparation-cgroup.yml preparation-cgroup.py verify-preparation-compose.py)
+  INSTALL_MANAGED_FILES=(connect-config.py compose.connect.yml gateway.json node-credentials.py node-enrollment.sh compose.node-media.yml .install-pending docker-compose.yml compose.release.yml compose.defaults.yml .env .env.example doctor.sh docker-compose.preparation-cgroup.yml preparation-cgroup.py verify-preparation-compose.py)
   local file
   for file in "${INSTALL_MANAGED_FILES[@]}"; do
     if [ -e "${FLUXOMNI_DIR}/$file" ]; then cp -p "${FLUXOMNI_DIR}/$file" "$INSTALL_BACKUP/$file"; fi
@@ -1522,6 +1522,53 @@ fi
 touch "${FLUXOMNI_DIR}/data/state.db"
 
 cd "${FLUXOMNI_DIR}"
+
+if [ "$FLUXOMNI_INSTALL_TARGET" = full ]; then
+  connect_key_id="${FLUXOMNI_CONNECT_GATEWAY_KEY_ID:-}"
+  connect_public_key="${FLUXOMNI_CONNECT_GATEWAY_PUBLIC_KEY:-}"
+  if [ -f compose.connect.yml ] && { [ -L gateway.json ] || [ ! -f gateway.json ]; }; then
+    echo "Error: restore gateway.json before restarting Connect." >&2
+    exit 1
+  fi
+  if [ -n "$connect_key_id$connect_public_key" ]; then
+    if [ -z "$connect_key_id" ] || [ -z "$connect_public_key" ]; then
+      echo "Error: supply both Connect gateway public key settings." >&2
+      exit 1
+    fi
+    if [ ! -f compose.connect.yml ] && [ -f "$INSTALL_BACKUP/.env" ] && [ "$CAPACITY_UPGRADE_MODE" != drained ]; then
+      echo "Error: enabling Connect on an existing installation requires drained maintenance." >&2
+      exit 1
+    fi
+    download_asset scripts/connect-config.py connect-config.py
+    python3 connect-config.py "$PUBLIC_URL_DEFAULT" "$connect_key_id" "$connect_public_key"
+    cat > compose.connect.yml <<'YAML'
+services:
+  frontend:
+    environment:
+      FLUXOMNI_MCP_PROXY_PATHS: "${FLUXOMNI_MCP_PROXY_PATHS:+${FLUXOMNI_MCP_PROXY_PATHS} }/mcp-gateway/*"
+  control-plane:
+    environment:
+      FLUXOMNI_MCP_GATEWAY_CONFIG: /run/fluxomni/gateway.json
+    volumes:
+      - ./gateway.json:/run/fluxomni/gateway.json:ro
+YAML
+  fi
+  if [ -f compose.connect.yml ]; then
+    python3 - "$PUBLIC_URL_DEFAULT" <<'PYTHON'
+import json
+import sys
+from pathlib import Path
+
+path = Path("gateway.json")
+if path.is_symlink() or not path.is_file():
+    sys.exit("Error: restore gateway.json before restarting Connect.")
+if json.loads(path.read_text()).get("origin") != sys.argv[1]:
+    sys.exit("Error: Connect requires the same HTTPS origin as gateway.json.")
+PYTHON
+    printf '      - compose.connect.yml\n' >> docker-compose.yml
+    "${DOCKER_CMD[@]}" compose config --quiet
+  fi
+fi
 
 assert_compose_services_match_target
 verify_preparation_compose

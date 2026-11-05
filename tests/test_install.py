@@ -648,3 +648,27 @@ def test_pending_marker_cannot_bypass_an_established_deployment(installation, ma
     # the failed bootstrap marker only after successful verification.
     assert run('full', arguments=['--capacity-upgrade', 'drained']).returncode == 0
     assert not pending.exists()
+
+
+def test_connect_install_preserves_identity_and_rejects_missing_config(installation):
+    _, destination, run = installation
+    settings = {
+        "FLUXOMNI_PUBLIC_URL": "https://installation.example",
+        "FLUXOMNI_CONNECT_GATEWAY_KEY_ID": "staging-key",
+        "FLUXOMNI_CONNECT_GATEWAY_PUBLIC_KEY": "A" * 43,
+    }
+    result = run("full", settings)
+    assert result.returncode == 0, result.stdout + result.stderr
+    config = destination / "gateway.json"
+    original = config.read_bytes()
+    assert json.loads(original)["origin"] == settings["FLUXOMNI_PUBLIC_URL"]
+    assert "compose.connect.yml" in (destination / "docker-compose.yml").read_text()
+    result = run("full")
+    assert result.returncode == 0, result.stdout + result.stderr
+    assert config.read_bytes() == original
+
+    config.unlink()
+    result = run("full", settings)
+    assert result.returncode != 0
+    assert "restore gateway.json" in result.stderr
+    assert not config.exists()
