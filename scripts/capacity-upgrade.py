@@ -70,39 +70,57 @@ def read_ledger(path):
     try:
         with closing(sqlite3.connect(path.as_uri() + "?mode=ro", uri=True, timeout=5)) as connection:
             connection.execute("BEGIN")
-            rows = connection.execute(
-                "SELECT payload FROM assignment_snapshots "
-                "WHERE assignment_snapshot_id = 'current' AND snapshot_key = 'current'"
-            ).fetchall()
-            if len(rows) != 1:
-                raise UpgradeError("Exactly one current assignment snapshot is required")
-            snapshot = document(rows[0][0])
+            tables = {
+                name for (name,) in connection.execute(
+                    "SELECT name FROM sqlite_master WHERE type = 'table' "
+                    "AND name IN ('execution_control', 'capacity_claims')"
+                )
+            }
+            if tables:
+                if tables != {"execution_control", "capacity_claims"}:
+                    raise UpgradeError("Incomplete capacity ledger schema")
+                rows = connection.execute(
+                    "SELECT singleton, capacity_initialized FROM execution_control"
+                ).fetchall()
+                if rows not in ([(1, 0)], [(1, 1)]):
+                    raise UpgradeError("Invalid capacity initialization marker")
+                initialized = bool(rows[0][1])
+                has_claims = connection.execute(
+                    "SELECT EXISTS(SELECT 1 FROM capacity_claims)"
+                ).fetchone()[0] == 1
+            else:
+                rows = connection.execute(
+                    "SELECT payload FROM assignment_snapshots "
+                    "WHERE assignment_snapshot_id = 'current' AND snapshot_key = 'current'"
+                ).fetchall()
+                if len(rows) != 1:
+                    raise UpgradeError("Exactly one current assignment snapshot is required")
+                snapshot = document(rows[0][0])
+                initialized = snapshot.get("capacity_initialized", False)
+                if not isinstance(initialized, bool):
+                    raise UpgradeError("Invalid capacity initialization marker")
+                # Older snapshots omit the field when no claims exist.
+                claims = snapshot.get("capacity_reservations", [])
+                if not isinstance(claims, list) or any(not isinstance(claim, dict) for claim in claims):
+                    raise UpgradeError("Invalid capacity reservation ledger")
+                has_claims = bool(claims)
             routes = [document(row[0]) for row in connection.execute("SELECT payload FROM restreams")]
     except sqlite3.Error as error:
         raise UpgradeError("Unable to read the control-plane capacity ledger") from error
-    initialized = snapshot.get("capacity_initialized", False)
-    if not isinstance(initialized, bool):
-        raise UpgradeError("Invalid capacity initialization marker")
-    # AssignmentSnapshot intentionally omits empty capacity_reservations via
-    # serde skip_serializing_if = "Vec::is_empty", including initialized ledgers.
-    # Missing means empty in this persisted schema; malformed values still fail.
-    claims = snapshot.get("capacity_reservations", [])
-    if not isinstance(claims, list) or any(not isinstance(claim, dict) for claim in claims):
-        raise UpgradeError("Invalid capacity reservation ledger")
     # For a stopped/drained boundary require no claims at all. Do not reinterpret
     # unknown claim schemas as empty demand.
     for route in routes:
         if not isinstance(route.get("enabled"), bool):
             raise UpgradeError("Unknown persisted route enabled state")
-    return initialized, claims, routes
+    return initialized, has_claims, routes
 
 
 def require_mode(path, mode):
-    initialized, claims, routes = read_ledger(path)
+    initialized, has_claims, routes = read_ledger(path)
     if mode == "initial":
         if initialized:
             raise UpgradeError("Ledger is already initialized; use a drained upgrade")
-    elif not initialized or claims or any(route["enabled"] for route in routes):
+    elif not initialized or has_claims or any(route["enabled"] for route in routes):
         raise UpgradeError("Disable all routes and wait for zero reservations before a drained upgrade")
 
 

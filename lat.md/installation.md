@@ -112,7 +112,9 @@ The helper reads the actual control-plane bind-mounted SQLite through a WAL-awar
 
 [[scripts/capacity-upgrade.py#read_ledger]] never edits SQLite. Initialized ledgers always reject initial mode. Drained mode requires disabled routes and no capacity reservations. Storage resolution compares candidate Compose and actual owner mounts; custom commands, ambiguous mounts, symlinks and remote Docker fail closed.
 
-The runtime serializer omits `capacity_reservations` when empty, even with `capacity_initialized: true`. The helper follows that persisted schema: an omitted field means empty; a present malformed value or any retained claim is rejected.
+When the SQLx execution tables exist, the helper reads initialization from `execution_control` and checks for any row in `capacity_claims`. A partial schema or invalid singleton fails closed. Schema discovery uses `sqlite_master` so older host SQLite builds can read either ledger.
+
+The legacy runtime serializer omits `capacity_reservations` when empty, even with `capacity_initialized: true`. The helper follows that persisted schema: an omitted field means empty; a present malformed value or any retained claim is rejected.
 
 ## Capacity upgrade service ordering
 
@@ -256,3 +258,15 @@ The installer prepares the gateway configuration and validates the Compose model
 Upgrades leave custom Compose overrides and gateway configuration under operator ownership. Connect stays opt-in for installations that lack an installer-managed override.
 
 Before starting, the installer checks that the rendered frontend environment includes the gateway route and the control plane retains the read-only gateway configuration mount after operator overrides are applied.
+
+## Credential volumes and database identity
+
+The database and private credential volumes belong to the same installation. Preserve both when restarting or moving a deployment.
+
+A new Compose project creates new named credential volumes. Reusing an existing database with those fresh volumes causes node credential provisioning to fail. A fresh test installation needs separate empty state; a restart must retain its original volumes.
+
+## Capacity helper source
+
+Maintenance uses the helper shipped beside a directly run runtime script, or downloads it from the resolved installer asset source.
+
+Release selection, aliases and custom asset sources apply to the capacity helper as well as deployment files. The helper must understand the same database contract as the selected installer. Falling back to main can incorrectly refuse an upgrade of a drained SQLx database.

@@ -57,6 +57,9 @@ if name == "curl":
         Path(args[args.index("--output") + 1]).write_text('{"enrolled":true}')
         print("200", end="")
         sys.exit(0)
+    if os.environ.get("TEST_STRICT_CAPACITY_SOURCE") and url.endswith("/scripts/capacity-upgrade.py"):
+        if not url.startswith(os.environ.get("TEST_CAPACITY_HELPER_ROOT", os.environ["FLUXOMNI_REPO_RAW"]) + "/"):
+            sys.exit(22)
     relative = "scripts/" + url.rsplit("/", 1)[1] if "/scripts/" in url else url.rsplit("/", 1)[1]
     source = Path(os.environ["TEST_ASSETS"]) / relative
     if not source.exists():
@@ -226,12 +229,16 @@ else:
         "WITH_FIREWALLD": "0",
     }
 
-    def run(target, overrides=None, arguments=None):
+    def run(target, overrides=None, arguments=None, downloaded_runtime=False):
         if arguments is None:
             arguments = []
             if (destination / ".env").exists():
                 arguments = ["--capacity-upgrade", "drained"] if target == "full" else ["--capacity-upgrade", "node", "--confirm-control-plane-ready"]
-        return subprocess.run(["bash", str(ROOT / "install.sh"), target, *arguments], cwd=tmp_path, env={**env, **(overrides or {})}, text=True, capture_output=True, timeout=30)
+        entrypoint = ROOT / "install.sh"
+        if downloaded_runtime:
+            entrypoint = tmp_path / "downloaded-runtime.sh"
+            shutil.copyfile(ROOT / "scripts/install-runtime.sh", entrypoint)
+        return subprocess.run(["bash", str(entrypoint), target, *arguments], cwd=tmp_path, env={**env, **(overrides or {})}, text=True, capture_output=True, timeout=30)
 
     return assets, destination, run
 
@@ -725,3 +732,17 @@ def test_connect_rejects_operator_override_that_breaks_gateway(installation, ove
     assert result.returncode != 0
     assert error in result.stderr
     assert override.read_text() == override_yaml
+
+
+# @lat: [[installation#Capacity helper source]]
+@pytest.mark.parametrize("asset_source", ["custom", "resolved"])
+def test_capacity_upgrade_uses_selected_installer_assets(installation, asset_source):
+    _, _, run = installation
+    first = run("full")
+    assert first.returncode == 0, first.stdout + first.stderr
+    overrides = {"TEST_STRICT_CAPACITY_SOURCE": "1"}
+    if asset_source == "resolved":
+        overrides.update(FLUXOMNI_REPO_RAW="", FLUXOMNI_SELFHOST_REF="", FLUXOMNI_VERSION="v26.4.0",
+                         TEST_CAPACITY_HELPER_ROOT="https://raw.githubusercontent.com/fluxomnia-systems/fluxomni-selfhost/v26.4.0")
+    repeated = run("full", overrides, downloaded_runtime=asset_source == "resolved")
+    assert repeated.returncode == 0, repeated.stdout + repeated.stderr
