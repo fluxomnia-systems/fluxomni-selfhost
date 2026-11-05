@@ -1654,6 +1654,19 @@ YAML
       echo "Error: frontend Compose configuration must retain /mcp-gateway/* in FLUXOMNI_MCP_PROXY_PATHS." >&2
       exit 1
     fi
+    if ! "${DOCKER_CMD[@]}" compose config control-plane | awk -v source="$(pwd -P)/gateway.json" '
+      /^  control-plane:$/ { service = 1; next }
+      /^  [^ ]/ { service = 0 }
+      service && /^      FLUXOMNI_MCP_GATEWAY_CONFIG: \/run\/fluxomni\/gateway\.json$/ { config = 1 }
+      service && /^      - type:/ { bind = ($3 == "bind"); local_file = target = 0 }
+      service && /^        source:/ { local_file = (substr($0, 17) == source) }
+      service && /^        target:/ { target = ($2 == "/run/fluxomni/gateway.json") }
+      service && /^        read_only: true$/ && bind && local_file && target { mount = 1 }
+      END { exit !(config && mount) }
+    '; then
+      echo "Error: control-plane Compose configuration must point to the installer gateway.json read-only mount." >&2
+      exit 1
+    fi
   fi
 fi
 

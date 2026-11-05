@@ -255,4 +255,4 @@ The installer prepares the gateway configuration and validates the Compose model
 
 Upgrades leave custom Compose overrides and gateway configuration under operator ownership. Connect stays opt-in for installations that lack an installer-managed override.
 
-Before starting, the installer checks that the rendered frontend environment includes the gateway route after operator overrides are applied.
+Before starting, the installer checks that the rendered frontend environment includes the gateway route and the control plane retains the read-only gateway configuration mount after operator overrides are applied.

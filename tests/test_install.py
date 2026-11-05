@@ -702,7 +702,15 @@ def test_legacy_install_does_not_adopt_custom_connect_files(installation):
     assert "compose.installer-connect.yml" not in compose
 
 
-def test_connect_rejects_operator_override_that_removes_gateway_path(installation):
+@pytest.mark.parametrize("override_yaml,error", [
+    ("services:\n  frontend:\n    environment:\n      FLUXOMNI_MCP_PROXY_PATHS: /mcp /mcp/*\n",
+     "must retain /mcp-gateway/*"),
+    ("services:\n  control-plane:\n    environment:\n      FLUXOMNI_MCP_GATEWAY_CONFIG: /other.json\n",
+     "must point to the installer gateway.json"),
+    ("services:\n  control-plane:\n    volumes:\n      - ./other.json:/run/fluxomni/gateway.json:ro\n",
+     "must point to the installer gateway.json"),
+])
+def test_connect_rejects_operator_override_that_breaks_gateway(installation, override_yaml, error):
     _, destination, run = installation
     settings = {
         "FLUXOMNI_PUBLIC_URL": "https://installation.example",
@@ -712,11 +720,8 @@ def test_connect_rejects_operator_override_that_removes_gateway_path(installatio
     result = run("full", settings)
     assert result.returncode == 0, result.stdout + result.stderr
     override = destination / "docker-compose.override.yml"
-    override.write_text(
-        "services:\n  frontend:\n    environment:\n"
-        "      FLUXOMNI_MCP_PROXY_PATHS: /mcp /mcp/*\n"
-    )
+    override.write_text(override_yaml)
     result = run("full")
     assert result.returncode != 0
-    assert "must retain /mcp-gateway/*" in result.stderr
-    assert "/mcp /mcp/*" in override.read_text()
+    assert error in result.stderr
+    assert override.read_text() == override_yaml
