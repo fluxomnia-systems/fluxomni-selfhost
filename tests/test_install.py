@@ -662,7 +662,7 @@ def test_connect_install_preserves_identity_and_rejects_missing_config(installat
     config = destination / "gateway.json"
     original = config.read_bytes()
     assert json.loads(original)["origin"] == settings["FLUXOMNI_PUBLIC_URL"]
-    assert "compose.connect.yml" in (destination / "docker-compose.yml").read_text()
+    assert "compose.installer-connect.yml" in (destination / "docker-compose.yml").read_text()
     result = run("full")
     assert result.returncode == 0, result.stdout + result.stderr
     assert config.read_bytes() == original
@@ -672,3 +672,23 @@ def test_connect_install_preserves_identity_and_rejects_missing_config(installat
     assert result.returncode != 0
     assert "restore gateway.json" in result.stderr
     assert not config.exists()
+
+
+def test_legacy_install_does_not_adopt_custom_connect_files(installation):
+    _, destination, run = installation
+    result = run("full")
+    assert result.returncode == 0, result.stdout + result.stderr
+    files = {
+        "compose.connect.yml": "services: {}\n",
+        "gateway.json": '{"custom": true}\n',
+    }
+    for name, content in files.items():
+        (destination / name).write_text(content)
+
+    result = run("full")
+    assert result.returncode == 0, result.stdout + result.stderr
+    for name, content in files.items():
+        assert (destination / name).read_text() == content
+    compose = (destination / "docker-compose.yml").read_text()
+    assert "compose.connect.yml" not in compose
+    assert "compose.installer-connect.yml" not in compose

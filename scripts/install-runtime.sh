@@ -821,7 +821,15 @@ preflight_preparation_host() {
 begin_config_transaction() {
   INSTALL_BACKUP="$(mktemp -d)"
   INSTALL_CONFIG_COMMITTED=0
-  INSTALL_MANAGED_FILES=(compose.connect.yml gateway.json node-credentials.py node-enrollment.sh compose.node-media.yml .install-pending docker-compose.yml compose.release.yml compose.defaults.yml .env .env.example doctor.sh docker-compose.preparation-cgroup.yml preparation-cgroup.py verify-preparation-compose.py)
+  INSTALL_MANAGED_FILES=(node-credentials.py node-enrollment.sh compose.node-media.yml .install-pending docker-compose.yml compose.release.yml compose.defaults.yml .env .env.example doctor.sh docker-compose.preparation-cgroup.yml preparation-cgroup.py verify-preparation-compose.py)
+  if [ "$FLUXOMNI_INSTALL_TARGET" = full ] &&
+     { [ -f "${FLUXOMNI_DIR}/compose.installer-connect.yml" ] ||
+       [ -n "${FLUXOMNI_CONNECT_GATEWAY_KEY_ID:-}${FLUXOMNI_CONNECT_GATEWAY_PUBLIC_KEY:-}" ]; }; then
+    INSTALL_MANAGED_FILES+=(compose.installer-connect.yml)
+    if [ ! -e "${FLUXOMNI_DIR}/gateway.json" ] && [ ! -L "${FLUXOMNI_DIR}/gateway.json" ]; then
+      INSTALL_MANAGED_FILES+=(gateway.json)
+    fi
+  fi
   local file
   for file in "${INSTALL_MANAGED_FILES[@]}"; do
     if [ -e "${FLUXOMNI_DIR}/$file" ]; then cp -p "${FLUXOMNI_DIR}/$file" "$INSTALL_BACKUP/$file"; fi
@@ -1526,7 +1534,7 @@ cd "${FLUXOMNI_DIR}"
 if [ "$FLUXOMNI_INSTALL_TARGET" = full ]; then
   connect_key_id="${FLUXOMNI_CONNECT_GATEWAY_KEY_ID:-}"
   connect_public_key="${FLUXOMNI_CONNECT_GATEWAY_PUBLIC_KEY:-}"
-  if [ -f compose.connect.yml ] && { [ -L gateway.json ] || [ ! -f gateway.json ]; }; then
+  if [ -f compose.installer-connect.yml ] && { [ -L gateway.json ] || [ ! -f gateway.json ]; }; then
     echo "Error: restore gateway.json before restarting Connect." >&2
     exit 1
   fi
@@ -1535,7 +1543,7 @@ if [ "$FLUXOMNI_INSTALL_TARGET" = full ]; then
       echo "Error: supply both Connect gateway public key settings." >&2
       exit 1
     fi
-    if [ ! -f compose.connect.yml ] && [ -f "$INSTALL_BACKUP/.env" ] && [ "$CAPACITY_UPGRADE_MODE" != drained ]; then
+    if [ ! -f compose.installer-connect.yml ] && [ -f "$INSTALL_BACKUP/.env" ] && [ "$CAPACITY_UPGRADE_MODE" != drained ]; then
       echo "Error: enabling Connect on an existing installation requires drained maintenance." >&2
       exit 1
     fi
@@ -1545,7 +1553,7 @@ if [ "$FLUXOMNI_INSTALL_TARGET" = full ]; then
       echo "Error: supply a canonical HTTPS hostname and a valid Connect verification key." >&2
       exit 1
     fi
-    if [ ! -f compose.connect.yml ]; then
+    if [ ! -f compose.installer-connect.yml ]; then
       if [ -e gateway.json ] || [ -L gateway.json ]; then
         echo "Error: gateway.json already exists. Keep the existing Connect configuration." >&2
         exit 1
@@ -1563,7 +1571,7 @@ if [ "$FLUXOMNI_INSTALL_TARGET" = full ]; then
           "$PUBLIC_URL_DEFAULT" "$connect_installation_id" "$connect_key_id" "$connect_public_key" > gateway.json
       )
     fi
-    cat > compose.connect.yml <<'YAML'
+    cat > compose.installer-connect.yml <<'YAML'
 services:
   frontend:
     environment:
@@ -1575,7 +1583,7 @@ services:
       - ./gateway.json:/run/fluxomni/gateway.json:ro
 YAML
   fi
-  if [ -f compose.connect.yml ]; then
+  if [ -f compose.installer-connect.yml ]; then
     connect_config="$(cat gateway.json)"
     connect_format='^\{"origin":"([^"]+)","installationId":"([0-9a-f-]+)","initialGatewayKey":\{"keyId":"([A-Za-z0-9._-]+)","publicKey":"([A-Za-z0-9_-]+)"\}\}$'
     if [[ ! "$connect_config" =~ $connect_format ]] || [ "${BASH_REMATCH[1]}" != "$PUBLIC_URL_DEFAULT" ]; then
@@ -1587,7 +1595,7 @@ YAML
       echo "Error: Connect verification key changed. Use the documented key rotation procedure." >&2
       exit 1
     fi
-    printf '      - compose.connect.yml\n' >> docker-compose.yml
+    printf '      - compose.installer-connect.yml\n' >> docker-compose.yml
     "${DOCKER_CMD[@]}" compose config --quiet
   fi
 fi

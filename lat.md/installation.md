@@ -252,3 +252,5 @@ No old account-link callback or fields remain. Public instructions require brows
 The full installer can enable Connect when the operator supplies the canonical HTTPS origin and the gateway verification key. It keeps the Installation ID across reruns.
 
 The installer prepares the gateway configuration and validates the Compose model before services start. The control-init service supplies private RPC credentials independently. Existing installations need drained maintenance when first enabling Connect. A missing gateway configuration on an enabled installation requires restoration before restart.
+
+Upgrades leave custom Compose overrides and gateway configuration under operator ownership. Connect stays opt-in for installations that lack an installer-managed override.
