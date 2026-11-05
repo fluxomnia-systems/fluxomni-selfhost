@@ -1547,11 +1547,19 @@ if [ "$FLUXOMNI_INSTALL_TARGET" = full ]; then
       echo "Error: enabling Connect on an existing installation requires drained maintenance." >&2
       exit 1
     fi
-    if [[ ! "$PUBLIC_URL_DEFAULT" =~ ^https://[a-z0-9]+([.-][a-z0-9]+)*$ ]] ||
+    if [[ ! "$PUBLIC_URL_DEFAULT" =~ ^https://[a-z0-9]+([.-][a-z0-9]+)*(:[1-9][0-9]{0,4})?$ ]] ||
        [[ ! "$connect_key_id" =~ ^[A-Za-z0-9._-]{1,64}$ ]] ||
        [[ ! "$connect_public_key" =~ ^[A-Za-z0-9_-]{42}[AEIMQUYcgkosw048]$ ]]; then
       echo "Error: supply a canonical HTTPS hostname and a valid Connect verification key." >&2
       exit 1
+    fi
+    connect_authority="${PUBLIC_URL_DEFAULT#https://}"
+    if [[ "$connect_authority" == *:* ]]; then
+      connect_port="${connect_authority##*:}"
+      if (( connect_port == 443 || connect_port > 65535 )); then
+        echo "Error: use a valid non-default HTTPS port or omit the port." >&2
+        exit 1
+      fi
     fi
     if [ ! -f compose.installer-connect.yml ]; then
       if [ -e gateway.json ] || [ -L gateway.json ]; then
