@@ -700,3 +700,23 @@ def test_legacy_install_does_not_adopt_custom_connect_files(installation):
     compose = (destination / "docker-compose.yml").read_text()
     assert "compose.connect.yml" not in compose
     assert "compose.installer-connect.yml" not in compose
+
+
+def test_connect_rejects_operator_override_that_removes_gateway_path(installation):
+    _, destination, run = installation
+    settings = {
+        "FLUXOMNI_PUBLIC_URL": "https://installation.example",
+        "FLUXOMNI_CONNECT_GATEWAY_KEY_ID": "staging-key",
+        "FLUXOMNI_CONNECT_GATEWAY_PUBLIC_KEY": "A" * 43,
+    }
+    result = run("full", settings)
+    assert result.returncode == 0, result.stdout + result.stderr
+    override = destination / "docker-compose.override.yml"
+    override.write_text(
+        "services:\n  frontend:\n    environment:\n"
+        "      FLUXOMNI_MCP_PROXY_PATHS: /mcp /mcp/*\n"
+    )
+    result = run("full")
+    assert result.returncode != 0
+    assert "must retain /mcp-gateway/*" in result.stderr
+    assert "/mcp /mcp/*" in override.read_text()

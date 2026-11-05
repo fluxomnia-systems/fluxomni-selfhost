@@ -254,3 +254,5 @@ The full installer can enable Connect when the operator supplies the canonical H
 The installer prepares the gateway configuration and validates the Compose model before services start. The control-init service supplies private RPC credentials independently. Existing installations need drained maintenance when first enabling Connect. A missing gateway configuration on an enabled installation requires restoration before restart.
 
 Upgrades leave custom Compose overrides and gateway configuration under operator ownership. Connect stays opt-in for installations that lack an installer-managed override.
+
+Before starting, the installer checks that the rendered frontend environment includes the gateway route after operator overrides are applied.

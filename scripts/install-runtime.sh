@@ -1641,7 +1641,19 @@ YAML
       exit 1
     fi
     printf '      - compose.installer-connect.yml\n' >> docker-compose.yml
-    "${DOCKER_CMD[@]}" compose config --quiet
+    if ! "${DOCKER_CMD[@]}" compose config frontend | awk '
+      $1 == "FLUXOMNI_MCP_PROXY_PATHS:" {
+        for (i = 2; i <= NF; i++) {
+          value = $i
+          gsub(/^[\047"]|[\047"]$/, "", value)
+          if (value == "/mcp-gateway/*") found = 1
+        }
+      }
+      END { exit !found }
+    '; then
+      echo "Error: frontend Compose configuration must retain /mcp-gateway/* in FLUXOMNI_MCP_PROXY_PATHS." >&2
+      exit 1
+    fi
   fi
 fi
 
