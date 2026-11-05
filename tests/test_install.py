@@ -650,7 +650,7 @@ def test_pending_marker_cannot_bypass_an_established_deployment(installation, ma
     assert not pending.exists()
 
 
-@pytest.mark.parametrize("origin", ["https://installation.example", "https://installation.example:8443", "https://[2001:db8::1]:8443"])
+@pytest.mark.parametrize("origin", ["https://installation.example", "https://installation.example:8443", "https://[2001:db8::1]:8443", "https://xn--bcher-kva.example"])
 def test_connect_install_preserves_identity_and_rejects_missing_config(installation, origin):
     _, destination, run = installation
     settings = {

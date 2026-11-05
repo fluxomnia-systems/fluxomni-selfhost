@@ -1531,11 +1531,18 @@ touch "${FLUXOMNI_DIR}/data/state.db"
 
 cd "${FLUXOMNI_DIR}"
 
+validate_connect_origin() {
+  local origin_format='^https://([a-z0-9]([a-z0-9-]*[a-z0-9])?(\.[a-z0-9]([a-z0-9-]*[a-z0-9])?)*|\[[0-9a-f]*:[0-9a-f:]*\])(:([1-9][0-9]{0,4}))?$'
+  local port
+  [[ "$1" =~ $origin_format ]] || return 1
+  port="${BASH_REMATCH[6]}"
+  [ -z "$port" ] || (( port != 443 && port <= 65535 ))
+}
+
 if [ "$FLUXOMNI_INSTALL_TARGET" = full ]; then
   connect_key_id_format='[A-Za-z0-9._-]{1,64}'
   connect_public_key_format='[A-Za-z0-9_-]{42}[AEIMQUYcgkosw048]'
   connect_id_format='[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}'
-  connect_origin_format='^https://([a-z0-9]+([.-][a-z0-9]+)*|\[[0-9a-f]*:[0-9a-f:]*\])(:([1-9][0-9]{0,4}))?$'
   connect_key_id="${FLUXOMNI_CONNECT_GATEWAY_KEY_ID:-}"
   connect_public_key="${FLUXOMNI_CONNECT_GATEWAY_PUBLIC_KEY:-}"
   if [ -f compose.installer-connect.yml ] && { [ -L gateway.json ] || [ ! -f gateway.json ]; }; then
@@ -1547,23 +1554,15 @@ if [ "$FLUXOMNI_INSTALL_TARGET" = full ]; then
       echo "Error: supply both Connect gateway public key settings." >&2
       exit 1
     fi
-    if [ ! -f compose.installer-connect.yml ] && [ -f "$INSTALL_BACKUP/.env" ] && [ "$CAPACITY_UPGRADE_MODE" != drained ]; then
+    if [ ! -f compose.installer-connect.yml ] && [ -f "$INSTALL_BACKUP/.env" ] && [ "$FRESH_RETRY" != 1 ] && [ "$CAPACITY_UPGRADE_MODE" != drained ]; then
       echo "Error: enabling Connect on an existing installation requires drained maintenance." >&2
       exit 1
     fi
-    if [[ ! "$PUBLIC_URL_DEFAULT" =~ $connect_origin_format ]] ||
+    if ! validate_connect_origin "$PUBLIC_URL_DEFAULT" ||
        [[ ! "$connect_key_id" =~ ^${connect_key_id_format}$ ]] ||
        [[ ! "$connect_public_key" =~ ^${connect_public_key_format}$ ]]; then
       echo "Error: supply a canonical HTTPS hostname and a valid Connect verification key." >&2
       exit 1
-    fi
-    [[ "$PUBLIC_URL_DEFAULT" =~ $connect_origin_format ]]
-    connect_port="${BASH_REMATCH[4]}"
-    if [ -n "$connect_port" ]; then
-      if (( connect_port == 443 || connect_port > 65535 )); then
-        echo "Error: use a valid non-default HTTPS port or omit the port." >&2
-        exit 1
-      fi
     fi
     if [ ! -f compose.installer-connect.yml ]; then
       if [ -e gateway.json ] || [ -L gateway.json ]; then
@@ -1605,6 +1604,10 @@ YAML
     if [ -n "$connect_key_id$connect_public_key" ] &&
        { [ "${BASH_REMATCH[3]}" != "$connect_key_id" ] || [ "${BASH_REMATCH[4]}" != "$connect_public_key" ]; }; then
       echo "Error: Connect verification key changed. Use the documented key rotation procedure." >&2
+      exit 1
+    fi
+    if ! validate_connect_origin "$PUBLIC_URL_DEFAULT"; then
+      echo "Error: Connect requires a canonical HTTPS origin." >&2
       exit 1
     fi
     printf '      - compose.installer-connect.yml\n' >> docker-compose.yml
