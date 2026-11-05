@@ -1533,10 +1533,40 @@ cd "${FLUXOMNI_DIR}"
 
 validate_connect_origin() {
   local origin_format='^https://([a-z0-9]([a-z0-9-]*[a-z0-9])?(\.[a-z0-9]([a-z0-9-]*[a-z0-9])?)*|\[[0-9a-f]*:[0-9a-f:]*\])(:([1-9][0-9]{0,4}))?$'
-  local port
+  local host port part remainder
+  local -a parts
   [[ "$1" =~ $origin_format ]] || return 1
+  host="${BASH_REMATCH[1]}"
   port="${BASH_REMATCH[6]}"
-  [ -z "$port" ] || (( port != 443 && port <= 65535 ))
+  if [ -n "$port" ]; then
+    (( port != 443 && port <= 65535 )) || return 1
+  fi
+  if [[ "$host" == \[*\] ]]; then
+    host="${host:1:${#host}-2}"
+    [[ "$host" != *:::* ]] || return 1
+    remainder="${host#*::}"
+    [[ "$remainder" != *::* ]] || return 1
+    [[ "$host" != :* || "$host" == ::* ]] || return 1
+    [[ "$host" != *: || "$host" == *:: ]] || return 1
+    IFS=: read -r -a parts <<< "$host"
+    local groups=0
+    for part in "${parts[@]}"; do
+      [ -n "$part" ] || continue
+      [ "${#part}" -le 4 ] || return 1
+      groups=$((groups + 1))
+    done
+    if [[ "$host" == *::* ]]; then
+      (( groups < 8 ))
+    else
+      (( groups == 8 ))
+    fi
+  else
+    [ "${#host}" -le 253 ] || return 1
+    IFS=. read -r -a parts <<< "$host"
+    for part in "${parts[@]}"; do
+      [ "${#part}" -le 63 ] || return 1
+    done
+  fi
 }
 
 if [ "$FLUXOMNI_INSTALL_TARGET" = full ]; then
