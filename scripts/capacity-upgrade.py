@@ -72,7 +72,7 @@ def read_ledger(path):
             connection.execute("BEGIN")
             tables = {
                 name for (name,) in connection.execute(
-                    "SELECT name FROM sqlite_schema WHERE type = 'table' "
+                    "SELECT name FROM sqlite_master WHERE type = 'table' "
                     "AND name IN ('execution_control', 'capacity_claims')"
                 )
             }
