@@ -1,12 +1,14 @@
 """Verify fluxomnictl finds the right install folder from any directory."""
 
 import importlib.util
+import subprocess
 from pathlib import Path
 
 import pytest
 
 ROOT = Path(__file__).resolve().parents[1]
 spec = importlib.util.spec_from_file_location("fluxomnictl", ROOT / "scripts/fluxomnictl.py")
+assert spec is not None and spec.loader is not None
 ctl = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(ctl)
 
@@ -159,6 +161,10 @@ def test_prompt_end_of_input_is_a_clean_failure(home):
         select(home, interactive=True, ask=closed)
 
 
+def must_not_ask(_question):
+    raise AssertionError("must not ask")
+
+
 class FakeHost(ctl.Host):
     """Scriptable host: a file map and a command table."""
 
@@ -190,7 +196,7 @@ class FakeHost(ctl.Host):
         self.written.append(str(path))
         self.files[str(path)] = text
 
-    def run(self, args, timeout=30):
+    def run(self, args, timeout=30, cwd=None):
         self.ran.append(list(args))
         handler = self.commands.get(args[0] + (" " + args[1] if len(args) > 1 else ""), self.commands.get(args[0]))
         return handler(args) if callable(handler) else (handler or (0, ""))
@@ -293,7 +299,7 @@ def test_enable_controllers_refuses_kernel_gaps_and_skips_when_enabled(capsys):
     host.files["/sys/fs/cgroup/cgroup.subtree_control"] = ""
     with pytest.raises(ctl.CtlError, match="kernel does not offer: pids"):
         ctl.enable_controllers(host, lambda _: True)
-    ctl.enable_controllers(good_host(), lambda _: pytest.fail("must not ask"))
+    ctl.enable_controllers(good_host(), must_not_ask)
     assert "already enabled" in capsys.readouterr().out
 
 
@@ -356,3 +362,131 @@ def test_real_host_write_is_atomic_and_refuses_symlinks(tmp_path):
     link.symlink_to(target)
     with pytest.raises(OSError, match="symlink"):
         ctl.Host().write(link, "x")
+
+
+def doctor_host(**options):
+    host = good_host(**options)
+    host.commands.update({
+        "docker version": (0, "28.0.1"),
+        "docker compose": lambda args: (0, "2.40.0") if args[2] == "version" else (
+            (0, '{"Name":"x"}') if args[2] == "ps" and "--format" in args and args[-1] == "json" else
+            (0, "frontend\ncontrol-plane\nmedia-node") if args[2] == "config" else (0, "running (healthy)")),
+        "hostname": (0, "10.0.0.5 172.17.0.1"),
+        "lsof": (1, ""),
+    })
+    host.tools |= {"docker"}
+    host.disk_free = lambda path: "40.0 GiB"
+    return host
+
+
+def doctor_install(tmp_path, target="full", extra_env=""):
+    folder = make_install(tmp_path / "inst", target)
+    (folder / ".env").write_text("FLUXOMNI_VERSION=26.4.0\nFLUXOMNI_PUBLIC_HOST=10.0.0.5\n" + extra_env)
+    (folder / "data").mkdir()
+    (folder / "data" / "state.db").write_text("x")
+    return ctl.Install(folder, target)
+
+
+def test_doctor_passes_on_a_healthy_full_install(tmp_path, capsys):
+    install = doctor_install(tmp_path, extra_env="FLUXOMNI_CONTROL_PLANE_INTERNAL_AUTH_TOKEN=t\n")
+    assert ctl.doctor(install, doctor_host(), environ={}) == 0
+    output = capsys.readouterr().out
+    assert "Internal Auth Token configured" in output and "control-plane container" in output
+    assert "Port 80 (Web UI) available" in output and "looks good" in output
+
+
+def test_doctor_reports_failures_and_exit_code(tmp_path, capsys):
+    install = doctor_install(tmp_path)
+    host = doctor_host()
+    host.commands["docker compose"] = lambda args: (0, "2.40.0") if args[2] == "version" else (
+        (0, "{}") if args[-1] == "json" else (0, "frontend\nmedia-node") if args[2] == "config" else (0, "exited (1)"))
+    assert ctl.doctor(install, host, environ={}) == 1
+    output = capsys.readouterr().out
+    assert "Internal Auth Token MISSING" in output and "frontend container NOT running" in output
+    assert "Some issues were detected" in output
+
+
+def test_doctor_standalone_node_credential_and_private_node(tmp_path, capsys):
+    folder = make_install(tmp_path / "node", "media-node")
+    (folder / ".env").write_text("FLUXOMNI_VERSION=26.4.0\nFLUXOMNI_NODE_CREDENTIAL_FILE=node-secrets/credential\n")
+    install = ctl.Install(folder, "media-node")
+    assert ctl.doctor(install, doctor_host(), environ={}) == 1
+    assert "Node credential missing" in capsys.readouterr().out
+    (folder / "node-secrets").mkdir()
+    (folder / "node-secrets" / "credential").write_text("secret")
+    assert ctl.doctor(install, doctor_host(), environ={}) == 0
+    output = capsys.readouterr().out
+    assert "Private node" in output and "Web UI" not in output and "RTMP" not in output
+
+
+def test_doctor_warns_on_unknown_public_host_and_busy_port(tmp_path, capsys):
+    install = doctor_install(tmp_path)
+    (install.path / ".env").write_text("FLUXOMNI_VERSION=26.4.0\nFLUXOMNI_PUBLIC_HOST=192.0.2.9\nFLUXOMNI_CONTROL_PLANE_INTERNAL_AUTH_TOKEN=t\n")
+    host = doctor_host()
+    host.commands["lsof"] = (0, "COMMAND PID\nnginx 12 root")
+    ctl.doctor(install, host, environ={})
+    output = capsys.readouterr().out
+    assert "NOT found in host IPs" in output and "in use by another process" in output
+
+
+def test_doctor_command_uses_the_selected_install(tmp_path, capsys):
+    install = doctor_install(tmp_path, extra_env="FLUXOMNI_CONTROL_PLANE_INTERNAL_AUTH_TOKEN=t\n")
+    assert ctl.main(["--dir", str(install.path), "doctor"], host=doctor_host(), interactive=False, environ={"HOME": str(tmp_path)}) == 0
+    assert str(install.path.resolve()) in capsys.readouterr().out
+
+
+@pytest.mark.parametrize("version,supported", [
+    ("26.4.0", True), ("v26.4.1", True), ("v27.0.0", True), ("v26.10.0", True), ("latest", True), ("edge", True), ("", True),
+    ("v26.3.2", False), ("26.3.9", False), ("v25.12.0", False), ("garbage", False),
+])
+def test_version_support(version, supported):
+    assert ctl.version_supported(version) is supported
+
+
+def test_check_support_refuses_old_installs_with_an_upgrade_hint(tmp_path, capsys):
+    folder = make_install(tmp_path / "old", "full")
+    (folder / ".env").write_text("FLUXOMNI_VERSION=v26.3.2\n")
+    assert ctl.main(["--dir", str(folder), "check-support"], environ={"HOME": str(tmp_path)}, interactive=False) == 1
+    assert "supports v26.4.0 and newer" in capsys.readouterr().err
+    (folder / ".env").write_text("FLUXOMNI_VERSION=26.4.0\n")
+    assert ctl.main(["--dir", str(folder), "check-support"], environ={"HOME": str(tmp_path)}, interactive=False) == 0
+
+
+def test_doctor_wrapper_calls_the_tool_by_absolute_path_with_its_own_folder(tmp_path):
+    folder = tmp_path / "install"
+    folder.mkdir()
+    wrapper = folder / "doctor.sh"
+    wrapper.write_text((ROOT / "doctor.sh").read_text())
+    tool = tmp_path / "ctl"
+    tool.write_text("#!/bin/sh\necho \"called: $*\"\n")
+    tool.chmod(0o755)
+    env = {"PATH": "/usr/bin:/bin", "HOME": str(tmp_path / "nohome")}
+    done = subprocess.run(["bash", str(wrapper)], env={**env, "FLUXOMNICTL": str(tool)}, capture_output=True, text=True, check=False)
+    assert done.returncode == 0 and done.stdout.strip() == f"called: --dir {folder.resolve()} doctor"
+    missing = subprocess.run(["bash", str(wrapper)], env=env, capture_output=True, text=True, check=False)
+    assert missing.returncode == 1 and "bash install.sh tools" in missing.stderr
+
+
+def test_version_edge_cases_and_last_line_wins(tmp_path):
+    for odd in ("26.4.0abc", "v26.4", "stable", "26.4.0-rc1x y"):
+        assert ctl.version_supported(odd) is False
+    assert ctl.version_supported("v26.5.0-rc.1") is True
+    env = tmp_path / ".env"
+    env.write_text("FLUXOMNI_VERSION=v26.3.2\nFLUXOMNI_VERSION=26.4.0\n")
+    assert ctl.read_env_value(env, "FLUXOMNI_VERSION") == "26.4.0"
+
+
+def test_doctor_reads_addresses_on_macos_and_survives_disk_errors(tmp_path, capsys):
+    host = doctor_host()
+    host.commands["hostname"] = (1, "")
+    host.commands["ip"] = (127, "")
+    host.commands["ifconfig"] = (0, "lo0: inet 127.0.0.1\nen0: inet 192.168.1.9 netmask 0xffffff00")
+    assert ctl.host_addresses(host) == ["192.168.1.9"]
+
+    def broken(path):
+        raise OSError("gone")
+
+    host.disk_free = broken
+    install = doctor_install(tmp_path, extra_env="FLUXOMNI_CONTROL_PLANE_INTERNAL_AUTH_TOKEN=t\n")
+    ctl.doctor(install, host, environ={})
+    assert "cannot read" in capsys.readouterr().out

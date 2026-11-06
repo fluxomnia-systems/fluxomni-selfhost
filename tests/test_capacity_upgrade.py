@@ -9,6 +9,7 @@ import pytest
 
 MODULE = Path(__file__).resolve().parents[1] / "scripts/capacity-upgrade.py"
 spec = importlib.util.spec_from_file_location("capacity_upgrade", MODULE)
+assert spec is not None and spec.loader is not None
 upgrade = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(upgrade)
 

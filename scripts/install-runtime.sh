@@ -951,6 +951,32 @@ verify_preparation_runtime() {
   echo "Preparation budget: ${PREPARATION_CPU} millicores, ${PREPARATION_MEMORY} MiB, ${PREPARATION_TASKS} threads"
 }
 
+# Install the admin tool on PATH. A missing asset on an older release is only a warning.
+install_fluxomnictl() {
+  local bin_dir tmp
+  if [ "${EUID:-$(id -u)}" -eq 0 ]; then bin_dir=/usr/local/bin; else bin_dir="${HOME}/.local/bin"; fi
+  bin_dir="${FLUXOMNI_CTL_BIN_DIR:-$bin_dir}"
+  tmp="$(mktemp)"
+  if ! curl -fsSL "${REPO_RAW}/scripts/fluxomnictl.py" -o "$tmp" >/dev/null 2>&1 ||
+     ! python3 -c 'import ast,sys; ast.parse(open(sys.argv[1]).read())' "$tmp" >/dev/null 2>&1; then
+    rm -f "$tmp"
+    echo "Warning: fluxomnictl is not published for this release; skipped." >&2
+    return 0
+  fi
+  if [ -L "$bin_dir" ] || [ -L "${bin_dir}/fluxomnictl" ]; then
+    echo "Warning: ${bin_dir} or its fluxomnictl is a symlink; skipped. Run: bash install.sh tools" >&2
+  elif mkdir -p "$bin_dir" && install -m 0755 "$tmp" "${bin_dir}/fluxomnictl"; then
+    echo "Installed fluxomnictl to ${bin_dir}/fluxomnictl"
+    case ":${PATH}:" in
+      *":${bin_dir}:"*) ;;
+      *) echo "Warning: ${bin_dir} is not on PATH. Add it to PATH, or run ${bin_dir}/fluxomnictl directly." >&2 ;;
+    esac
+  else
+    echo "Warning: could not install fluxomnictl to ${bin_dir}; run: bash install.sh tools" >&2
+  fi
+  rm -f "$tmp"
+}
+
 # @lat: [[installation#Media-node file limits]]
 ensure_media_node_file_limits() {
   local compose_file="$1"
@@ -1855,6 +1881,7 @@ if [ "$FLUXOMNI_INSTALL_TARGET" = "media-node" ]; then
     unset FLUXOMNI_CREDENTIAL_MODE
   fi
   verify_preparation_runtime
+  install_fluxomnictl || true
 
   MEDIA_HOST="$(read_env_file_value "FLUXOMNI_MEDIA_NODE_PUBLIC_HOST" .env)"
   MEDIA_NODE_ID="$(read_env_file_value "FLUXOMNI_MEDIA_NODE_ID" .env)"
@@ -1873,6 +1900,7 @@ if [ "$FLUXOMNI_INSTALL_TARGET" = "media-node" ]; then
   echo "Common commands:"
   echo "  Update: follow the capacity upgrade guide and rerun install.sh with --capacity-upgrade node --confirm-control-plane-ready"
   echo "  Logs  : cd ${FLUXOMNI_DIR} && ${DOCKER_DISPLAY} compose logs -f media-node"
+  echo "  Check : fluxomnictl doctor   (preparation limits: fluxomnictl preparation check)"
   echo "  Stop  : drain routes using the capacity upgrade guide before stopping containers"
   exit 0
 fi
@@ -1893,6 +1921,7 @@ if ! wait_for_container_ready "$MEDIA_NODE_CONTAINER_NAME" "media-node"; then
 fi
 
 verify_preparation_runtime
+install_fluxomnictl || true
 
 HOST="$(read_env_file_value "FLUXOMNI_PUBLIC_HOST" .env)"
 MEDIA_HOST="$(read_env_file_value "FLUXOMNI_MEDIA_NODE_PUBLIC_HOST" .env)"
@@ -1911,4 +1940,5 @@ echo
 echo "Common commands:"
 echo "  Update: follow the capacity upgrade guide and rerun install.sh with --capacity-upgrade initial or drained"
 echo "  Logs  : cd ${FLUXOMNI_DIR} && ${DOCKER_DISPLAY} compose logs -f frontend control-plane media-node"
+echo "  Check : fluxomnictl doctor   (preparation limits: fluxomnictl preparation check)"
 echo "  Stop  : drain routes using the capacity upgrade guide before stopping containers"

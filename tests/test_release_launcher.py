@@ -183,3 +183,60 @@ def test_launcher_help_matches_the_runtime_usage(launch):
     assert "fluxomnictl preparation" in result.stdout
     assert "--capacity-upgrade drained" in result.stdout
     assert not requests.exists()
+def tools_routes(routes):
+    routes[f"{RAW}/main/scripts/fluxomnictl.py"] = (ROOT / "scripts/fluxomnictl.py").read_text()
+    routes[f"{RAW}/main/doctor.sh"] = (ROOT / "doctor.sh").read_text()
+
+
+def make_install(destination, version):
+    destination.mkdir(parents=True)
+    (destination / ".env").write_text(f"FLUXOMNI_VERSION={version}\n")
+    (destination / "docker-compose.yml").write_text("services:\n  media-node: {}\n")
+    (destination / "doctor.sh").write_text("old\n")
+
+
+def test_tools_installs_the_tool_and_doctor_wrapper_without_touching_anything_else(launch, tmp_path):
+    routes, destination, requests, run = launch
+    tools_routes(routes)
+    make_install(destination, "26.4.0")
+    before = (destination / ".env").read_text()
+    bin_dir = tmp_path / "bin"
+    result = run(["tools"], {"FLUXOMNI_CTL_BIN_DIR": str(bin_dir)})
+    assert result.returncode == 0, result.stderr
+    assert (bin_dir / "fluxomnictl").read_text() == (ROOT / "scripts/fluxomnictl.py").read_text()
+    assert os.access(bin_dir / "fluxomnictl", os.X_OK)
+    assert (destination / "doctor.sh").read_text() == (ROOT / "doctor.sh").read_text()
+    assert (destination / ".env").read_text() == before
+    assert sorted(path.name for path in destination.iterdir()) == [".env", "docker-compose.yml", "doctor.sh"]
+    assert requests.read_text().splitlines() == [f"{RAW}/main/scripts/fluxomnictl.py", f"{RAW}/main/doctor.sh"]
+    assert "is not on PATH" in result.stderr
+
+
+def test_tools_refuses_unsupported_versions_before_writing(launch, tmp_path):
+    routes, destination, _, run = launch
+    tools_routes(routes)
+    make_install(destination, "v26.3.2")
+    bin_dir = tmp_path / "bin"
+    result = run(["tools"], {"FLUXOMNI_CTL_BIN_DIR": str(bin_dir)})
+    assert result.returncode == 1
+    assert "supports v26.4.0 and newer" in result.stderr and "No files were changed" in result.stderr
+    assert not bin_dir.exists()
+    assert (destination / "doctor.sh").read_text() == "old\n"
+
+
+def test_tools_needs_an_install_and_no_extra_arguments(launch, tmp_path):
+    routes, _, requests, run = launch
+    tools_routes(routes)
+    missing = run(["tools"], {"FLUXOMNI_CTL_BIN_DIR": str(tmp_path / "bin")})
+    assert missing.returncode == 1 and "no existing install found" in missing.stderr
+    extra = run(["tools", "full"])
+    assert extra.returncode == 1 and '"tools" takes no other arguments' in extra.stderr
+    assert not requests.exists()
+
+
+def test_tools_downloads_nothing_changed_when_the_tool_is_not_published(launch, tmp_path):
+    _, destination, _, run = launch
+    make_install(destination, "26.4.0")
+    result = run(["tools"], {"FLUXOMNI_CTL_BIN_DIR": str(tmp_path / "bin")})
+    assert result.returncode == 1 and "cannot download fluxomnictl" in result.stderr
+    assert not (tmp_path / "bin").exists()

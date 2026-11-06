@@ -178,15 +178,22 @@ class Host:
         temporary.chmod(0o644)
         os.replace(temporary, path)
 
-    def run(self, args, timeout=30):
+    def run(self, args, timeout=30, cwd=None):
         """Return (status, output); 127 when the command does not exist."""
         try:
-            done = subprocess.run(args, capture_output=True, text=True, timeout=timeout, check=False)
+            done = subprocess.run(args, capture_output=True, text=True, timeout=timeout, cwd=cwd, check=False)
         except FileNotFoundError:
             return 127, ""
         except subprocess.TimeoutExpired:
             return 124, ""
         return done.returncode, (done.stdout + done.stderr).strip()
+
+    def exists(self, path):
+        return Path(path).exists()
+
+    def disk_free(self, path):
+        usage = shutil.disk_usage(path)
+        return f"{usage.free / 1024 ** 3:.1f} GiB"
 
     def cpus(self):
         return os.cpu_count() or 1
@@ -333,6 +340,197 @@ def suggest_budgets(cpus, memory_mib):
     }
 
 
+MIN_SUPPORTED = (26, 4, 0)
+FLOATING_VERSIONS = ("", "latest", "edge", "main")
+
+
+def installed_version(install):
+    return read_env_value(install.path / ".env", "FLUXOMNI_VERSION").strip()
+
+
+def version_supported(version):
+    """Installs from v26.4.0 on are supported; floating tags are accepted."""
+    if version in FLOATING_VERSIONS:
+        return True
+    found = re.fullmatch(r"v?(\d+)\.(\d+)\.(\d+)(?:[-+][0-9A-Za-z.-]+)?", version)
+    return bool(found) and tuple(int(part) for part in found.groups()) >= MIN_SUPPORTED
+
+
+def require_supported(install):
+    version = installed_version(install)
+    if not version_supported(version):
+        wanted = ".".join(str(part) for part in MIN_SUPPORTED)
+        raise CtlError(f"{install.path} runs Fluxomni {version or 'unknown'}, but this tool supports v{wanted} and newer. Upgrade the install first (see the capacity upgrade guide)")
+
+
+ICONS = {"pass": "\u2705", "fail": "\u274c", "warn": "\u26a0\ufe0f ", "info": "\u2139\ufe0f "}
+
+
+class Report:
+    """Doctor output. A failed required check makes the run fail."""
+
+    def __init__(self, out):
+        self.out, self.failed = out, False
+
+    def section(self, title):
+        print(f"\n--- {title} ---", file=self.out)
+
+    def check(self, status, label, hint=""):
+        if status == "fail":
+            self.failed = True
+        print(f"  {ICONS[status]}  {label:<45} {hint}".rstrip(), file=self.out)
+
+    def say(self, text=""):
+        print(text, file=self.out)
+
+
+def read_env_value(path, key):
+    """First KEY=value line, quotes removed, like the old doctor.sh."""
+    value = ""
+    try:
+        for line in Path(path).read_text().splitlines():
+            if line.startswith(key + "="):
+                value = line.split("=", 1)[1].replace('"', "").replace("'", "")
+    except OSError:
+        pass
+    return value
+
+
+def host_addresses(host):
+    status, output = host.run(["hostname", "-I"])
+    if status != 0 or not output:
+        for command in (["ip", "-o", "-4", "addr", "show"], ["ifconfig"]):
+            status, text = host.run(command)
+            output = " ".join(re.findall(r"inet (?:addr:)?(\d+\.\d+\.\d+\.\d+)", text)) if status == 0 else ""
+            if output:
+                break
+    return [item for item in output.split() if re.fullmatch(r"\d+\.\d+\.\d+\.\d+", item) and not item.startswith("127.")]
+
+
+def port_check(report, host, port, label):
+    port = str(port).rsplit(":", 1)[-1]
+    status, output = host.run(["lsof", f"-iTCP:{port}", "-sTCP:LISTEN", "-P", "-n"])
+    if status == 0 and output:
+        if "docker" in output:
+            report.check("pass", f"Port {port} ({label}) is used by Docker")
+        else:
+            owner = output.splitlines()[-1].split()[0] if output.splitlines() else ""
+            report.check("warn", f"Port {port} ({label}) in use by another process", owner)
+    else:
+        report.check("pass", f"Port {port} ({label}) available")
+
+
+def doctor(install, host, out=None, environ=None):
+    """Health check of one install. Returns the process exit code."""
+    out = out or sys.stdout
+    environ = os.environ if environ is None else environ
+    report = Report(out)
+    folder = str(install.path)
+    env_file, compose_file = install.path / ".env", install.path / "docker-compose.yml"
+    print(f"Fluxomni Self-Host Doctor: {install.path} ({install.target})", file=out)
+    report.section("Prerequisites")
+    if host.which("docker"):
+        status, version = host.run(["docker", "version", "--format", "{{.Server.Version}}"])
+        report.check("pass", "Docker installed", version if status == 0 and version else "running but inaccessible")
+    else:
+        report.check("fail", "Docker not installed", "Install from https://docs.docker.com/engine/install/")
+    status, version = host.run(["docker", "compose", "version", "--short"], cwd=folder)
+    if status == 0:
+        report.check("pass", "Docker Compose installed", version)
+    else:
+        report.check("fail", "Docker Compose not installed", "Required for self-hosting")
+    report.section("Configuration")
+    standalone = False
+    if env_file.is_file():
+        report.check("pass", ".env file exists")
+        read = lambda key: read_env_value(env_file, key)
+        token = read("FLUXOMNI_CONTROL_PLANE_INTERNAL_AUTH_TOKEN")
+        if read("FLUXOMNI_NODE_CREDENTIAL_FILE"):
+            standalone = True
+            secret = install.path / "node-secrets" / "credential"
+            if secret.is_file() and secret.stat().st_size:
+                report.check("pass", "Node credential saved")
+            else:
+                report.check("fail", "Node credential missing", "Restore node-secrets from backup; do not rotate by deleting the directory.")
+        elif token:
+            report.check("pass", "Internal Auth Token configured")
+        else:
+            report.check("fail", "Internal Auth Token MISSING", "Set FLUXOMNI_CONTROL_PLANE_INTERNAL_AUTH_TOKEN in .env")
+        public = read("FLUXOMNI_PUBLIC_HOST")
+        addresses = host_addresses(host)
+        if public:
+            report.check("info", "Public Host", public)
+            if addresses and public not in ("127.0.0.1", "localhost") and public not in addresses:
+                report.check("warn", f"PUBLIC_HOST ({public}) NOT found in host IPs ({' '.join(addresses)})", "Verify reachability from your client network")
+            elif addresses and public in ("127.0.0.1", "localhost"):
+                report.say("\nHint: To access the Web UI from another machine, set FLUXOMNI_PUBLIC_HOST to one of these IPs in .env:")
+                for address in addresses:
+                    report.say(f"   - {address}")
+                report.say("   Run: sed -i 's/FLUXOMNI_PUBLIC_HOST=.*/FLUXOMNI_PUBLIC_HOST=<chosen-ip>/' .env && docker compose up -d")
+        elif standalone:
+            report.check("info", "Private node", "Public media is optional; control is outbound.")
+        else:
+            report.check("warn", "FLUXOMNI_PUBLIC_HOST unset", "Defaults to 127.0.0.1 (local access only)")
+            report.say("\nHint: To access the Web UI from another machine, set FLUXOMNI_PUBLIC_HOST to your server's IP in .env:")
+            for address in addresses:
+                report.say(f"   - {address}")
+    else:
+        read = lambda key: ""
+        report.check("fail", ".env file missing", "Run install.sh or create .env from .env.example")
+    if compose_file.is_file():
+        report.check("pass", "docker-compose.yml exists")
+    else:
+        report.check("fail", "docker-compose.yml missing", "Run doctor for an install folder (use --dir)")
+    report.section("Port Availability")
+    ports = {
+        "frontend": environ.get("FLUXOMNI_FRONTEND_HTTP_PORT") or environ.get("FLUXOMNI_CONTROL_PLANE_HTTP_PORT") or "80",
+        "rtmp": environ.get("FLUXOMNI_MEDIA_NODE_RTMP_PORT", "1935"),
+        "hls": environ.get("FLUXOMNI_MEDIA_NODE_HLS_PORT", "8000"),
+        "whip": environ.get("FLUXOMNI_MEDIA_NODE_WHIP_PORT", "8003"),
+        "rpc": environ.get("FLUXOMNI_CONTROL_PLANE_RPC_PORT", "127.0.0.1:50052"),
+    }
+    if not standalone:
+        port_check(report, host, ports["frontend"], "Web UI")
+        port_check(report, host, ports["rpc"], "Outbound control listener")
+    if not standalone or read("FLUXOMNI_MEDIA_NODE_PUBLIC_HOST"):
+        port_check(report, host, ports["rtmp"], "RTMP Ingest")
+        port_check(report, host, ports["hls"], "HLS Playback")
+        port_check(report, host, ports["whip"], "WHIP Signaling")
+    report.section("Container Status")
+    if host.which("docker") and compose_file.is_file():
+        status, services = host.run(["docker", "compose", "ps", "--format", "json"], cwd=folder, timeout=90)
+        if status == 0 and services:
+            _, expected = host.run(["docker", "compose", "config", "--services"], cwd=folder)
+            expected = expected.split()
+            for name in ("frontend", "control-plane", "media-node"):
+                if name not in expected:
+                    continue
+                _, state = host.run(["docker", "compose", "ps", name, "--format", "{{.Status}}"], cwd=folder)
+                state = state or "missing"
+                if state.lower().startswith(("running", "up")):
+                    report.check("pass", f"{name} container", state)
+                else:
+                    report.check("fail", f"{name} container NOT running", state)
+        else:
+            report.check("info", "No containers currently managed by docker-compose", "Run: docker compose up -d")
+    report.section("Disk & Data")
+    try:
+        report.check("info", "Available disk space", host.disk_free(folder))
+    except OSError:
+        report.check("warn", "Available disk space", "cannot read")
+    if (install.path / "data").is_dir():
+        report.check("pass", "data/ directory exists")
+        if (install.path / "data" / "state.db").is_file():
+            report.check("pass", "SQLite database (state.db) found")
+        else:
+            report.check("warn", "SQLite database NOT found", "Will be created on first start")
+    else:
+        report.check("warn", "data/ directory missing", "Will be created on first start")
+    report.say()
+    report.say("Fluxomni self-host environment looks good!" if not report.failed else "Some issues were detected in your self-host setup.")
+    return 1 if report.failed else 0
+
+
 def run_check(args, host, interactive, ask, environ=None):
     """Run the host checks, optionally enabling controllers first."""
     if args.enable_controllers:
@@ -352,6 +550,8 @@ def build_parser():
     parser.add_argument("--target", choices=TARGETS, help="only consider installs of this target")
     commands = parser.add_subparsers(dest="command", metavar="COMMAND")
     commands.add_parser("where", help="print the selected install folder and target")
+    commands.add_parser("check-support", help="fail when the installed version is not supported by this tool")
+    commands.add_parser("doctor", help="check one install: prerequisites, config, ports, containers, disk")
     preparation = commands.add_parser("preparation", help="offline preparation limits")
     actions = preparation.add_subparsers(dest="action", metavar="ACTION", required=True)
     check = actions.add_parser("check", help="check every host requirement and list all problems")
@@ -374,6 +574,11 @@ def main(argv=None, environ=None, cwd=None, interactive=None, host=None, ask=inp
         install = select_install(args.dir, args.target, cwd, environ, interactive, ask)
         if args.command == "where":
             print(f"{install.path} {install.target}")
+        elif args.command == "check-support":
+            require_supported(install)
+            print(f"{install.path}: Fluxomni {installed_version(install) or 'unknown'} is supported")
+        elif args.command == "doctor":
+            return doctor(install, host, environ=environ)
     except CtlError as error:
         print(f"Error: {error}.", file=sys.stderr)
         return 1

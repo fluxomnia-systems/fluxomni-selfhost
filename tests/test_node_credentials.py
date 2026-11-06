@@ -10,6 +10,7 @@ import pytest
 from test_install import installation  # noqa: F401
 
 SPEC = importlib.util.spec_from_file_location("node_credentials", Path(__file__).parents[1] / "scripts/node-credentials.py")
+assert SPEC is not None and SPEC.loader is not None
 helper = importlib.util.module_from_spec(SPEC)
 SPEC.loader.exec_module(helper)
 OLD = "a" * 64
