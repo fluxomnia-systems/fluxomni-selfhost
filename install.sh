@@ -55,6 +55,63 @@ raw_root="https://raw.githubusercontent.com/$repo"
 temporary=$(mktemp -d)
 trap 'rm -rf "$temporary"' EXIT
 
+# "tools" installs fluxomnictl and the doctor.sh wrapper for existing installs.
+# It never pulls images, restarts services, or touches capacity state.
+install_tools() {
+  local tool_root bin_dir dir found=() checked=()
+  tool_root="${FLUXOMNI_REPO_RAW:-$raw_root/main}"
+  if [ -n "${FLUXOMNI_DIR:-}" ]; then
+    checked=("$FLUXOMNI_DIR")
+  else
+    checked=("$home_dir/fluxomni" "$home_dir/fluxomni-media-node")
+  fi
+  for dir in "${checked[@]}"; do
+    if [ -f "$dir/.env" ] && [ -f "$dir/docker-compose.yml" ]; then found+=("$dir"); fi
+  done
+  if [ "${#found[@]}" -eq 0 ]; then
+    echo "Error: no existing install found. Checked: ${checked[*]}. Set FLUXOMNI_DIR to the install folder." >&2
+    return 1
+  fi
+  command -v python3 >/dev/null 2>&1 || { echo 'Error: python3 is required for fluxomnictl.' >&2; return 1; }
+  case "$tool_root" in
+    https://*) ;;
+    *) [ -n "${FLUXOMNI_REPO_RAW:-}" ] || { echo 'Error: tools needs an https download source.' >&2; return 1; } ;;
+  esac
+  curl -fsSL "$tool_root/scripts/fluxomnictl.py" -o "$temporary/fluxomnictl" || { echo 'Error: cannot download fluxomnictl. No files were changed.' >&2; return 1; }
+  curl -fsSL "$tool_root/doctor.sh" -o "$temporary/doctor.sh" || { echo 'Error: cannot download doctor.sh. No files were changed.' >&2; return 1; }
+  python3 -c 'import ast,sys; ast.parse(open(sys.argv[1]).read())' "$temporary/fluxomnictl" || return 1
+  bash -n "$temporary/doctor.sh" || return 1
+  # Refuse unsupported installed versions before writing anything.
+  local support
+  for dir in "${found[@]}"; do
+    support=$(python3 "$temporary/fluxomnictl" --dir "$dir" check-support 2>&1) || {
+      printf '%s\n' "$support" >&2
+      echo 'No files were changed.' >&2
+      return 1
+    }
+  done
+  if [ "$(id -u)" -eq 0 ]; then bin_dir=/usr/local/bin; else bin_dir="$home_dir/.local/bin"; fi
+  bin_dir="${FLUXOMNI_CTL_BIN_DIR:-$bin_dir}"
+  if [ -L "$bin_dir" ] || [ -L "$bin_dir/fluxomnictl" ]; then
+    echo "Error: $bin_dir or its fluxomnictl is a symlink. No files were changed." >&2
+    return 1
+  fi
+  mkdir -p "$bin_dir"
+  install -m 0755 "$temporary/fluxomnictl" "$bin_dir/fluxomnictl"
+  for dir in "${found[@]}"; do
+    install -m 0755 "$temporary/doctor.sh" "$dir/doctor.sh" || { echo "Error: cannot update $dir/doctor.sh. fluxomnictl is installed; rerun after fixing permissions." >&2; return 1; }
+    echo "Updated $dir/doctor.sh"
+  done
+  echo "Installed fluxomnictl to $bin_dir/fluxomnictl"
+  case ":$PATH:" in *":$bin_dir:"*) ;; *) echo "Warning: $bin_dir is not on PATH. Add it to PATH, or run $bin_dir/fluxomnictl directly." >&2 ;; esac
+}
+
+if [ "${arguments[0]:-}" = tools ]; then
+  [ "${#arguments[@]}" -eq 1 ] || { echo 'Error: "tools" takes no other arguments.' >&2; exit 1; }
+  install_tools || exit 1
+  exit 0
+fi
+
 load_version_map() {
   curl -fsSL "$raw_root/main/scripts/generated-version-map.sh" -o "$temporary/version-map.sh" || {
     echo 'Error: cannot resolve the stable installer release.' >&2; return 1;

@@ -1000,3 +1000,23 @@ def test_preparation_only_rerun_points_to_fluxomnictl(installation):
     assert "install.sh tools" in result.stderr
     plain = run("full", None, [])
     assert "fluxomnictl" not in plain.stderr
+def test_install_places_fluxomnictl_on_the_bin_path_and_warns_when_not_on_path(installation, tmp_path):
+    _, _, run = installation
+    bin_dir = tmp_path / "ctl-bin"
+    result = run("full", {"FLUXOMNI_CTL_BIN_DIR": str(bin_dir)})
+    assert result.returncode == 0, result.stderr
+    assert (bin_dir / "fluxomnictl").read_text() == (ROOT / "scripts/fluxomnictl.py").read_text()
+    assert os.access(bin_dir / "fluxomnictl", os.X_OK)
+    assert f"Installed fluxomnictl to {bin_dir}/fluxomnictl" in result.stdout
+    assert f"{bin_dir} is not on PATH" in result.stderr
+    covered = run("full", {"FLUXOMNI_CTL_BIN_DIR": str(bin_dir), "PATH": f"{bin_dir}:" + os.environ["PATH"]})
+    assert "is not on PATH" not in covered.stderr
+
+
+def test_old_release_without_the_tool_still_installs(installation, tmp_path):
+    assets, _, run = installation
+    (assets / "scripts" / "fluxomnictl.py").unlink()
+    result = run("full", {"FLUXOMNI_CTL_BIN_DIR": str(tmp_path / "ctl-bin")})
+    assert result.returncode == 0, result.stderr
+    assert "fluxomnictl is not published for this release" in result.stderr
+    assert not (tmp_path / "ctl-bin").exists()
