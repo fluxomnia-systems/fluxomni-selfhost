@@ -96,7 +96,7 @@ Follow the [capacity upgrade guide](capacity-upgrades.md). Installer reruns requ
 
 ## Offline Preparation Resource Limits
 
-A new install turns this on when the host can enforce it. The budgets are about 25% of CPU, 25% of memory, and 256 threads. The installer prints the numbers. Set `FLUXOMNI_PREPARATION_CGROUP_ENABLED=0` to skip it. An existing install keeps its saved choice.
+From the installer release after v26.4.0, a new Linux host with a normal Docker Engine turns preparation limits on. Docker Desktop and WSL stay off. The budgets are about 25% of CPU, 25% of memory, and 256 threads. The installer prints the numbers. Set `FLUXOMNI_PREPARATION_CGROUP_ENABLED=0` to skip it. An existing install keeps its saved choice.
 
 Each media node can have its own shared budget for playlist normalization.
 Live FFmpeg and SRS remain outside that preparation group. The Fleet node's
@@ -105,8 +105,8 @@ active/waiting preparation jobs.
 
 This option requires a media-node build that supports preparation cgroups,
 Linux with cgroup v2, a local rootful Docker daemon without user namespace
-remapping, systemd, Python 3 at `/usr/bin/python3`, and root or sudo. Docker Desktop, remote Docker
-contexts and rootless Docker are not supported.
+remapping, systemd, Python 3 at `/usr/bin/python3`, and root or sudo. Docker Desktop, WSL, remote Docker
+contexts and rootless Docker are not supported. A new install leaves limits off there and continues.
 
 If `fluxomnictl` is not installed yet, install it first. See [Installation Health Check (Doctor)](troubleshooting.md#installation-health-check-doctor). It does not pull images or restart services.
 

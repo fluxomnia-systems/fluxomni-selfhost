@@ -62,9 +62,9 @@ The tests use local assets and simulated commands with real Compose rendering so
 
 ## Preparation installation configuration
 
-Full and standalone installs support an opt-in preparation budget with explicit CPU, memory and thread limits, persisted per installation.
+A new install enables preparation when the host Docker Engine can enforce it. Docker Desktop and WSL stay off. Later runs keep the saved flag.
 
-A fresh install enables preparation when the host can enforce it, and fills empty budgets from about 25% of CPU and memory plus 256 threads. An existing install without a saved flag stays off. `FLUXOMNI_PREPARATION_CGROUP_ENABLED=1` requires all three positive integer budgets. Requests override saved values; absent overrides preserve them. Disabled budgets become comments so `env_file` never injects partial runtime options. Enable/disable requires installer regeneration of the include. Validation/provisioning failures restore only installer-managed files, never operator overrides or runtime data.
+A fresh install enables preparation when the host Docker Engine can enforce it. Docker Desktop and WSL stay off. Empty budgets are about 25% of CPU and memory plus 256 threads. An existing install without a saved flag stays off. `FLUXOMNI_PREPARATION_CGROUP_ENABLED=1` requires all three positive integer budgets. Requests override saved values; absent overrides preserve them. Disabled budgets become comments so `env_file` never injects partial runtime options. Enable/disable requires installer regeneration of the include. Validation/provisioning failures restore only installer-managed files, never operator overrides or runtime data.
 
 ## Preparation host prerequisites
 

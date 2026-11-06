@@ -56,7 +56,7 @@ Expand the **Show advanced options** section. Go to the **Management** tab and p
 curl -fsSL https://install.fluxomni.io | WITH_FIREWALLD=1 bash -s
 ```
 
-On a new Linux host that can enforce preparation limits, this also turns them on. The installer prints the CPU, memory, and thread budgets. Set `FLUXOMNI_PREPARATION_CGROUP_ENABLED=0` before `bash` to skip them.
+From the installer release after v26.4.0, a new Linux host with a normal Docker Engine also turns preparation limits on. Docker Desktop and WSL stay off. The installer prints the budgets. Set `FLUXOMNI_PREPARATION_CGROUP_ENABLED=0` before `bash` to skip them.
 
 ![Cloud-init script](../images/oci_1.5.2.png)
 

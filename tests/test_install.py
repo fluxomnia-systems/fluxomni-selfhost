@@ -84,7 +84,10 @@ elif name == "python3":
     else:
         sys.exit(subprocess.run([sys.executable, *args]).returncode)
 elif name == "uname":
-    print(os.environ.get("TEST_HOST_OS", "Linux"))
+    if "-r" in args:
+        print(os.environ.get("TEST_KERNEL_RELEASE", "6.8.0"))
+    else:
+        print(os.environ.get("TEST_HOST_OS", "Linux"))
 elif name == "stat":
     print(os.environ.get("TEST_CGROUP_FS", "cgroup2fs"))
 elif name == "hostname":
@@ -93,7 +96,8 @@ elif name == "nc":
     with (Path(os.environ["TEST_ASSETS"]).parent / "connectivity.jsonl").open("a") as log:
         log.write(json.dumps(args) + "\n")
 elif name == "sudo":
-    sys.exit(subprocess.run(args).returncode)
+    forwarded = args[1:] if args[:1] == ["-n"] else args
+    sys.exit(subprocess.run(forwarded).returncode)
 elif name in ("apt-get", "ufw", "firewall-cmd", "systemctl"):
     if name == "systemctl" and os.environ.get("TEST_SYSTEMCTL_FAIL"):
         sys.exit(1)
@@ -134,7 +138,11 @@ elif name == "docker":
         if args[:2] == ["compose", "pull"] and os.environ.get("TEST_PULL_FAIL"):
             sys.exit(1)
     elif args[:2] == ["info", "--format"]:
-        print(os.environ.get("TEST_DOCKER_INFO", '2 ["name=seccomp"]'))
+        fmt = args[2] if len(args) > 2 else ""
+        if "OperatingSystem" in fmt:
+            print(os.environ.get("TEST_DOCKER_OS", "Docker Engine"))
+        else:
+            print(os.environ.get("TEST_DOCKER_INFO", '2 ["name=seccomp"]'))
     elif args[:2] == ["context", "show"]:
         print("default")
     elif args[:2] == ["context", "inspect"]:
@@ -419,6 +427,22 @@ def test_fresh_install_fills_only_the_empty_budgets(installation):
     assert node["environment"]["FLUXOMNI_PREPARATION_CPU_MILLICORES"] == "1000"
     assert node["environment"]["FLUXOMNI_PREPARATION_MEMORY_MIB"] == "2048"
     assert node["environment"]["FLUXOMNI_PREPARATION_TASKS"] == "512"
+
+
+def test_fresh_install_skips_preparation_on_docker_desktop(installation):
+    _, destination, run = installation
+    result = run("full", {"TEST_DOCKER_OS": "Docker Desktop"})
+    assert result.returncode == 0, result.stdout + result.stderr
+    assert "not Docker Desktop" in result.stderr
+    assert "cgroup" not in started_node(destination)
+
+
+def test_fresh_install_skips_preparation_on_wsl(installation):
+    _, destination, run = installation
+    result = run("full", {"TEST_KERNEL_RELEASE": "5.15.0-microsoft-standard-WSL2"})
+    assert result.returncode == 0, result.stdout + result.stderr
+    assert "not WSL" in result.stderr
+    assert "cgroup" not in started_node(destination)
 
 
 def test_fresh_install_skips_preparation_when_the_host_cannot_enforce_it(installation):

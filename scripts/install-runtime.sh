@@ -905,16 +905,29 @@ preflight_preparation_host() {
     preparation_refuse "$strict" 'preparation isolation requires rootful cgroup-v2 Docker without user namespace remapping.' || return 1
   fi
   [ "$(stat -fc %T /sys/fs/cgroup)" = cgroup2fs ] || preparation_refuse "$strict" 'host cgroup v2 is required.' || return 1
+  docker_os="$("${DOCKER_CMD[@]}" info --format '{{.OperatingSystem}}')"
+  if printf '%s' "$docker_os" | grep -q 'Docker Desktop'; then
+    preparation_refuse "$strict" 'preparation limits need a Linux Docker Engine, not Docker Desktop.' || return 1
+  fi
+  kernel="$(uname -r 2>/dev/null || true)"
+  if printf '%s' "$kernel" | grep -qi microsoft; then
+    preparation_refuse "$strict" 'preparation limits need a Linux host, not WSL.' || return 1
+  fi
   if ! controllers="$(python3 -c 'from pathlib import Path; p=Path("/sys/fs/cgroup/cgroup.subtree_control"); print(p.read_text() if p.is_file() else "")' 2>/dev/null)"; then
     preparation_refuse "$strict" 'python3 could not read cgroup controllers.' || return 1
   fi
   for need in cpu memory pids; do
     printf '%s' "$controllers" | grep -qw "$need" || preparation_refuse "$strict" 'cpu, memory, and pids controllers are not enabled.' || return 1
   done
-  if [ "$strict" = 0 ] && [ "${EUID:-$(id -u)}" -ne 0 ] && ! command -v sudo >/dev/null 2>&1; then
-    preparation_refuse 0 'preparation provisioning requires root or sudo.' || return 1
-  fi
-  if ! run_privileged systemctl show-environment >/dev/null; then
+  if [ "$strict" = 0 ]; then
+    if [ "${EUID:-$(id -u)}" -eq 0 ]; then
+      systemctl show-environment >/dev/null || preparation_refuse 0 'systemd did not accept the preparation check.' || return 1
+    elif ! command -v sudo >/dev/null 2>&1; then
+      preparation_refuse 0 'preparation provisioning requires root or sudo.' || return 1
+    elif ! sudo -n systemctl show-environment >/dev/null; then
+      preparation_refuse 0 'systemd did not accept the preparation check.' || return 1
+    fi
+  elif ! run_privileged systemctl show-environment >/dev/null; then
     preparation_refuse "$strict" 'systemd did not accept the preparation check.' || return 1
   fi
 }
