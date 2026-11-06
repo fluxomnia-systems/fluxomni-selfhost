@@ -181,7 +181,7 @@ class Host:
     def run(self, args, timeout=30):
         """Return (status, output); 127 when the command does not exist."""
         try:
-            done = subprocess.run(args, capture_output=True, text=True, timeout=timeout)
+            done = subprocess.run(args, capture_output=True, text=True, timeout=timeout, check=False)
         except FileNotFoundError:
             return 127, ""
         except subprocess.TimeoutExpired:
