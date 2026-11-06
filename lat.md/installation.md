@@ -72,6 +72,12 @@ Preparation provisioning requires a local rootful Linux cgroup-v2 Docker daemon,
 
 Docker Desktop, remote contexts, rootless daemons and user namespace remapping fail before configuration changes. The helper never enables host-wide controllers. CPU, memory and pids limits remain exclusively owned by the runtime.
 
+## Local admin tool
+
+[[scripts/fluxomnictl.py#main|fluxomnictl]] finds a full or standalone install and checks it without pulling images or restarting services.
+
+`bash install.sh tools` installs the current tool for a supported install (`v26.4.0` or newer, including `latest` and `edge`). Root gets `/usr/local/bin`. Other users get `~/.local/bin`. [[doctor.sh]] only forwards to `fluxomnictl doctor` for that install folder. [[scripts/fluxomnictl.py#preparation_checks]] lists every preparation host failure. `--enable-controllers` writes a systemd drop-in only after confirmation and never removes it.
+
 ## Preparation group lifecycle
 
 Each canonical install directory has a hash-named group, root-owned ownership marker, helper and boot unit, supporting safe reruns and reboot recreation.

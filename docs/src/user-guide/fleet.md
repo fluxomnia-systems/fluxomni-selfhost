@@ -94,7 +94,7 @@ Open a node to set **Route limit** and **Output limit**. Blank means unlimited. 
 
 ## Preparation resources
 
-The node page includes **Preparation resources** when the node reports them: CPU, memory, tasks, and the preparation queue, including waiting work. The figures describe offline preparation. They do not predict how many additional routes or outputs will fit. The capture does not start a preparation job.
+The node page includes **Preparation resources** when the node has a preparation budget. It shows CPU, memory, tasks, the preparation queue, and **enforced** when the limits are active. The figures describe offline preparation. They do not predict how many additional routes or outputs will fit. The capture does not start a preparation job. See [Offline Preparation Resource Limits](../getting-started/configuration.md#offline-preparation-resource-limits) to turn the budget on.
 
 ![Preparation CPU, memory, tasks, and queue on a media node](../images/user-guide/v264/fleet-preparation.jpg)
 

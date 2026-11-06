@@ -2,20 +2,36 @@
 
 ## Installation Health Check (Doctor)
 
-If you have issues during or after installation, run the diagnostic script from your install directory:
+If you have issues during or after installation, run the admin tool. It finds the install folder, so you can run it from any directory:
 
 ```bash
-# From your install directory (default ~/fluxomni)
-./doctor.sh
+fluxomnictl doctor
 ```
 
-The script verifies:
+A full install and a standalone media node can both exist. Pick one with `--dir` or `--target`:
+
+```bash
+fluxomnictl --dir ~/fluxomni-media-node doctor
+fluxomnictl --target media-node doctor
+```
+
+`./doctor.sh` in the install folder does the same check. It calls `fluxomnictl`. If the command is missing, install the tool without changing the stack:
+
+```bash
+bash install.sh tools
+```
+
+Root installs it to `/usr/local/bin`. Other users get `~/.local/bin`. Add that folder to `PATH` if the shell cannot find the command.
+
+The check covers:
 
 - Docker and Docker Compose installation
 - Environment configuration (`.env`)
 - Port availability (checks for conflicts with other services)
 - Container running status
 - Disk space and data directory integrity
+
+For preparation limits, run `fluxomnictl preparation check`. It lists every failed host check, with a fix for each one.
 
 ## Container Does Not Start
 
@@ -168,7 +184,7 @@ Access the Control Surface at `http://<HOST-IP>:8080`. If you also set `FLUXOMNI
 
 In environments with multiple networks (e.g. cloud VPCs, complex office LANs, or behind NAT), the Web UI might be unreachable if the public-facing address is misconfigured.
 
-The **Self-Host Doctor** (`./doctor.sh`) detects your local IP addresses and warns you if `FLUXOMNI_PUBLIC_HOST` is set to a restricted loopback address.
+The **Self-Host Doctor** (`fluxomnictl doctor`) detects your local IP addresses and warns you if `FLUXOMNI_PUBLIC_HOST` is set to a restricted loopback address.
 
 **Symptoms:**
 
@@ -177,7 +193,7 @@ The **Self-Host Doctor** (`./doctor.sh`) detects your local IP addresses and war
 
 **Resolution:**
 
-1. **Run the Doctor:** `./doctor.sh` to see the recommended IPs for your host.
+1. **Run the Doctor:** `fluxomnictl doctor` to see the recommended IPs for your host.
 2. **Set the correct Public Host:** ensure `FLUXOMNI_PUBLIC_HOST` in `.env` is set to the IP or hostname that your **browser** uses to reach the server.
 3. **Bind to all interfaces:** if you want the Control Plane to be reachable from any network connected to the server, ensure `FLUXOMNI_CONTROL_PLANE_HTTP_BIND` is set to `0.0.0.0:<port>` (default in most setups).
 4. **Check NAT Reflection:** if you are accessing the server via a public IP from inside the same LAN, ensure your router supports NAT reflection (Hairpin NAT).

@@ -141,7 +141,7 @@ docker compose --profile auto-update stop watchtower
 - Configure [authentication and settings](../user-guide/settings.md)
 - Use [private access and tunnels](private-access.md) for Tailscale or Cloudflare Tunnel deployments
 - Review [cloud deployment guides](../deployment/)
-- Use [troubleshooting](troubleshooting.md) if startup fails
+- Use [troubleshooting](troubleshooting.md) if startup fails. `fluxomnictl doctor` checks the install from any directory
 
 For per-node playlist normalization CPU/memory/thread budgets, see
 [Offline Preparation Resource Limits](configuration.md#offline-preparation-resource-limits).
