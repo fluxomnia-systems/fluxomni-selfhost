@@ -281,6 +281,8 @@ An explicit portal update uses a private temporary file and atomic rename. Insta
 
 Compare normalized IP literals and effective ports when checking that the portal differs from the Installation. Equivalent IPv6 or short/numeric IPv4 spellings cannot bypass the check. Different ports remain different origins. This comparison does not rewrite saved origin strings or resolve DNS.
 
+Require the supplied text to match canonical serialization before writing it. Reject expanded IPv6, short/numeric IPv4 aliases and invalid numeric hostnames rather than writing configuration that the native gateway parser will reject at startup.
+
 Require host Python3 before comparing configured Connect origins. A missing dependency fails before the gateway file is written. Reject gateway symlinks without transaction ownership, so rollback preserves both dangling and resolved operator links and their targets.
 
 Public instructions use verification links, local identity/client review and automatic signed handoffs. Ownership registration does not approve an AI client. Native MCP works independently of Connect. The guided application build is required; this helper option cannot add browser handlers to an older image.

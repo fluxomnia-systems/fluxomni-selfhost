@@ -1587,11 +1587,22 @@ def origin(value):
         try:
             host = socket.inet_ntoa(socket.inet_aton(host))
         except OSError:
-            pass
+            last = host.rsplit(".", 1)[-1]
+            if last.isdigit() or (last.startswith("0x") and all(c in "0123456789abcdef" for c in last[2:])):
+                raise ValueError("Invalid numeric host") from None
     return host, parsed.port or 443
 
+def serialize(value):
+    host, port = value
+    if ":" in host:
+        host = "[" + host + "]"
+    return "https://" + host + (":" + str(port) if port != 443 else "")
+
 try:
-    sys.exit(0 if origin(sys.argv[1]) != origin(sys.argv[2]) else 1)
+    left, right = origin(sys.argv[1]), origin(sys.argv[2])
+    if serialize(left) != sys.argv[1] or serialize(right) != sys.argv[2]:
+        sys.exit(1)
+    sys.exit(0 if left != right else 1)
 except ValueError:
     sys.exit(1)
 PY

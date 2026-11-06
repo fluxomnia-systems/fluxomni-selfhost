@@ -864,6 +864,7 @@ def test_connect_allows_distinct_ports_on_an_ipv6_host(installation):
 @pytest.mark.parametrize("portal", [
     "http://connect.example", "https://connect.example/", "https://connect.example/path",
     "https://user@connect.example", "https://Connect.example", "https://installation.example",
+    "https://[2001:0db8::2]", "https://127.1", "https://256.1", "https://example.123",
     'https://connect.example\"', "https://connect.example?next=x",
 ])
 def test_connect_rejects_invalid_portal_before_starting_services(installation, portal):
