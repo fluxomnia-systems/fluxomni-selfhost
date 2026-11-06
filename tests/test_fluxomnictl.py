@@ -8,6 +8,7 @@ import pytest
 
 ROOT = Path(__file__).resolve().parents[1]
 spec = importlib.util.spec_from_file_location("fluxomnictl", ROOT / "scripts/fluxomnictl.py")
+assert spec is not None and spec.loader is not None
 ctl = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(ctl)
 
@@ -160,6 +161,10 @@ def test_prompt_end_of_input_is_a_clean_failure(home):
         select(home, interactive=True, ask=closed)
 
 
+def must_not_ask(_question):
+    raise AssertionError("must not ask")
+
+
 class FakeHost(ctl.Host):
     """Scriptable host: a file map and a command table."""
 
@@ -294,7 +299,7 @@ def test_enable_controllers_refuses_kernel_gaps_and_skips_when_enabled(capsys):
     host.files["/sys/fs/cgroup/cgroup.subtree_control"] = ""
     with pytest.raises(ctl.CtlError, match="kernel does not offer: pids"):
         ctl.enable_controllers(host, lambda _: True)
-    ctl.enable_controllers(good_host(), lambda _: pytest.fail("must not ask"))
+    ctl.enable_controllers(good_host(), must_not_ask)
     assert "already enabled" in capsys.readouterr().out
 
 

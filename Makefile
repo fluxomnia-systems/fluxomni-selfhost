@@ -9,7 +9,7 @@ MARKDOWNLINT ?= markdownlint-cli2
 
 .DEFAULT_GOAL := help
 
-.PHONY: help check.tools.docs build serve clean lint lint.ci screenshots api.docs.sync.check api.docs.sync.update release.sync.check release.sync.update docs.build docs.serve docs.clean docs.lint.links docs.lint docs.lint.ci
+.PHONY: py.lint help check.tools.docs build serve clean lint lint.ci screenshots api.docs.sync.check api.docs.sync.update release.sync.check release.sync.update docs.build docs.serve docs.clean docs.lint.links docs.lint docs.lint.ci
 
 help:
 	@echo "Fluxomni Self-Hosted: common targets"
@@ -32,6 +32,13 @@ build: docs.build
 serve: docs.serve
 
 clean: docs.clean
+
+# Python helpers: same tools and files as the installer CI job.
+PY_FILES = scripts/capacity-upgrade.py tests/test_capacity_upgrade.py scripts/node-credentials.py tests/test_node_credentials.py scripts/fluxomnictl.py tests/test_fluxomnictl.py
+
+py.lint:
+	uvx ruff@latest check --no-cache $(PY_FILES)
+	./scripts/typecheck.sh
 
 lint: docs.lint
 

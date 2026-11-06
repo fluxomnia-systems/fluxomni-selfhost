@@ -36,6 +36,9 @@ make lint
 # Strict CI lint (requires markdownlint-cli2)
 make lint.ci
 
+# Lint and type check the Python helpers (ruff latest + ty)
+make py.lint
+
 # Clean generated docs
 make clean
 

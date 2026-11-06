@@ -19,6 +19,7 @@ on:
       - scripts/requirements-test.txt
       - scripts/capacity-upgrade.py
       - scripts/fluxomnictl.py
+      - scripts/typecheck.sh
       - scripts/preparation-cgroup.py
       - scripts/verify-preparation-compose.py
       - .github/workflows/installer.yml
@@ -40,6 +41,7 @@ on:
       - scripts/requirements-test.txt
       - scripts/capacity-upgrade.py
       - scripts/fluxomnictl.py
+      - scripts/typecheck.sh
       - scripts/preparation-cgroup.py
       - scripts/verify-preparation-compose.py
       - .github/workflows/installer.yml
@@ -65,5 +67,7 @@ jobs:
           shellcheck --severity=warning install.sh scripts/install-runtime.sh scripts/node-enrollment.sh doctor.sh
       - name: Check capacity helper
         run: uvx ruff check scripts/capacity-upgrade.py tests/test_capacity_upgrade.py scripts/node-credentials.py tests/test_node_credentials.py scripts/fluxomnictl.py tests/test_fluxomnictl.py
+      - name: Type check helpers
+        run: ./scripts/typecheck.sh
       - name: Test fresh installs and upgrades
         run: uv run --no-project --with-requirements scripts/requirements-test.txt pytest -q tests
