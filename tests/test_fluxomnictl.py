@@ -157,3 +157,202 @@ def test_prompt_end_of_input_is_a_clean_failure(home):
 
     with pytest.raises(ctl.CtlError, match="no install selected"):
         select(home, interactive=True, ask=closed)
+
+
+class FakeHost(ctl.Host):
+    """Scriptable host: a file map and a command table."""
+
+    def __init__(self, files=None, commands=None, system="Linux", euid=0, tools=("docker", "systemctl", "sudo", "stat"), cpus=8, mem=16384):
+        self.files = dict(files or {})
+        self.commands = dict(commands or {})
+        self._system, self._euid, self.tools = system, euid, set(tools)
+        self.ran, self._cpus, self._mem, self.python, self.written = [], cpus, mem, True, []
+
+    def system(self):
+        return self._system
+
+    def euid(self):
+        return self._euid
+
+    def which(self, name):
+        return name if name in self.tools else None
+
+    def executable(self, path):
+        return self.python
+
+    def read(self, path):
+        try:
+            return self.files[str(path)]
+        except KeyError:
+            raise FileNotFoundError(path) from None
+
+    def write(self, path, text):
+        self.written.append(str(path))
+        self.files[str(path)] = text
+
+    def run(self, args, timeout=30):
+        self.ran.append(list(args))
+        handler = self.commands.get(args[0] + (" " + args[1] if len(args) > 1 else ""), self.commands.get(args[0]))
+        return handler(args) if callable(handler) else (handler or (0, ""))
+
+    def cpus(self):
+        return self._cpus
+
+    def memory_mib(self):
+        return self._mem
+
+
+GOOD_COMMANDS = {
+    "systemctl show-environment": (0, ""),
+    "docker context": lambda args: (0, "default") if args[2] == "show" else (0, "unix:///var/run/docker.sock"),
+    "docker info": (0, '2 ["name=seccomp,profile=builtin","name=cgroupns"]'),
+    "stat": (0, "cgroup2fs"),
+}
+
+
+def good_host(enabled="cpu memory pids", **options):
+    files = {
+        "/sys/fs/cgroup/cgroup.controllers": "cpuset cpu io memory pids",
+        "/sys/fs/cgroup/cgroup.subtree_control": enabled,
+    }
+    return FakeHost(files=files, commands=dict(GOOD_COMMANDS), **options)
+
+
+def test_good_host_passes_every_check(monkeypatch):
+    monkeypatch.delenv("DOCKER_HOST", raising=False)
+    results = ctl.preparation_checks(good_host(), {})
+    assert all(item.ok for item in results), [(i.label, i.detail) for i in results if not i.ok]
+    assert len(results) == 8
+
+
+def test_all_failures_are_reported_together_with_fixes(monkeypatch, capsys):
+    monkeypatch.delenv("DOCKER_HOST", raising=False)
+    host = FakeHost(system="Darwin", euid=1000, tools=(), commands={})
+    host.python = False
+    results = ctl.preparation_checks(host, {})
+    failed = [item.label for item in results if not item.ok]
+    assert {"Linux host", "Root or sudo", "/usr/bin/python3", "systemd", "Docker", "Host cgroup v2"} <= set(failed)
+    assert ctl.print_checks(results) is False
+    output = capsys.readouterr().out
+    assert output.count("fix:") == len(failed)
+    assert "checks passed" in output
+
+
+def test_rootless_userns_and_remote_docker_are_refused(monkeypatch):
+    monkeypatch.delenv("DOCKER_HOST", raising=False)
+    for info in ('2 ["name=rootless"]', '2 ["name=userns"]', '1 ["name=seccomp"]'):
+        host = good_host()
+        host.commands["docker info"] = (0, info)
+        assert not next(i for i in ctl.preparation_checks(host, {}) if i.label.startswith("Docker uses")).ok
+    remote = {"DOCKER_HOST": "tcp://remote:2375"}
+    assert not next(i for i in ctl.preparation_checks(good_host(), remote) if i.label == "Local Docker socket").ok
+    named = good_host()
+    named.commands["docker context"] = lambda args: (0, "ssh://box") if args[2] == "inspect" else (0, "default")
+    assert not next(i for i in ctl.preparation_checks(named, {}) if i.label == "Local Docker socket").ok
+    pinned = {"DOCKER_CONTEXT": "local"}
+    assert next(i for i in ctl.preparation_checks(good_host(), pinned) if i.label == "Local Docker socket").ok
+    failing = good_host()
+    failing.commands["docker context"] = (1, "boom")
+    result = next(i for i in ctl.preparation_checks(failing, {}) if i.label == "Local Docker socket")
+    assert not result.ok and result.detail == "docker context failed"
+
+
+def test_missing_controllers_name_the_fix(monkeypatch):
+    monkeypatch.delenv("DOCKER_HOST", raising=False)
+    item = next(i for i in ctl.preparation_checks(good_host(enabled="cpuset"), {}) if "controllers" in i.label)
+    assert not item.ok and "--enable-controllers" in item.fix and item.detail == "not enabled: cpu, memory, pids"
+
+
+def test_enable_controllers_needs_confirmation_and_never_writes_cgroup_files():
+    host = good_host(enabled="cpuset")
+    with pytest.raises(ctl.CtlError, match="not confirmed"):
+        ctl.enable_controllers(host, lambda _: False)
+    assert str(ctl.SYSTEMD_DROPIN) not in host.files and not host.ran
+
+    def reexec(args):
+        host.files["/sys/fs/cgroup/cgroup.subtree_control"] = "cpuset cpu memory pids"
+        return 0, ""
+
+    host.commands["systemctl daemon-reexec"] = reexec
+    ctl.enable_controllers(host, lambda _: True)
+    assert host.files[str(ctl.SYSTEMD_DROPIN)] == ctl.DROPIN_TEXT
+    assert ["systemctl", "daemon-reexec"] in host.ran
+    assert host.written == [str(ctl.SYSTEMD_DROPIN)]
+
+
+def test_enable_controllers_says_reboot_when_systemd_does_not_apply_it():
+    host = good_host(enabled="cpuset")
+    with pytest.raises(ctl.CtlError, match="Reboot the host"):
+        ctl.enable_controllers(host, lambda _: True)
+    assert str(ctl.SYSTEMD_DROPIN) in host.files
+
+
+def test_enable_controllers_refuses_kernel_gaps_and_skips_when_enabled(capsys):
+    host = good_host()
+    host.files["/sys/fs/cgroup/cgroup.controllers"] = "cpu memory"
+    host.files["/sys/fs/cgroup/cgroup.subtree_control"] = ""
+    with pytest.raises(ctl.CtlError, match="kernel does not offer: pids"):
+        ctl.enable_controllers(host, lambda _: True)
+    ctl.enable_controllers(good_host(), lambda _: pytest.fail("must not ask"))
+    assert "already enabled" in capsys.readouterr().out
+
+
+def test_check_command_exit_codes_and_noninteractive_confirmation(monkeypatch, capsys):
+    monkeypatch.delenv("DOCKER_HOST", raising=False)
+    assert ctl.main(["preparation", "check"], host=good_host(), interactive=False) == 0
+    assert ctl.main(["preparation", "check"], host=good_host(enabled=""), interactive=False) == 1
+    assert ctl.main(["preparation", "check", "--enable-controllers"], host=good_host(enabled=""), interactive=False) == 1
+    assert "use --yes to confirm" in capsys.readouterr().err
+
+
+def test_budget_validation_matches_the_installer_bounds():
+    assert ctl.validate_budget("CPU", "500") == 500
+    for label, bad in [("CPU", "0"), ("CPU", "49"), ("CPU", "256001"), ("CPU", "1e3"), ("CPU", "$(id)"), ("MEMORY", "255"), ("TASKS", "-1"), ("TASKS", "")]:
+        with pytest.raises(ctl.CtlError):
+            ctl.validate_budget(label, bad)
+
+
+def test_suggested_budgets_have_a_floor_and_a_ceiling():
+    assert ctl.suggest_budgets(8, 16384) == {"CPU": 2000, "MEMORY": 4096, "TASKS": 256}
+    assert ctl.suggest_budgets(1, 512) == {"CPU": 250, "MEMORY": 512, "TASKS": 256}
+    huge = ctl.suggest_budgets(1024, 8 * 1024 * 1024)
+    assert huge["CPU"] == 64000 and huge["MEMORY"] == 262144
+    for label, value in huge.items():
+        assert ctl.validate_budget(label, value) == value
+
+
+def test_enable_controllers_needs_root_and_maps_write_errors(tmp_path):
+    with pytest.raises(ctl.CtlError, match="needs root"):
+        ctl.enable_controllers(good_host(enabled="cpuset", euid=1000), lambda _: True)
+    host = good_host(enabled="cpuset")
+
+    def refuse(path, text):
+        raise PermissionError("denied")
+
+    host.write = refuse
+    with pytest.raises(ctl.CtlError, match="cannot write"):
+        ctl.enable_controllers(host, lambda _: True)
+    assert not host.ran
+    host = good_host(enabled="cpuset")
+    host.commands["systemctl daemon-reexec"] = (1, "failed")
+    with pytest.raises(ctl.CtlError, match="daemon-reexec failed"):
+        ctl.enable_controllers(host, lambda _: True)
+
+
+def test_yes_confirms_without_a_terminal(monkeypatch):
+    host = good_host(enabled="cpuset")
+    host.commands["systemctl daemon-reexec"] = lambda args: (host.files.update({"/sys/fs/cgroup/cgroup.subtree_control": "cpu memory pids"}), (0, ""))[1]
+    monkeypatch.delenv("DOCKER_HOST", raising=False)
+    assert ctl.main(["preparation", "check", "--enable-controllers", "--yes"], host=host, interactive=False) == 0
+
+
+def test_real_host_write_is_atomic_and_refuses_symlinks(tmp_path):
+    target = tmp_path / "conf.d" / "x.conf"
+    ctl.Host().write(target, "one\n")
+    ctl.Host().write(target, "two\n")
+    assert target.read_text() == "two\n" and oct(target.stat().st_mode & 0o777) == "0o644"
+    assert not list(target.parent.glob("*.tmp"))
+    link = tmp_path / "link.conf"
+    link.symlink_to(target)
+    with pytest.raises(OSError, match="symlink"):
+        ctl.Host().write(link, "x")
