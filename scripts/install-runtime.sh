@@ -22,7 +22,23 @@ Usage:
 Defaults:
   - No argument installs the full single-host stack.
   - media-node installs a standalone remote media node.
+
+Existing installs:
+  - Updating needs one --capacity-upgrade mode (see the capacity upgrade guide).
+  - To change offline preparation limits, use fluxomnictl preparation
+    (run "install.sh tools" first when the command is missing).
 EOF
+}
+
+capacity_mode_help() {
+  local suggestion
+  if [ "${INSTALL_TARGET_ARG:-${FLUXOMNI_INSTALL_TARGET:-full}}" = media-node ]; then
+    suggestion='install.sh media-node --capacity-upgrade node --confirm-control-plane-ready'
+  else
+    suggestion='install.sh full --capacity-upgrade drained (or "initial --confirm-execution-stopped" for the first capacity upgrade)'
+  fi
+  echo "Error: --capacity-upgrade needs one mode: initial, drained, or node." >&2
+  echo "For this install use: ${suggestion}" >&2
 }
 
 while [ "$#" -gt 0 ]; do
@@ -51,9 +67,22 @@ while [ "$#" -gt 0 ]; do
       shift 2
       ;;
     --capacity-upgrade)
-      [ "$#" -ge 2 ] && [ -z "$CAPACITY_UPGRADE_MODE" ] || { usage; exit 1; }
-      CAPACITY_UPGRADE_MODE="$2"
-      shift 2
+      if [ -n "$CAPACITY_UPGRADE_MODE" ]; then
+        echo "Error: --capacity-upgrade was specified more than once." >&2
+        usage
+        exit 1
+      fi
+      case "${2:-}" in
+        initial|drained|node) CAPACITY_UPGRADE_MODE="$2"; shift 2 ;;
+        ''|-*|full|media-node)
+          capacity_mode_help
+          exit 1
+          ;;
+        *)
+          echo "Error: unknown capacity upgrade mode '$2'. Use initial, drained, or node." >&2
+          exit 1
+          ;;
+      esac
       ;;
     --confirm-execution-stopped)
       EXECUTION_STOPPED_CONFIRMED=1
@@ -1142,6 +1171,10 @@ validate_capacity_maintenance() {
           FRESH_RETRY=1
         else
           echo 'Error: existing installs require --capacity-upgrade initial, drained, or node. Read the capacity upgrade guide before stopping execution.' >&2
+          if [ -n "${REQUESTED_PREPARATION_ENABLED}${REQUESTED_PREPARATION_CPU}${REQUESTED_PREPARATION_MEMORY}${REQUESTED_PREPARATION_TASKS}" ]; then
+            echo 'To change only the preparation limits, do not rerun the installer. Use: fluxomnictl preparation enable|set|disable' >&2
+            echo 'If the command is missing, run: bash install.sh tools' >&2
+          fi
           exit 1
         fi
       fi
@@ -1198,6 +1231,17 @@ verify_fresh_retry() {
   fi
 }
 
+other_install_hint() {
+  local other target
+  for target in full media-node; do
+    [ "$target" != "$FLUXOMNI_INSTALL_TARGET" ] || continue
+    if [ "$target" = media-node ]; then other="$HOME/fluxomni-media-node"; else other="$HOME/fluxomni"; fi
+    if [ "$other" != "$FLUXOMNI_DIR" ] && [ -f "$other/.env" ] && [ -f "$other/docker-compose.yml" ]; then
+      echo "A ${target} install exists at ${other}. Run the installer with: install.sh ${target} ..." >&2
+    fi
+  done
+}
+
 stop_capacity_updater() {
   [ -n "$CAPACITY_UPGRADE_MODE" ] || [ "$FRESH_RETRY" = 1 ] || return 0
   if [ -n "${DOCKER_HOST:-}" ] || [ -n "${COMPOSE_FILE:-}" ] || [ -n "${COMPOSE_PROFILES:-}" ]; then
@@ -1212,7 +1256,8 @@ stop_capacity_updater() {
     *) echo 'Error: maintenance requires a local Docker daemon.' >&2; exit 1 ;;
   esac
   [ -f "${FLUXOMNI_DIR}/.env" ] && [ -f "${FLUXOMNI_DIR}/docker-compose.yml" ] || {
-    echo 'Error: maintenance requires an existing installation.' >&2
+    echo "Error: maintenance requires an existing installation. Checked ${FLUXOMNI_DIR}: it needs .env and docker-compose.yml." >&2
+    other_install_hint
     exit 1
   }
   # Read the existing bundle before helper download, ledger inspection or pull.

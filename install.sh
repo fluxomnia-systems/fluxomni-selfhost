@@ -13,8 +13,23 @@ while [ "$#" -gt 0 ]; do
       shift
       ;;
     --help|-h)
-      printf '%s\n' 'Usage: install.sh [full|media-node] [maintenance options]' \
-        'No argument installs the full stack. Configure a control endpoint before adding a media node.'
+      cat <<'USAGE'
+Usage:
+  install.sh [full|media-node]
+  install.sh --install-target <full|media-node>
+  install.sh full --capacity-upgrade initial --confirm-execution-stopped
+  install.sh full --capacity-upgrade drained
+  install.sh media-node --capacity-upgrade node --confirm-control-plane-ready
+
+Defaults:
+  - No argument installs the full single-host stack.
+  - media-node installs a standalone remote media node.
+
+Existing installs:
+  - Updating needs one --capacity-upgrade mode (see the capacity upgrade guide).
+  - To change offline preparation limits, use fluxomnictl preparation
+    (run "install.sh tools" first when the command is missing).
+USAGE
       exit 0
       ;;
   esac

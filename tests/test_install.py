@@ -952,3 +952,51 @@ def test_connect_reports_missing_python_before_writing_gateway(installation):
     assert "required command 'python3' was not found" in result.stdout
     assert "distinct canonical HTTPS origin" not in result.stderr
     assert not (destination / "gateway.json").exists()
+
+
+@pytest.mark.parametrize("target,arguments,suggestion", [
+    ("full", ["--capacity-upgrade"], "install.sh full --capacity-upgrade drained"),
+    ("media-node", ["--capacity-upgrade", "--confirm-control-plane-ready"], "--capacity-upgrade node --confirm-control-plane-ready"),
+    ("full", ["--capacity-upgrade", "full"], "install.sh full --capacity-upgrade drained"),
+])
+def test_missing_capacity_mode_names_the_modes_and_suggests_one(installation, target, arguments, suggestion):
+    _, destination, run = installation
+    result = run(target, arguments=arguments)
+    assert result.returncode == 1
+    assert "needs one mode: initial, drained, or node" in result.stderr
+    assert suggestion in result.stderr
+    assert not destination.exists()
+
+
+def test_unknown_capacity_mode_is_named(installation):
+    _, destination, run = installation
+    result = run("full", arguments=["--capacity-upgrade", "later"])
+    assert result.returncode == 1
+    assert "unknown capacity upgrade mode 'later'" in result.stderr
+    assert not destination.exists()
+
+
+def test_missing_install_shows_checked_folder_and_the_other_install(installation, tmp_path):
+    _, _, run = installation
+    home = tmp_path / "home"
+    (home / "fluxomni").mkdir(parents=True)
+    (home / "fluxomni" / ".env").write_text("FLUXOMNI_VERSION=26.4.0\n")
+    (home / "fluxomni" / "docker-compose.yml").write_text("services: {}\n")
+    missing = home / "fluxomni-media-node"
+    result = run("media-node", {"HOME": str(home), "FLUXOMNI_DIR": str(missing), "DOCKER_CONFIG": os.path.expanduser("~/.docker")},
+                 ["--capacity-upgrade", "node", "--confirm-control-plane-ready"])
+    assert result.returncode == 1
+    assert f"Checked {missing}" in result.stderr
+    assert f"A full install exists at {home / 'fluxomni'}" in result.stderr
+
+
+def test_preparation_only_rerun_points_to_fluxomnictl(installation):
+    _, destination, run = installation
+    assert run("full").returncode == 0
+    limits = {"FLUXOMNI_PREPARATION_CGROUP_ENABLED": "1", "FLUXOMNI_PREPARATION_CPU_MILLICORES": "500"}
+    result = run("full", limits, [])
+    assert result.returncode == 1
+    assert "fluxomnictl preparation enable|set|disable" in result.stderr
+    assert "install.sh tools" in result.stderr
+    plain = run("full", None, [])
+    assert "fluxomnictl" not in plain.stderr
