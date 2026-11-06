@@ -56,6 +56,8 @@ Expand the **Show advanced options** section. Go to the **Management** tab and p
 curl -fsSL https://install.fluxomni.io | WITH_FIREWALLD=1 bash -s
 ```
 
+From the installer release after v26.4.0, a new Linux host with a normal Docker Engine also turns preparation limits on. Docker Desktop and WSL stay off. The installer prints the budgets. Set `FLUXOMNI_PREPARATION_CGROUP_ENABLED=0` before `bash` to skip them.
+
 ![Cloud-init script](../images/oci_1.5.2.png)
 
 Click **Create** to begin provisioning the VM instance.

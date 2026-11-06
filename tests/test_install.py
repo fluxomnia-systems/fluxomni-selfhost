@@ -71,6 +71,9 @@ if name == "curl":
     if "--write-out" in args:
         print("200", end="")
 elif name == "python3":
+    if args[:1] == ["-c"] and "cgroup.subtree_control" in args[1]:
+        print(os.environ.get("TEST_SUBTREE_CONTROL", "cpu memory pids"))
+        sys.exit(0)
     if len(args) > 1 and Path(args[0]).name == "preparation-cgroup.py" and args[1] in ("install", "disable"):
         with open(Path(os.environ["TEST_ASSETS"]).parent / "preparation.jsonl", "a") as log:
             log.write(json.dumps(args[1:]) + "\n")
@@ -81,7 +84,10 @@ elif name == "python3":
     else:
         sys.exit(subprocess.run([sys.executable, *args]).returncode)
 elif name == "uname":
-    print(os.environ.get("TEST_HOST_OS", "Linux"))
+    if "-r" in args:
+        print(os.environ.get("TEST_KERNEL_RELEASE", "6.8.0"))
+    else:
+        print(os.environ.get("TEST_HOST_OS", "Linux"))
 elif name == "stat":
     print(os.environ.get("TEST_CGROUP_FS", "cgroup2fs"))
 elif name == "hostname":
@@ -90,8 +96,11 @@ elif name == "nc":
     with (Path(os.environ["TEST_ASSETS"]).parent / "connectivity.jsonl").open("a") as log:
         log.write(json.dumps(args) + "\n")
 elif name == "sudo":
-    sys.exit(subprocess.run(args).returncode)
+    forwarded = args[1:] if args[:1] == ["-n"] else args
+    sys.exit(subprocess.run(forwarded).returncode)
 elif name in ("apt-get", "ufw", "firewall-cmd", "systemctl"):
+    if name == "systemctl" and os.environ.get("TEST_SYSTEMCTL_FAIL"):
+        sys.exit(1)
     with open(Path(os.environ["TEST_ASSETS"]).parent / "firewall.jsonl", "a") as log:
         log.write(json.dumps([name, *args]) + "\n")
 elif name == "docker":
@@ -129,7 +138,11 @@ elif name == "docker":
         if args[:2] == ["compose", "pull"] and os.environ.get("TEST_PULL_FAIL"):
             sys.exit(1)
     elif args[:2] == ["info", "--format"]:
-        print(os.environ.get("TEST_DOCKER_INFO", '2 ["name=seccomp"]'))
+        fmt = args[2] if len(args) > 2 else ""
+        if "OperatingSystem" in fmt:
+            print(os.environ.get("TEST_DOCKER_OS", "Docker Engine"))
+        else:
+            print(os.environ.get("TEST_DOCKER_INFO", '2 ["name=seccomp"]'))
     elif args[:2] == ["context", "show"]:
         print("default")
     elif args[:2] == ["context", "inspect"]:
@@ -374,11 +387,88 @@ def started_node(destination):
     return json.loads((destination / 'started.json').read_text())['services']['media-node']
 
 
+def test_fresh_install_enables_preparation_with_detected_budgets(installation):
+    _, destination, run = installation
+    result = run("full", {"FLUXOMNI_PREPARATION_DETECT_CPUS": "4", "FLUXOMNI_PREPARATION_DETECT_MEMORY_KIB": str(8 * 1024 * 1024)})
+    assert result.returncode == 0, result.stdout + result.stderr
+    assert "Preparation limits are on by default: 1000 millicores, 2048 MiB, 256 threads." in result.stdout
+    node = started_node(destination)
+    assert node["cgroup"] == "host"
+    assert node["environment"]["FLUXOMNI_PREPARATION_CPU_MILLICORES"] == "1000"
+    assert node["environment"]["FLUXOMNI_PREPARATION_MEMORY_MIB"] == "2048"
+    assert node["environment"]["FLUXOMNI_PREPARATION_TASKS"] == "256"
+
+
+def test_fresh_install_skips_when_controllers_are_missing(installation):
+    _, destination, run = installation
+    result = run("full", {"TEST_SUBTREE_CONTROL": ""})
+    assert result.returncode == 0, result.stdout + result.stderr
+    assert "controllers are not enabled" in result.stderr
+    assert "cgroup" not in started_node(destination)
+
+
+def test_fresh_install_skips_when_systemd_check_fails(installation):
+    _, destination, run = installation
+    result = run("full", {"TEST_SYSTEMCTL_FAIL": "1"})
+    assert result.returncode == 0, result.stdout + result.stderr
+    assert "systemd did not accept" in result.stderr
+    assert "cgroup" not in started_node(destination)
+
+
+def test_fresh_install_fills_only_the_empty_budgets(installation):
+    _, destination, run = installation
+    result = run("full", {
+        "FLUXOMNI_PREPARATION_TASKS": "512",
+        "FLUXOMNI_PREPARATION_DETECT_CPUS": "4",
+        "FLUXOMNI_PREPARATION_DETECT_MEMORY_KIB": str(8 * 1024 * 1024),
+    })
+    assert result.returncode == 0, result.stdout + result.stderr
+    node = started_node(destination)
+    assert node["environment"]["FLUXOMNI_PREPARATION_CPU_MILLICORES"] == "1000"
+    assert node["environment"]["FLUXOMNI_PREPARATION_MEMORY_MIB"] == "2048"
+    assert node["environment"]["FLUXOMNI_PREPARATION_TASKS"] == "512"
+
+
+def test_fresh_install_skips_preparation_on_docker_desktop(installation):
+    _, destination, run = installation
+    result = run("full", {"TEST_DOCKER_OS": "Docker Desktop"})
+    assert result.returncode == 0, result.stdout + result.stderr
+    assert "not Docker Desktop" in result.stderr
+    assert "cgroup" not in started_node(destination)
+
+
+def test_fresh_install_skips_preparation_on_wsl(installation):
+    _, destination, run = installation
+    result = run("full", {"TEST_KERNEL_RELEASE": "5.15.0-microsoft-standard-WSL2"})
+    assert result.returncode == 0, result.stdout + result.stderr
+    assert "not WSL" in result.stderr
+    assert "cgroup" not in started_node(destination)
+
+
+def test_fresh_install_skips_preparation_when_the_host_cannot_enforce_it(installation):
+    _, destination, run = installation
+    result = run("full", {"TEST_HOST_OS": "Darwin"})
+    assert result.returncode == 0, result.stdout + result.stderr
+    assert "Preparation limits stay off" in result.stderr
+    assert "cgroup" not in started_node(destination)
+
+
+def test_existing_install_without_a_saved_flag_does_not_turn_preparation_on(installation):
+    _, destination, run = installation
+    assert run("full", {"FLUXOMNI_PREPARATION_CGROUP_ENABLED": "0"}).returncode == 0
+    env = destination / ".env"
+    env.write_text("\n".join(line for line in env.read_text().splitlines() if not line.startswith("FLUXOMNI_PREPARATION_")) + "\n")
+    result = run("full")
+    assert result.returncode == 0, result.stdout + result.stderr
+    assert "cgroup" not in started_node(destination)
+
+
 # @lat: [[installation#Preparation installer regression coverage]]
 @pytest.mark.parametrize('target', ['full', 'media-node'])
 def test_preparation_enable_preserve_update_disable_reenable(installation, target):
     assets, destination, run = installation
-    assert run(target).returncode == 0
+    # Keep this lifecycle on an explicit off start. A fresh install now turns limits on.
+    assert run(target, {"FLUXOMNI_PREPARATION_CGROUP_ENABLED": "0"}).returncode == 0
     assert 'cgroup' not in started_node(destination)
     assert not any(k in started_node(destination)['environment'] for k in PREPARATION if k != 'FLUXOMNI_PREPARATION_CGROUP_ENABLED')
     first = run(target, PREPARATION)

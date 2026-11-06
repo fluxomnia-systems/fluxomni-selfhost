@@ -72,6 +72,8 @@ Connect to your server via SSH and run the following command. Replace `your_serv
 ssh root@your_server_ip "curl -fsSL https://install.fluxomni.io | WITH_INITIAL_UPGRADE=1 WITH_UFW=1 bash -s"
 ```
 
+From the installer release after v26.4.0, a new Linux host with a normal Docker Engine also turns preparation limits on. Docker Desktop and WSL stay off. The installer prints the budgets. Set `FLUXOMNI_PREPARATION_CGROUP_ENABLED=0` before `bash` to skip them.
+
 If you are using password authentication, you will be prompted to enter the password from the previous step.
 
 ## 2. Access Fluxomni
