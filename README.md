@@ -137,7 +137,7 @@ docker compose --profile auto-update stop --timeout 30
 
 If you used a custom directory or installed only a media node, pass `--dir` to `fluxomnictl`, or run `./doctor.sh` from that directory.
 
-`bash install.sh tools` installs `fluxomnictl` on an existing host. It does not pull images or restart services. Root gets `/usr/local/bin/fluxomnictl`. Other users get `~/.local/bin/fluxomnictl`.
+If `fluxomnictl` is missing, download the current launcher and run `bash install.sh tools`. A `curl | bash` install does not leave `install.sh` on disk. `tools` does not pull images or restart services. It looks in `~/fluxomni` and `~/fluxomni-media-node` unless you set `FLUXOMNI_DIR`. Root gets `/usr/local/bin/fluxomnictl`. Other users get `~/.local/bin/fluxomnictl`.
 
 Installer reruns preserve data and known `.env` settings. v26.3.2 keeps its release-specific rerun behavior. v26.4.0 requires an explicit capacity maintenance mode on established installations. Follow the [capacity upgrade guide](docs/src/getting-started/capacity-upgrades.md) for initial upgrades, later drained upgrades and standalone nodes.
 

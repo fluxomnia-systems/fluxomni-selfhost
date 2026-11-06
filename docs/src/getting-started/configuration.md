@@ -106,16 +106,24 @@ Linux with cgroup v2, a local rootful Docker daemon without user namespace
 remapping, systemd, Python 3 at `/usr/bin/python3`, and root or sudo. Docker Desktop, remote Docker
 contexts and rootless Docker are not supported.
 
+If `fluxomnictl` is not installed yet, install it first. See [Installation Health Check (Doctor)](troubleshooting.md#installation-health-check-doctor). It does not pull images or restart services.
+
 Check the host before you change an install. The command lists every problem at once:
 
 ```bash
 fluxomnictl preparation check
 ```
 
-If `cpu`, `memory`, or `pids` is missing from `/sys/fs/cgroup/cgroup.subtree_control`, this command can turn those controllers on. It asks first, writes a systemd drop-in, and keeps that setting after reboot:
+If `cpu`, `memory`, or `pids` is missing from `/sys/fs/cgroup/cgroup.subtree_control`, this command can turn those controllers on. It asks first. It writes `/etc/systemd/system.conf.d/fluxomni-preparation.conf` and runs `systemctl daemon-reexec`. That is a host-wide change. Nothing removes the file later, including when you disable preparation. Delete it yourself and run `systemctl daemon-reexec` again if you want the old host policy back.
 
 ```bash
 sudo fluxomnictl preparation check --enable-controllers
+```
+
+If `sudo` cannot find the command, use the path from a non-root install:
+
+```bash
+sudo ~/.local/bin/fluxomnictl preparation check --enable-controllers
 ```
 
 The installer itself does not change that host-wide policy. If the setting is saved but not active, reboot, then run the check again.
@@ -131,7 +139,7 @@ FLUXOMNI_PREPARATION_TASKS=64 \
   bash install.sh full
 ```
 
-On an existing full install, name the install folder and use drained maintenance. `full` matches `~/fluxomni`. Do not pass `media-node` unless that is the install you mean:
+On an existing full install, name the install folder and use drained maintenance. Disable routes and wait for zero reservations first. See [Later planned upgrades](capacity-upgrades.md#later-planned-upgrades). `full` matches `~/fluxomni`. Do not pass `media-node` unless that is the install you mean:
 
 ```bash
 FLUXOMNI_DIR=~/fluxomni \
@@ -143,8 +151,6 @@ FLUXOMNI_PREPARATION_TASKS=64 \
 ```
 
 A standalone node uses `media-node`, `~/fluxomni-media-node`, and `--capacity-upgrade node --confirm-control-plane-ready`. Repeat on other node hosts with different budgets. `500` millicores means half of one CPU core; memory is MiB and includes charged page cache; tasks count threads, not just processes. Swap is disabled for preparation. These limits do not predict how many additional live routes or outputs will fit.
-
-If `fluxomnictl` is not installed yet, run `bash install.sh tools` first. It does not pull images or restart services.
 
 The installer saves the values in `.env`, downloads the common
 `docker-compose.preparation-cgroup.yml` overlay and includes it in the installed

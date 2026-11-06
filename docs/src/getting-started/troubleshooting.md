@@ -8,6 +8,17 @@ If you have issues during or after installation, run the admin tool. It finds th
 fluxomnictl doctor
 ```
 
+If that command is missing, download the current launcher and install the tool. This does not pull images or restart services. A `curl | bash` install does not leave `install.sh` on disk, so use this form:
+
+```bash
+curl -fsSL https://install.fluxomni.io -o install.sh
+bash install.sh tools
+```
+
+`tools` looks in `~/fluxomni` and `~/fluxomni-media-node`. For another folder, set `FLUXOMNI_DIR`. It refuses an install older than v26.4.0. Keep using `./doctor.sh` on those older installs.
+
+Root installs the tool to `/usr/local/bin`. Other users get `~/.local/bin`. Add that folder to `PATH` if the shell cannot find the command. `sudo` does not search `~/.local/bin`, so a non-root install needs the full path when a later step needs root.
+
 A full install and a standalone media node can both exist. Pick one with `--dir` or `--target`:
 
 ```bash
@@ -15,13 +26,7 @@ fluxomnictl --dir ~/fluxomni-media-node doctor
 fluxomnictl --target media-node doctor
 ```
 
-`./doctor.sh` in the install folder does the same check. It calls `fluxomnictl`. If the command is missing, install the tool without changing the stack:
-
-```bash
-bash install.sh tools
-```
-
-Root installs it to `/usr/local/bin`. Other users get `~/.local/bin`. Add that folder to `PATH` if the shell cannot find the command.
+`./doctor.sh` in the install folder does the same check after `tools` has updated it. Until then, an older `./doctor.sh` is a separate script and does not call `fluxomnictl`.
 
 The check covers:
 
