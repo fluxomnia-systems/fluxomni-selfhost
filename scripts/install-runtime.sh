@@ -826,7 +826,8 @@ begin_config_transaction() {
      { [ -f "${FLUXOMNI_DIR}/compose.installer-connect.yml" ] ||
        [ -n "${FLUXOMNI_CONNECT_GATEWAY_KEY_ID:-}${FLUXOMNI_CONNECT_GATEWAY_PUBLIC_KEY:-}" ]; }; then
     INSTALL_MANAGED_FILES+=(compose.installer-connect.yml)
-    if [ ! -e "${FLUXOMNI_DIR}/gateway.json" ] && [ ! -L "${FLUXOMNI_DIR}/gateway.json" ]; then
+    if { [ ! -e "${FLUXOMNI_DIR}/gateway.json" ] && [ ! -L "${FLUXOMNI_DIR}/gateway.json" ]; } ||
+       [ -n "${FLUXOMNI_CONNECT_PORTAL_ORIGIN:-}" ]; then
       INSTALL_MANAGED_FILES+=(gateway.json)
     fi
   fi
@@ -1574,6 +1575,17 @@ if [ "$FLUXOMNI_INSTALL_TARGET" = full ]; then
   connect_id_format='[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}'
   connect_key_id="${FLUXOMNI_CONNECT_GATEWAY_KEY_ID:-}"
   connect_public_key="${FLUXOMNI_CONNECT_GATEWAY_PUBLIC_KEY:-}"
+  connect_portal="${FLUXOMNI_CONNECT_PORTAL_ORIGIN:-}"
+  if [ -n "$connect_portal" ]; then
+    if ! validate_connect_origin "$connect_portal" || [ "$connect_portal" = "$PUBLIC_URL_DEFAULT" ]; then
+      echo "Error: Connect portal must be a distinct canonical HTTPS origin." >&2
+      exit 1
+    fi
+    if [ ! -f compose.installer-connect.yml ] && [ -z "$connect_key_id$connect_public_key" ]; then
+      echo "Error: supply Connect gateway verification keys before setting its portal." >&2
+      exit 1
+    fi
+  fi
   if [ -f compose.installer-connect.yml ] && { [ -L gateway.json ] || [ ! -f gateway.json ]; }; then
     echo "Error: restore gateway.json before restarting Connect." >&2
     exit 1
@@ -1625,7 +1637,7 @@ YAML
   fi
   if [ -f compose.installer-connect.yml ]; then
     connect_config="$(cat gateway.json)"
-    connect_format='^\{"origin":"([^"]+)","installationId":"('"${connect_id_format}"')","initialGatewayKey":\{"keyId":"('"${connect_key_id_format}"')","publicKey":"('"${connect_public_key_format}"')"\}\}$'
+    connect_format='^\{"origin":"([^"]+)","installationId":"('"${connect_id_format}"')","initialGatewayKey":\{"keyId":"('"${connect_key_id_format}"')","publicKey":"('"${connect_public_key_format}"')"\}(,"portalOrigin":"([^"]+)")?\}$'
     if [[ ! "$connect_config" =~ $connect_format ]] || [ "${BASH_REMATCH[1]}" != "$PUBLIC_URL_DEFAULT" ]; then
       echo "Error: restore the original gateway.json and HTTPS origin before restarting Connect." >&2
       exit 1
@@ -1634,6 +1646,25 @@ YAML
        { [ "${BASH_REMATCH[3]}" != "$connect_key_id" ] || [ "${BASH_REMATCH[4]}" != "$connect_public_key" ]; }; then
       echo "Error: Connect verification key changed. Use the documented key rotation procedure." >&2
       exit 1
+    fi
+    retained_installation="${BASH_REMATCH[2]}"
+    retained_key_id="${BASH_REMATCH[3]}"
+    retained_public_key="${BASH_REMATCH[4]}"
+    retained_portal="${BASH_REMATCH[6]:-}"
+    if [ -n "$retained_portal" ] &&
+       { ! validate_connect_origin "$retained_portal" || [ "$retained_portal" = "$PUBLIC_URL_DEFAULT" ]; }; then
+      echo "Error: restore a valid Connect portal origin before restarting." >&2
+      exit 1
+    fi
+    if [ -n "$connect_portal" ] && [ "$connect_portal" != "$retained_portal" ]; then
+      (
+        umask 077
+        portal_config="$(mktemp ./gateway.json.XXXXXX)"
+        trap 'rm -f "$portal_config"' EXIT
+        printf '{"origin":"%s","installationId":"%s","initialGatewayKey":{"keyId":"%s","publicKey":"%s"},"portalOrigin":"%s"}\n' \
+          "$PUBLIC_URL_DEFAULT" "$retained_installation" "$retained_key_id" "$retained_public_key" "$connect_portal" > "$portal_config"
+        mv "$portal_config" gateway.json
+      )
     fi
     if ! validate_connect_origin "$PUBLIC_URL_DEFAULT"; then
       echo "Error: Connect requires a canonical HTTPS origin." >&2

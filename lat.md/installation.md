@@ -270,3 +270,13 @@ A new Compose project creates new named credential volumes. Reusing an existing 
 Maintenance uses the helper shipped beside a directly run runtime script, or downloads it from the resolved installer asset source.
 
 Release selection, aliases and custom asset sources apply to the capacity helper as well as deployment files. The helper must understand the same database contract as the selected installer. Falling back to main can incorrectly refuse an upgrade of a drained SQLx database.
+
+## Guided Connect portal configuration
+
+The standard Docker installer accepts an explicit HTTPS portal origin for browser handoffs while keeping the Installation identity and gateway verification key unchanged.
+
+`FLUXOMNI_CONNECT_PORTAL_ORIGIN` writes the native `portalOrigin` field only for installer-managed Connect. It must be canonical HTTPS and distinct from the Installation. Fresh setup still requires both gateway verification-key inputs. An omitted portal input preserves existing configuration bytes; it does not disable Connect or replace identity.
+
+An explicit portal update uses a private temporary file and atomic rename. Installer rollback includes the prior gateway file for this requested update. Malformed retained or requested origins fail before services change. Custom files and non-Connect installations remain operator-owned.
+
+Public instructions use verification links, local identity/client review and automatic signed handoffs. Ownership registration does not approve an AI client. Native MCP works independently of Connect. The guided application build is required; this helper option cannot add browser handlers to an older image.

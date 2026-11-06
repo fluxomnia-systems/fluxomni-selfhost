@@ -2,6 +2,10 @@
 
 Use this guide to enroll a public HTTPS Installation and approve read access for an AI agent. A named local Admin must complete ownership registration.
 
+Connect is optional. An AI agent can also use [native MCP](../api/mcp.md) directly, with its separate local OAuth setup. Connect provides a shared cloud MCP endpoint and does not replace local permissions.
+
+This guide describes guided setup. Use matching control-plane and frontend builds that include this workflow; stable 26.3.2 alone is not its acceptance evidence. Use the reviewed image versions supplied for your environment.
+
 Start with the distributed Compose installation. Confirm the control plane is healthy and that a named local Admin can sign in. A password-only Installation can use Connect. Local OIDC remains an independent option.
 
 The standard single-server installer configures private RPC automatically. Its `control-init` service creates the internal TLS certificate, private key and local media-node credential in persistent Docker volumes. The media node uses those files to connect to `https://control-plane:50052`. Keep the volumes when restarting or updating. Confirm that the media node logs `Registered media node with control plane`.
@@ -12,7 +16,11 @@ Give the frontend a public HTTPS origin with a trusted certificate. Route the In
 
 ## Standard installer
 
-To enable Connect during a fresh standard install, set `FLUXOMNI_PUBLIC_URL`, `FLUXOMNI_CONNECT_GATEWAY_KEY_ID` and `FLUXOMNI_CONNECT_GATEWAY_PUBLIC_KEY` in the installer environment. The installer creates the gateway configuration and checks the combined Compose files before starting services. Existing installations must use drained maintenance when enabling Connect.
+To enable Connect during a fresh standard install, set `FLUXOMNI_PUBLIC_URL`, `FLUXOMNI_CONNECT_PORTAL_ORIGIN`, `FLUXOMNI_CONNECT_GATEWAY_KEY_ID` and `FLUXOMNI_CONNECT_GATEWAY_PUBLIC_KEY` in the installer environment. The installer creates the gateway configuration and checks the combined Compose files before starting services. Existing installations must use drained maintenance when enabling Connect.
+
+The portal address and public verification key come from the operator of your Connect environment. They are public configuration, not secrets to generate yourself. The installer creates and retains the Installation ID; the Installation creates its own private ownership key. Do not put OAuth client secrets or AI-agent tokens into these fields.
+
+`FLUXOMNI_CONNECT_PORTAL_ORIGIN` is the portal HTTPS origin without a trailing slash, for example `https://connect.example`. It must differ from the Installation origin. On an installer-managed installation, explicitly supplying it adds or updates only browser navigation; omitting it preserves the saved configuration. It never replaces the Installation ID or gateway verification key. Keep existing keys and state on upgrades.
 
 After setup, proceed to [Register the Installation](#register-the-installation).
 
@@ -24,6 +32,7 @@ Create `gateway.json` with the canonical HTTPS origin, a UUID v4 and your Connec
 {
   "origin": "https://installation.example",
   "installationId": "11111111-1111-4111-8111-111111111111",
+  "portalOrigin": "https://connect.example",
   "initialGatewayKey": {
     "keyId": "REPLACE_WITH_GATEWAY_KEY_ID",
     "publicKey": "REPLACE_WITH_GATEWAY_PUBLIC_KEY"
@@ -62,25 +71,50 @@ Include any existing site override files in both commands. Pin the image version
 
 ## Register the Installation
 
-In Settings → Connected Apps, start registration and copy the registration details. Sign in to Fluxomni Connect and submit them in Installations. Return to the local screen to review and confirm the account. Submit the same registration again. The portal reports Installation registered when the registry activates it.
+1. Sign in as a named local Admin and open **Settings → Connected apps**.
+2. Select **Start registration**. The browser opens the configured Connect portal; no registration JSON needs copying.
+3. Sign in through your invited Connect email account and select **Continue registration**.
+4. Back on the Installation, review the exact Connect account and select **Confirm Connect account**.
+5. The browser returns to Connect and completes the signed acknowledgment. Wait for **Installation registered**.
 
-Use an AI agent that supports remote MCP over HTTPS with OAuth. Add the MCP URL supplied for your Connect environment and sign in using the agent’s setup flow. For example, in Codex CLI:
+Keep the same local browser session until confirmation. Registration establishes the owner only; it does not approve any AI client, even for an Admin.
+
+## Connect an AI agent
+
+Use any AI agent that supports remote MCP over HTTPS with OAuth. Add the MCP endpoint supplied for your Connect environment and complete the agent's sign-in flow. Codex CLI is one example:
 
 ```sh
 codex mcp add fluxomni --url https://connect.example/mcp
 codex mcp login fluxomni
 ```
 
-Replace the example URL with your environment's MCP endpoint. In a conversation with your AI agent, ask it to call `fluxomni_begin_link`. Paste the handoff token and the local linking details into the portal, then prepare the request. Review and approve read access locally. Submit the signed receipt in the portal and ask the same AI agent connection to call `fluxomni_complete_link` with the displayed generation. Repeat the approval for each agent connection.
+Other agents use their own MCP settings. These commands are not required when your agent provides a settings screen. A successful OAuth login alone does not grant Installation access.
 
-To remove access, revoke the specific approval locally and submit the revocation notification. Verify that a new read is denied. If the Installation ownership key is lost, register with a new Installation ID and approve each client again.
+1. Ask the agent to connect to your Installation. It calls `fluxomni_begin_link` and gives you a verification link.
+2. Open that link, sign in with the same Connect account and select the registered Installation. A personal account can also enter an already registered public HTTPS origin.
+3. On the Installation, sign in as your named local user. Review the global account and AI client, then select **Approve read access**.
+4. The signed receipt returns automatically to Connect. Return to the original agent conversation and ask it to finish connecting. That same OAuth connection calls `fluxomni_complete_link` with its original request ID.
+5. Confirm that the portal reports **Connected**, then ask the agent to list visible routes or check readiness for one listed route.
+
+Approve each AI client separately. Current local roles, route limits and account security still apply. A readiness result permits an attempt; it does not prove playback or destination acceptance.
+
+## Revoke access and recover failures
+
+In the Installation's **Connected apps**, select **Revoke local access** for the specific approval. Local denial commits first; the browser then notifies Connect automatically. If delivery fails, retry the same revocation notification. A notification failure does not restore local access. Verify a new read from that agent is denied.
+
+Signing out of the portal removes that browser session; it does not revoke independent AI-client approvals. To retire the whole cloud registration, open its owner view and select **Retire registration**, review the exact origin and ID, then confirm. This ends Connect access for all clients on that registration. Reconnecting requires a new Installation ID and fresh approvals.
+
+If the Installation key is lost, use named-Admin recovery with an exact transaction ID, old Installation ID and fresh replacement ID. Install the public replacement configuration returned by the recovery service and restart the matched control plane. Retire the old cloud registration and Egress target through their supported owners, then register the replacement and approve each client again. Preserve trust, replay and revoked history. Do not reset databases, edit authority SQL, restore a pre-revocation backup or recreate the lost key.
 
 ## Troubleshooting
 
 - If Connected Apps is unavailable, confirm the control plane loaded the mounted gateway configuration, then sign in as a named local Admin.
 - If starting registration fails after sign-in, check that the control-plane process owns its data directory and that the gateway key directory has mode 0700. This can fail when a host user creates a bind mount and the container runs under a different UID.
 - If registration cannot verify the Installation, check that the public HTTPS origin is reachable, matches the JSON exactly and serves the gateway ownership endpoint without a redirect or browser challenge.
-- Keep the local browser session that started registration until you finish local confirmation. If the portal response is lost, submit the same registration again with the same Connect account. When the portal has already retained a signed callback, it reserves that registration for exact retry until 24 hours after the challenge expires. A fresh registration for that Installation or origin may be rejected during this window. If you can no longer confirm the original registration, wait for the reservation to expire before creating a replacement.
+- If the page says Direct MCP is not configured, this describes the separate local OAuth endpoint. Check the Connect registration and personal approval below it.
+- If Start registration is disabled, check the configured Connect portal origin and use matching guided-setup images.
+- Keep the local browser session that started registration until you finish local confirmation. If the portal response is lost, use Continue in Connect or the explicit retry for the same transaction and Connect account. When the portal has already retained a signed callback, it reserves that registration for exact retry until 24 hours after the challenge expires. A fresh registration for that Installation or origin may be rejected during this window. If the local session changes or a pending action expires, start a new local transaction; do not extend or adopt the old session binding. A new portal login for the same global account is separate from the initiating local session.
+- If a pending link expires, start a new request in the same AI agent. If local approval already committed, retry that original request to recover its receipt; do not create another approval just because a response was lost.
 - If an AI agent can sign in but cannot inspect an Installation, check that the same agent connection completed the link and that its local approval is active. Review the local role and route scope before changing the approval.
 
 ## Clean-install evidence

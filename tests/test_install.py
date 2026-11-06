@@ -746,3 +746,97 @@ def test_capacity_upgrade_uses_selected_installer_assets(installation, asset_sou
                          TEST_CAPACITY_HELPER_ROOT="https://raw.githubusercontent.com/fluxomnia-systems/fluxomni-selfhost/v26.4.0")
     repeated = run("full", overrides, downloaded_runtime=asset_source == "resolved")
     assert repeated.returncode == 0, repeated.stdout + repeated.stderr
+
+# @lat: [[installation#Guided Connect portal configuration]]
+@pytest.mark.parametrize("portal", ["https://connect.example", "https://connect.example:8443"])
+def test_connect_portal_is_explicit_and_preserves_identity(installation, portal):
+    _, destination, run = installation
+    settings = {
+        "FLUXOMNI_PUBLIC_URL": "https://installation.example",
+        "FLUXOMNI_CONNECT_GATEWAY_KEY_ID": "staging-key",
+        "FLUXOMNI_CONNECT_GATEWAY_PUBLIC_KEY": "A" * 43,
+        "FLUXOMNI_CONNECT_PORTAL_ORIGIN": portal,
+    }
+    result = run("full", settings)
+    assert result.returncode == 0, result.stdout + result.stderr
+    path = destination / "gateway.json"
+    original = path.read_bytes()
+    before = json.loads(original)
+    assert before["portalOrigin"] == portal
+    assert path.stat().st_mode & 0o777 == 0o600
+    result = run("full")
+    assert result.returncode == 0, result.stdout + result.stderr
+    assert path.read_bytes() == original
+    result = run("full", {"FLUXOMNI_CONNECT_PORTAL_ORIGIN": "https://replacement.example"})
+    assert result.returncode == 0, result.stdout + result.stderr
+    after = json.loads(path.read_bytes())
+    assert after.pop("portalOrigin") == "https://replacement.example"
+    before.pop("portalOrigin")
+    assert after == before
+
+
+def test_connect_portal_can_be_added_without_replacing_existing_identity(installation):
+    _, destination, run = installation
+    result = run("full", {
+        "FLUXOMNI_PUBLIC_URL": "https://installation.example",
+        "FLUXOMNI_CONNECT_GATEWAY_KEY_ID": "staging-key",
+        "FLUXOMNI_CONNECT_GATEWAY_PUBLIC_KEY": "A" * 43,
+    })
+    assert result.returncode == 0, result.stdout + result.stderr
+    path = destination / "gateway.json"
+    original = json.loads(path.read_bytes())
+    result = run("full", {"FLUXOMNI_CONNECT_PORTAL_ORIGIN": "https://connect.example"})
+    assert result.returncode == 0, result.stdout + result.stderr
+    configured = json.loads(path.read_bytes())
+    assert configured.pop("portalOrigin") == "https://connect.example"
+    assert configured == original
+    saved = path.read_bytes()
+    result = run("full")
+    assert result.returncode == 0, result.stdout + result.stderr
+    assert path.read_bytes() == saved
+
+
+@pytest.mark.parametrize("portal", [
+    "http://connect.example", "https://connect.example/", "https://connect.example/path",
+    "https://user@connect.example", "https://Connect.example", "https://installation.example",
+    'https://connect.example\"', "https://connect.example?next=x",
+])
+def test_connect_rejects_invalid_portal_before_starting_services(installation, portal):
+    _, destination, run = installation
+    result = run("full", {
+        "FLUXOMNI_PUBLIC_URL": "https://installation.example",
+        "FLUXOMNI_CONNECT_GATEWAY_KEY_ID": "staging-key",
+        "FLUXOMNI_CONNECT_GATEWAY_PUBLIC_KEY": "A" * 43,
+        "FLUXOMNI_CONNECT_PORTAL_ORIGIN": portal,
+    })
+    assert result.returncode != 0
+    assert "distinct canonical HTTPS origin" in result.stderr
+    assert not (destination / "gateway.json").exists()
+
+
+def test_connect_portal_does_not_silently_enable_gateway(installation):
+    _, destination, run = installation
+    result = run("full", {"FLUXOMNI_CONNECT_PORTAL_ORIGIN": "https://connect.example"})
+    assert result.returncode != 0
+    assert "supply Connect gateway verification keys" in result.stderr
+    assert not (destination / "gateway.json").exists()
+
+
+def test_connect_portal_update_rolls_back_when_compose_validation_fails(installation):
+    _, destination, run = installation
+    result = run("full", {
+        "FLUXOMNI_PUBLIC_URL": "https://installation.example",
+        "FLUXOMNI_CONNECT_GATEWAY_KEY_ID": "staging-key",
+        "FLUXOMNI_CONNECT_GATEWAY_PUBLIC_KEY": "A" * 43,
+    })
+    assert result.returncode == 0, result.stdout + result.stderr
+    path = destination / "gateway.json"
+    original = path.read_bytes()
+    (destination / "docker-compose.override.yml").write_text(
+        "services:\n  frontend:\n    environment:\n      FLUXOMNI_MCP_PROXY_PATHS: /wrong\n"
+    )
+    result = run("full", {"FLUXOMNI_CONNECT_PORTAL_ORIGIN": "https://connect.example"})
+    assert result.returncode != 0
+    assert "must retain /mcp-gateway/*" in result.stderr
+    assert path.read_bytes() == original
+    assert not list(destination.glob("gateway.json.*"))

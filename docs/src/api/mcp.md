@@ -4,6 +4,8 @@ Use native MCP to ask a client for your current user, visible routes and selecte
 
 This is a preview integration. It requires a Fluxomni build containing [the native MCP runtime](https://github.com/fluxomnia-systems/fluxomni/pull/437), including its matching frontend and the [unified sign-in implementation](https://github.com/fluxomnia-systems/fluxomni/issues/439). Stable 26.3.2 alone does not provide this feature. The isolated issuer and Codex CLI workflow are verified; an actual web-chat connection remains an acceptance gate.
 
+Native MCP connects an AI agent directly to this Installation. It does not require Fluxomni Connect. Use the separate [Connect guide](../getting-started/connect.md) when you want the cloud endpoint and per-Installation linking. The two paths keep independent OAuth and approval requirements.
+
 ## Prepare the instance
 
 Use the same public HTTPS origin for the operator UI and MCP resource, for example `https://stream.example.com/mcp`. Run a separate HTTPS issuer, for example `https://auth.example.com/realms/fluxomni`.
