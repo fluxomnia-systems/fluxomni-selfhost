@@ -6,6 +6,10 @@ The changelog is editorial release copy. Use `release-manifest.json` as the fact
 
 ## v26.4.0 - 6 November 2026
 
+<video controls muted playsinline width="100%">
+  <source src="videos/user-guide/v264-overview.webm" type="video/webm">
+</video>
+
 This release adds reusable rundowns, richer playlist programming, recording retention, and a per-node capacity ledger. Upgrade the frontend, control plane, and every media node together. See the [upgrade guide](getting-started/upgrade-26.4.0.md). `v26.3.2` predates the capacity-ledger contract.
 
 ### Recordings and DVR retention

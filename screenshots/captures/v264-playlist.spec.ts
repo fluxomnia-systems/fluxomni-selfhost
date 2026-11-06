@@ -173,16 +173,19 @@ test('playlist-programming.webm — stinger, timing, and schedule', async ({ bro
   try {
     await openPlaylistWorkspace(page, data.programRoute.id);
     await expandPlaylistSettings(page);
-    const timing = page.getByTestId('playlist-timing-summary');
-    await holdCallout(page, timing, 'Planned program total', 'right', 1100);
+    await page.waitForTimeout(800);
     const stinger = page.getByLabel('Playlist stinger');
     await holdCallout(page, stinger, 'Optional stinger', 'left', 900);
     const choose = stinger.getByRole('button', { name: /choose clip|change clip/i });
     await smoothClick(page, choose);
     const picker = page.getByTestId('playlist-stinger-picker');
     await expect(picker).toBeVisible();
-    await picker.getByText(data.videoNames[0], { exact: true }).first().click();
-    await expect(stinger.getByText(data.videoNames[0]).first()).toBeVisible({ timeout: 15_000 });
+    const clip = picker.getByText(data.videoNames[0], { exact: true }).first();
+    await expect(clip).toBeVisible({ timeout: 15_000 });
+    await clip.click();
+    const selected = stinger.getByText(data.videoNames[0]).first();
+    await expect(selected).toBeVisible({ timeout: 15_000 });
+    await holdCallout(page, selected, 'Stinger selected', 'left', 1200);
     if (await picker.isVisible().catch(() => false)) await page.keyboard.press('Escape');
     await armWeekdaySchedule(page, data.programRoute.id);
     await holdCallout(

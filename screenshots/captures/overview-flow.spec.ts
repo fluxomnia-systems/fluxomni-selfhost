@@ -93,9 +93,10 @@ test.describe('Overview video', () => {
       await holdCallout(page, newRouteButton, 'Create a route', 'left', 900);
       await smoothClick(page, newRouteButton);
 
-      const dialog = page.locator('.modal-open, [role="dialog"]').first();
+      const dialog = page.locator('dialog[open], .modal-open, [role="dialog"]').first();
       await expect(dialog).toBeVisible({ timeout: 10_000 });
-      await holdCallout(page, dialog, 'RTMP, SRT, or WebRTC ingest', 'right', 1100);
+      const protocol = dialog.getByText('Route protocol', { exact: true }).locator('xpath=..');
+      await holdCallout(page, protocol, 'RTMP, SRT, or WebRTC ingest', 'right', 1100);
 
       const labelInput = page
         .getByTestId('add-input-modal:label-input')
@@ -131,11 +132,12 @@ test.describe('Overview video', () => {
       await expect(liveStatus).toBeVisible({ timeout: 20_000 });
       await holdCallout(page, liveStatus, 'Live input detected', 'left', 1200);
 
-      const monitorPanel = page
-        .locator('main video:visible, main canvas:visible')
-        .or(page.locator('main').getByText(/waiting for stream|unsupported playback/i))
-        .first();
-      await holdCallout(page, monitorPanel, 'HLS preview', 'left', 1200);
+      const hlsToggle = page.locator('main').getByRole('button', { name: 'HLS', exact: true }).first();
+      if (await hlsToggle.isVisible().catch(() => false)) await hlsToggle.click();
+      const monitorVideo = page.locator('main video:visible').first();
+      await expect.poll(async () => monitorVideo.evaluate((el) => (el as HTMLVideoElement).currentTime).catch(() => 0), { timeout: 30_000 }).toBeGreaterThan(0.4).catch(() => undefined);
+      const monitorPanel = page.locator('main video:visible, main canvas:visible').first();
+      await holdCallout(page, monitorPanel, 'HLS preview', 'left', 1400);
 
       const addOutputButton = page.getByRole('button', { name: /add output/i }).first();
       await holdCallout(page, addOutputButton, 'Add destination', 'left', 800);
@@ -252,6 +254,7 @@ async function waitForPublishUrlFromApi(label: string): Promise<string> {
       const route = await findRoute(api, label);
       const token = route?.publishCredentials.find((credential) => credential.token)?.token;
       const host =
+        process.env.FLUXOMNI_PUBLISH_HOST ??
         route?.assignedMediaNode?.publicHost ??
         new URL(process.env.FLUXOMNI_URL ?? 'http://localhost').hostname;
       const port = route?.assignedMediaNode?.rtmpPort ?? 1935;

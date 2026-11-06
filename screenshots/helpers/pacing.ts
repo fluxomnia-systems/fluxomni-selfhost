@@ -110,9 +110,17 @@ export async function holdCallout(
   side: CalloutSide = 'left',
   duration = 1000,
 ) {
-  await expect(target.first()).toBeVisible({ timeout: 10_000 });
-  await target.first().scrollIntoViewIfNeeded({ timeout: 10_000 });
-  await addCallout(page, target, label, side);
+  for (let attempt = 0; attempt < 3; attempt += 1) {
+    try {
+      await expect(target.first()).toBeVisible({ timeout: 10_000 });
+      await target.first().scrollIntoViewIfNeeded({ timeout: 10_000 });
+      await addCallout(page, target, label, side);
+      break;
+    } catch (error) {
+      if (attempt === 2) throw error;
+      await page.waitForTimeout(400);
+    }
+  }
   await page.waitForTimeout(duration);
   await clearCallouts(page);
 }
