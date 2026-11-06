@@ -826,7 +826,8 @@ begin_config_transaction() {
      { [ -f "${FLUXOMNI_DIR}/compose.installer-connect.yml" ] ||
        [ -n "${FLUXOMNI_CONNECT_GATEWAY_KEY_ID:-}${FLUXOMNI_CONNECT_GATEWAY_PUBLIC_KEY:-}" ]; }; then
     INSTALL_MANAGED_FILES+=(compose.installer-connect.yml)
-    if [ ! -e "${FLUXOMNI_DIR}/gateway.json" ] && [ ! -L "${FLUXOMNI_DIR}/gateway.json" ]; then
+    if [ ! -L "${FLUXOMNI_DIR}/gateway.json" ] &&
+       { [ ! -e "${FLUXOMNI_DIR}/gateway.json" ] || [ -n "${FLUXOMNI_CONNECT_PORTAL_ORIGIN:-}" ]; }; then
       INSTALL_MANAGED_FILES+=(gateway.json)
     fi
   fi
@@ -1568,12 +1569,71 @@ validate_connect_origin() {
   fi
 }
 
+connect_origins_differ() {
+  python3 - "$1" "$2" <<'PY'
+import ipaddress
+import socket
+import sys
+from urllib.parse import urlsplit
+
+def origin(value):
+    parsed = urlsplit(value)
+    host = parsed.hostname
+    if not host:
+        raise ValueError("Origin has no host")
+    try:
+        host = ipaddress.ip_address(host).compressed
+    except ValueError:
+        try:
+            host = socket.inet_ntoa(socket.inet_aton(host))
+        except OSError:
+            last = host.rsplit(".", 1)[-1]
+            if last.isdigit() or (last.startswith("0x") and all(c in "0123456789abcdef" for c in last[2:])):
+                raise ValueError("Invalid numeric host") from None
+    return host, parsed.port or 443
+
+def serialize(value):
+    host, port = value
+    if ":" in host:
+        host = "[" + host + "]"
+    return "https://" + host + (":" + str(port) if port != 443 else "")
+
+try:
+    left, right = origin(sys.argv[1]), origin(sys.argv[2])
+    if serialize(left) != sys.argv[1] or serialize(right) != sys.argv[2]:
+        sys.exit(1)
+    sys.exit(0 if left != right else 1)
+except ValueError:
+    sys.exit(1)
+PY
+}
+
 if [ "$FLUXOMNI_INSTALL_TARGET" = full ]; then
   connect_key_id_format='[A-Za-z0-9._-]{1,64}'
   connect_public_key_format='[A-Za-z0-9_-]{42}[AEIMQUYcgkosw048]'
   connect_id_format='[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}'
   connect_key_id="${FLUXOMNI_CONNECT_GATEWAY_KEY_ID:-}"
   connect_public_key="${FLUXOMNI_CONNECT_GATEWAY_PUBLIC_KEY:-}"
+  connect_portal="${FLUXOMNI_CONNECT_PORTAL_ORIGIN:-}"
+  if [ -n "$connect_key_id$connect_public_key" ] &&
+     [ ! -f compose.installer-connect.yml ] && [ -z "$connect_portal" ]; then
+    connect_portal=https://connect.fluxomni.io
+  fi
+  if [ -n "$connect_portal" ]; then
+    if ! validate_connect_origin "$connect_portal"; then
+      echo "Error: Connect portal must be a distinct canonical HTTPS origin." >&2
+      exit 1
+    fi
+    if [ ! -f compose.installer-connect.yml ] && [ -z "$connect_key_id$connect_public_key" ]; then
+      echo "Error: supply Connect gateway verification keys before setting its portal." >&2
+      exit 1
+    fi
+    require_cmd python3
+    if ! connect_origins_differ "$connect_portal" "$PUBLIC_URL_DEFAULT"; then
+      echo "Error: Connect portal must be a distinct canonical HTTPS origin." >&2
+      exit 1
+    fi
+  fi
   if [ -f compose.installer-connect.yml ] && { [ -L gateway.json ] || [ ! -f gateway.json ]; }; then
     echo "Error: restore gateway.json before restarting Connect." >&2
     exit 1
@@ -1625,7 +1685,7 @@ YAML
   fi
   if [ -f compose.installer-connect.yml ]; then
     connect_config="$(cat gateway.json)"
-    connect_format='^\{"origin":"([^"]+)","installationId":"('"${connect_id_format}"')","initialGatewayKey":\{"keyId":"('"${connect_key_id_format}"')","publicKey":"('"${connect_public_key_format}"')"\}\}$'
+    connect_format='^\{"origin":"([^"]+)","installationId":"('"${connect_id_format}"')","initialGatewayKey":\{"keyId":"('"${connect_key_id_format}"')","publicKey":"('"${connect_public_key_format}"')"\}(,"portalOrigin":"([^"]+)")?\}$'
     if [[ ! "$connect_config" =~ $connect_format ]] || [ "${BASH_REMATCH[1]}" != "$PUBLIC_URL_DEFAULT" ]; then
       echo "Error: restore the original gateway.json and HTTPS origin before restarting Connect." >&2
       exit 1
@@ -1634,6 +1694,27 @@ YAML
        { [ "${BASH_REMATCH[3]}" != "$connect_key_id" ] || [ "${BASH_REMATCH[4]}" != "$connect_public_key" ]; }; then
       echo "Error: Connect verification key changed. Use the documented key rotation procedure." >&2
       exit 1
+    fi
+    retained_installation="${BASH_REMATCH[2]}"
+    retained_key_id="${BASH_REMATCH[3]}"
+    retained_public_key="${BASH_REMATCH[4]}"
+    retained_portal="${BASH_REMATCH[6]:-}"
+    if [ -n "$retained_portal" ]; then
+      require_cmd python3
+      if ! validate_connect_origin "$retained_portal" || ! connect_origins_differ "$retained_portal" "$PUBLIC_URL_DEFAULT"; then
+        echo "Error: restore a valid Connect portal origin before restarting." >&2
+        exit 1
+      fi
+    fi
+    if [ -n "$connect_portal" ] && [ "$connect_portal" != "$retained_portal" ]; then
+      (
+        umask 077
+        portal_config="$(mktemp ./gateway.json.XXXXXX)"
+        trap 'rm -f "$portal_config"' EXIT
+        printf '{"origin":"%s","installationId":"%s","initialGatewayKey":{"keyId":"%s","publicKey":"%s"},"portalOrigin":"%s"}\n' \
+          "$PUBLIC_URL_DEFAULT" "$retained_installation" "$retained_key_id" "$retained_public_key" "$connect_portal" > "$portal_config"
+        mv "$portal_config" gateway.json
+      )
     fi
     if ! validate_connect_origin "$PUBLIC_URL_DEFAULT"; then
       echo "Error: Connect requires a canonical HTTPS origin." >&2

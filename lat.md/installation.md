@@ -270,3 +270,27 @@ A new Compose project creates new named credential volumes. Reusing an existing 
 Maintenance uses the helper shipped beside a directly run runtime script, or downloads it from the resolved installer asset source.
 
 Release selection, aliases and custom asset sources apply to the capacity helper as well as deployment files. The helper must understand the same database contract as the selected installer. Falling back to main can incorrectly refuse an upgrade of a drained SQLx database.
+
+## Guided Connect portal configuration
+
+The standard Docker installer accepts an explicit HTTPS portal origin for browser handoffs while keeping the Installation identity and gateway verification key unchanged.
+
+Fresh installer-managed Connect uses `https://connect.fluxomni.io` as its portal. `FLUXOMNI_CONNECT_PORTAL_ORIGIN` overrides that address for staging or another Connect operator. It must be canonical HTTPS and distinct from the Installation. Fresh setup still requires both gateway verification-key inputs. An omitted portal input preserves existing configuration bytes, including older files without a portal; it does not enable Connect or replace identity.
+
+An explicit portal update uses a private temporary file and atomic rename. Installer rollback includes the prior gateway file for this requested update. Malformed retained or requested origins fail before services change. Custom files and non-Connect installations remain operator-owned.
+
+Compare normalized IP literals and effective ports when checking that the portal differs from the Installation. Equivalent IPv6 or short/numeric IPv4 spellings cannot bypass the check. Different ports remain different origins. This comparison does not rewrite saved origin strings or resolve DNS.
+
+Require the supplied text to match canonical serialization before writing it. Reject expanded IPv6, short/numeric IPv4 aliases and invalid numeric hostnames rather than writing configuration that the native gateway parser will reject at startup.
+
+Require host Python3 before comparing configured Connect origins. A missing dependency fails before the gateway file is written. Reject gateway symlinks without transaction ownership, so rollback preserves both dangling and resolved operator links and their targets.
+
+Public instructions use verification links, local identity/client review and automatic signed handoffs. Ownership registration does not approve an AI client. Native MCP works independently of Connect. The guided application build is required; this helper option cannot add browser handlers to an older image.
+
+The approved default-address slice delivers the official default for new gateway files, an advanced explicit override, unchanged retained files and rejection when the portal equals the Installation. Checks are pinned installer tests, Bash syntax, ShellCheck, strict docs lint, `lat check` and `git diff --check`, then this PR's Docs/Installer CI and current-head Codex review. Stop at those passing checks or a preserved concrete failure. Do not change running Installations or verification keys.
+
+## Build and agent qualification
+
+Identify a supported Connect setup by its image digests, matching application contracts and observed agent workflows. Moving tags and version labels alone are not qualification evidence.
+
+Keep the Installation ID, gateway trust, database and generated private RPC volumes together across drained upgrades. A standards-compatible AI agent can use Connect; native MCP remains independently configured. Codex is a qualification example, not an exclusive client requirement.
