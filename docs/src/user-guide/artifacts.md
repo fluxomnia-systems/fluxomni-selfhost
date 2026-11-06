@@ -30,6 +30,18 @@ The menu supports:
 
 Uploads and imports share the same transfer drawer. The drawer shows queued files, upload progress, skipped non-video files, and storage rejections.
 
+The **Add files** menu also includes **Video from photos**. That opens a composer for PNG and JPEG images already in the Library. Order the photos, set **Video name**, and keep or edit **Seconds per image**. The default is five seconds. **Create video** renders an MP4 and publishes it to configured object storage. The still stops before that button is used.
+
+![The slideshow composer with photo order and five-second timing, before render](../images/user-guide/v264/artifacts-slideshow.jpg)
+
+Uploaded videos and preserved recordings can show a small thumbnail in the Library and in the shared file picker. A row may be preparing a thumbnail, showing one, or offering **Retry thumbnail** when one is unavailable. Playback, selection, and paging stay available in those states.
+
+![A library row showing the thumbnail state of an uploaded video](../images/user-guide/v264/artifacts-thumbnails.jpg)
+
+When the Library already contains a recording, open it to preview the file, including FLV, and use **Preserve to library** when that action is shown. Preservation copies the recording into an independent Library asset. The capture suite does not create a recording, so this still is produced only when one is already present.
+
+![A library recording with preview and preserve, when a recording exists](../images/user-guide/v264/artifacts-recording.jpg)
+
 ## Storage Backends
 
 The storage chip in the header summarizes the control-plane relay backend used for direct uploads.

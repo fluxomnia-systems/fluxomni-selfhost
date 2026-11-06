@@ -109,10 +109,12 @@ Stills are written to `docs/src/images/user-guide/v264/` when the UI can be driv
 - `fleet-preparation.jpg` — preparation CPU, memory, task, and queue figures
 - `fleet-enroll.jpg` — Add Node enrollment form, with secrets masked
 
-Short WebMs use the same callout pacing as the guided flows. They land in `screenshots/recordings/user-guide/` unless `FLUXOMNI_VIDEO_OUTPUT_DIR` is set:
+Short WebMs use the same callout pacing as the guided flows. By default they are written where the user guide embeds them, `docs/src/videos/user-guide/`:
 
 - `rundowns.webm` — create, save, and duplicate a rundown
 - `playlist-programming.webm` — timing, stinger, weekday schedule, and readiness
+
+Stills from this command are already under `docs/src/images/user-guide/v264/`. Leave `FLUXOMNI_VIDEO_OUTPUT_DIR` unset so the two WebMs land in `docs/src/videos/user-guide/` next to `flow-overview.webm`. If you set `FLUXOMNI_VIDEO_OUTPUT_DIR`, copy `rundowns.webm` and `playlist-programming.webm` into `docs/src/videos/user-guide/` before you commit. The user-guide pages embed those paths. Until the files exist, docs link check warns and continues; other missing images still fail the check.
 
 #### Not captured automatically
 

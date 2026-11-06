@@ -16,7 +16,7 @@ export const V264_IMAGES_DIR = resolve(
 export function v264VideoDir(): string {
   return process.env.FLUXOMNI_VIDEO_OUTPUT_DIR
     ? resolve(process.env.FLUXOMNI_VIDEO_OUTPUT_DIR)
-    : resolve(__dirname, '../recordings/user-guide');
+    : resolve(__dirname, '../../docs/src/videos/user-guide');
 }
 
 export async function captureStill(page: Page, name: string) {

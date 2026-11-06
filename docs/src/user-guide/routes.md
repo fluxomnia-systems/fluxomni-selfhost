@@ -156,12 +156,46 @@ Admins and operators can change placement, failover, live backups, and file fall
 
 ### Playlist
 
-The **Playlist** tab manages file-based playout for the route:
+Switch the route workspace to **Playlist Playout** to manage file-based playout:
 
 - **Now playing** — current file, codec summary, progress, and transport controls.
 - **Queue status** — readiness, local-file count, mismatch warnings, and stream errors.
 - **Google Drive import** — load files from a Drive folder or file URL/ID, then start downloads to the assigned media node. Configure the required API key first in [Settings → Artifacts → Google Drive](settings.md#google-drive).
 - **File list** — codec metadata plus signal-integrity badges such as **REF**, **DIFF**, or **ERROR**.
+
+### Playlist programming
+
+This video opens planned timing, chooses a stinger, saves a weekday schedule, and shows the readiness checklist. It does not start playback.
+
+<video controls muted playsinline width="100%">
+  <source src="../videos/user-guide/playlist-programming.webm" type="video/webm">
+</video>
+
+Open **Playlist settings** to see the planned program. Each queue row can show its planned duration and offset. The summary shows the finite total when every duration is known. Unknown durations and loops stay marked as uncertain.
+
+![Planned playlist item timing and the program total](../images/user-guide/v264/playlist-timing.jpg)
+
+**Playlist stinger** holds an optional Library clip. **Choose clip** selects it, and **Enable** inserts that clip between completed content files during sequential playback. Manual controls skip it.
+
+![A library clip selected as the playlist stinger](../images/user-guide/v264/playlist-stinger.jpg)
+
+**Schedule playlist start** sets when sequential playback should start. Choose **Once**, **Every day**, or **Selected weekdays**, then set the time and an IANA time zone. The route shows the next start, including the zone. Pause, resume, and replacement of an existing schedule stay on this control.
+
+![A weekday playlist schedule with its time zone and next occurrence](../images/user-guide/v264/playlist-schedule.jpg)
+
+When playback is confirmed, **Edit playback time** opens the timestamp editor on the progress line. You can also scrub **Playback position**. Until playback is confirmed, the progress line stays idle and the timestamp editor is not available. The still shows the state the route is in. Capturing it does not start playout.
+
+![Playlist progress, including the timestamp editor when cueing is enabled](../images/user-guide/v264/playlist-cue.jpg)
+
+**Add** opens the Library picker. **Playback preparation** can prepare the selected videos, and the current queue, for this route baseline. Leave **Prepare selected videos for this baseline** unchecked when you only want to inspect the option. Checking it, or choosing **Normalize files**, starts preparation.
+
+![The playlist picker with preparation available and left unchecked](../images/user-guide/v264/playlist-prepare.jpg)
+
+The **Route readiness checklist** lists findings for the selected flow. Choose **Playlist**, **Live source**, or **Relay**, then use **Refresh readiness**. The checklist previews placement and capacity rules. It does not start streams.
+
+![The route readiness checklist for the playlist flow](../images/user-guide/v264/route-readiness.jpg)
+
+Saved program order lives on the [Rundowns](rundowns.md) page. Apply one saved revision from **Reusable rundown** in these playlist settings when the route is idle and has no schedule.
 
 ### Live Playback
 
