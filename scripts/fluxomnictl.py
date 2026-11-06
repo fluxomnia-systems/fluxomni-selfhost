@@ -128,7 +128,7 @@ def select_install(directory=None, target=None, cwd=None, environ=None, interact
     for number, item in enumerate(installs, 1):
         print(f"  {number}) {item.path} ({item.target})", file=sys.stderr)
     try:
-        answer = ask("Select an install [1-%d]: " % len(installs)).strip()
+        answer = ask(f"Select an install [1-{len(installs)}]: ").strip()
     except (EOFError, KeyboardInterrupt):
         raise CtlError("no install selected") from None
     if not answer.isdigit() or not 1 <= int(answer) <= len(installs):
