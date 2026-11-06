@@ -25,8 +25,9 @@ Defaults:
 
 Existing installs:
   - Updating needs one --capacity-upgrade mode (see the capacity upgrade guide).
-  - To change offline preparation limits, use fluxomnictl preparation
+  - Check preparation host requirements with: fluxomnictl preparation check
     (run "install.sh tools" first when the command is missing).
+  - Changing preparation budgets on an existing install still needs that mode.
 EOF
 }
 
@@ -1198,8 +1199,11 @@ validate_capacity_maintenance() {
         else
           echo 'Error: existing installs require --capacity-upgrade initial, drained, or node. Read the capacity upgrade guide before stopping execution.' >&2
           if [ -n "${REQUESTED_PREPARATION_ENABLED}${REQUESTED_PREPARATION_CPU}${REQUESTED_PREPARATION_MEMORY}${REQUESTED_PREPARATION_TASKS}" ]; then
-            echo 'To change only the preparation limits, do not rerun the installer. Use: fluxomnictl preparation enable|set|disable' >&2
-            echo 'If the command is missing, run: bash install.sh tools' >&2
+            echo 'To change preparation limits, rerun with the budgets and a maintenance mode.' >&2
+            echo 'Full install: bash install.sh full --capacity-upgrade drained' >&2
+            echo 'Standalone node: bash install.sh media-node --capacity-upgrade node --confirm-control-plane-ready' >&2
+            echo 'Check the host first: fluxomnictl preparation check' >&2
+            echo 'If that command is missing, run: bash install.sh tools' >&2
           fi
           exit 1
         fi

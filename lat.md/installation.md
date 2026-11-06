@@ -112,6 +112,8 @@ Existing installations require an explicit initial, drained or standalone-node m
 
 The initial mode is full-stack only and requires an external-execution-stopped assertion. Standalone updates assert that the upgraded control plane has verified the initial boundary, or the node drained before stopping. Raw acknowledgement environment/Compose overrides are rejected. See the public capacity upgrade guide for operator ordering.
 
+A rerun that only sets preparation variables, and omits the maintenance mode, stops before any change. It prints the drained or node command and [[scripts/fluxomnictl.py#preparation_checks|fluxomnictl preparation check]]. It does not name unshipped preparation subcommands.
+
 ## Capacity ledger evidence
 
 The helper reads the actual control-plane bind-mounted SQLite through a WAL-aware read-only transaction and verifies its current assignment marker and persisted route state.

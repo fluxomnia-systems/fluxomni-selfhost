@@ -996,7 +996,9 @@ def test_preparation_only_rerun_points_to_fluxomnictl(installation):
     limits = {"FLUXOMNI_PREPARATION_CGROUP_ENABLED": "1", "FLUXOMNI_PREPARATION_CPU_MILLICORES": "500"}
     result = run("full", limits, [])
     assert result.returncode == 1
-    assert "fluxomnictl preparation enable|set|disable" in result.stderr
+    assert "fluxomnictl preparation enable|set|disable" not in result.stderr
+    assert "bash install.sh full --capacity-upgrade drained" in result.stderr
+    assert "fluxomnictl preparation check" in result.stderr
     assert "install.sh tools" in result.stderr
     plain = run("full", None, [])
     assert "fluxomnictl" not in plain.stderr
