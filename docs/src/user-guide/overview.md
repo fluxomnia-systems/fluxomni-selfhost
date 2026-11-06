@@ -29,6 +29,7 @@ The Control Surface has a sidebar on the left. It shows the Fluxomni logo, versi
 ### Operate
 
 - **Attention** — one feed for route alerts, fleet alerts, and known issues. Each route alert links directly to the affected workspace.
+- **Rundowns** — saved program order. Edit and duplicate a rundown, then apply one revision to an idle route.
 - **Routes** — the main page for streams. It includes search, scope controls, health summaries, route cards, and output actions.
 - **Artifacts** — the shared source-file library. Upload files, import from Drive, add tags, check storage limits, and reuse files in playlists.
 
@@ -48,6 +49,7 @@ The bottom of the sidebar shows real-time CPU, memory, and network usage for the
 ## Next Steps
 
 - [Attention](attention.md) — review route, fleet, and storage alerts
+- [Rundowns](rundowns.md) — save, duplicate, and apply program order
 - [Routes](routes.md) — learn how to create and operate routes
 - [Artifacts](artifacts.md) — upload and reuse source files across routes
 - [Fleet](fleet.md) — understand media node management

@@ -5,6 +5,8 @@
   "scripts": {
     "capture": "playwright test",
     "capture:overview": "playwright test captures/overview-flow.spec.ts",
+    "capture:v264": "playwright test captures/v264-rundowns.spec.ts captures/v264-playlist.spec.ts captures/v264-library.spec.ts captures/v264-fleet.spec.ts",
+    "capture:v264:headed": "playwright test captures/v264-rundowns.spec.ts captures/v264-playlist.spec.ts captures/v264-library.spec.ts captures/v264-fleet.spec.ts --headed",
     "capture:headed": "playwright test --headed",
     "install:browsers": "playwright install chromium"
   },

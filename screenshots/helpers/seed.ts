@@ -76,8 +76,20 @@ const LIST_RESTREAMS = `
   }
 `;
 
-const LIST_LIBRARY_FILES = `
-  query ListLibraryFiles {
+const LIST_LIBRARY_FILES_PAGE = `
+  query ListLibraryFiles($after: String) {
+    artifacts {
+      libraryFiles(first: 200, after: $after) {
+        nodes { id name }
+        hasNextPage
+        endCursor
+      }
+    }
+  }
+`;
+
+const LIST_LIBRARY_FILES_LEGACY = `
+  query ListLibraryFilesLegacy {
     artifacts {
       libraryFiles {
         id
@@ -212,19 +224,74 @@ export async function cleanupSeededRoutes(
  * Removes all library files whose name starts with the given prefix.
  * Returns the count of removed files.
  */
+async function listLibraryFiles(
+  api: APIRequestContext,
+): Promise<ListedLibraryFile[]> {
+  try {
+    const files: ListedLibraryFile[] = [];
+    let after: string | null = null;
+    for (;;) {
+      const data: {
+        artifacts: {
+          libraryFiles: {
+            nodes: ListedLibraryFile[];
+            hasNextPage: boolean;
+            endCursor: string | null;
+          };
+        };
+      } = await requestGraphql(api, LIST_LIBRARY_FILES_PAGE, { after });
+      const page: {
+        nodes: ListedLibraryFile[];
+        hasNextPage: boolean;
+        endCursor: string | null;
+      } = data.artifacts.libraryFiles;
+      files.push(...page.nodes);
+      if (!page.hasNextPage || !page.endCursor || page.endCursor === after) return files;
+      after = page.endCursor;
+    }
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error);
+    if (!/libraryFiles|unknown argument|must not have a selection/i.test(message)) {
+      throw error;
+    }
+    const data = await requestGraphql<{
+      artifacts: { libraryFiles: ListedLibraryFile[] };
+    }>(api, LIST_LIBRARY_FILES_LEGACY);
+    return data.artifacts.libraryFiles;
+  }
+}
+
 export async function cleanupSeededLibraryFiles(
   api: APIRequestContext,
   prefix: string,
 ): Promise<number> {
-  const data = await requestGraphql<{
-    artifacts: { libraryFiles: ListedLibraryFile[] };
-  }>(api, LIST_LIBRARY_FILES);
-  const ids = data.artifacts.libraryFiles
-    .filter((file) => file.name.startsWith(prefix))
-    .map((file) => file.id);
+  const files = await listLibraryFiles(api);
+  const ids = files.filter((file) => file.name.startsWith(prefix)).map((file) => file.id);
   if (ids.length === 0) return 0;
   await requestGraphql(api, DELETE_LIBRARY_FILES, { ids });
   return ids.length;
+}
+
+export async function uploadLibraryFile(
+  api: APIRequestContext,
+  opts: { name: string; contentType: string; body: Buffer },
+): Promise<string> {
+  const response = await api.post('/files', {
+    headers: {
+      'content-type': opts.contentType,
+      'x-file-name': encodeURIComponent(opts.name),
+    },
+    data: opts.body,
+  });
+  if (!response.ok()) {
+    throw new Error(`Library upload failed for ${opts.name} (${response.status()})`);
+  }
+  const payload = (await response.json()) as { file_id?: string; fileId?: string };
+  const fileId = payload.file_id ?? payload.fileId;
+  if (!fileId) {
+    throw new Error(`Library upload for ${opts.name} did not return a file id`);
+  }
+  return fileId;
 }
 
 function createValid720p30Fixture(): Buffer {

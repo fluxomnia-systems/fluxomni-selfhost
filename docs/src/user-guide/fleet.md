@@ -79,3 +79,27 @@ For library operations, use:
 ## Opening a Node
 
 Click **Open node →** on any media node card to view detailed node information, including full telemetry, route assignments, and cached file inventory. Use [Attention](attention.md) to review node issues that need action, then return to node diagnostics.
+
+## Control connection
+
+Each node reports **Control connection** separately from media reachability. A private node can show a control connection without exposing an inbound control port.
+
+![Fleet showing control connection separately from media access](../images/user-guide/v264/fleet-control.jpg)
+
+## Admission ceilings
+
+Open a node to set **Route limit** and **Output limit**. Blank means unlimited. Zero prevents new demand. The same panel shows routes and outputs already reserved, including work that is starting or retiring. **Save limits** writes the ceilings. The still shows the form and does not save.
+
+![Per-node route and output ceilings with reserved demand](../images/user-guide/v264/fleet-capacity.jpg)
+
+## Preparation resources
+
+The node page includes **Preparation resources** when the node reports them: CPU, memory, tasks, and the preparation queue, including waiting work. The figures describe offline preparation. They do not predict how many additional routes or outputs will fit. The capture does not start a preparation job.
+
+![Preparation CPU, memory, tasks, and queue on a media node](../images/user-guide/v264/fleet-preparation.jpg)
+
+## Add a private node
+
+**Add Node** opens the enrollment form. Set **Enrollment URL** to the control plane HTTPS address the new node can reach. **Generate join command** creates a one-time code and a copy-and-run installer command. The still is taken before that button is used. Commands, one-time codes, private keys, and private hosts are masked in the capture. Follow [Attach Another Media Node](../getting-started/quick-start.md#attach-another-media-node) for the install itself.
+
+![The Add Node form before a join command is generated](../images/user-guide/v264/fleet-enroll.jpg)

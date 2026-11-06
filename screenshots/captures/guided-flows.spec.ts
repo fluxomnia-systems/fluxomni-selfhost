@@ -12,6 +12,7 @@ import {
 const __dirname = dirname(fileURLToPath(import.meta.url));
 
 import { createAuthenticatedApi } from '../helpers/auth';
+import { captureUnavailableReason, gateCapture, skipIfCaptureUnavailable } from '../helpers/instance';
 import { waitForAppReady } from '../helpers/readiness';
 import { cleanupSeededRoutes, createRoute } from '../helpers/seed';
 import { saveRecordedVideo } from '../helpers/video';
@@ -49,7 +50,10 @@ const SEED_PREFIX = 'docs-flow';
 // Setup / teardown
 // ---------------------------------------------------------------------------
 
+gateCapture();
+
 test.beforeAll(async () => {
+  skipIfCaptureUnavailable();
   const baseURL = process.env.FLUXOMNI_URL ?? 'http://localhost';
   const api = await createAuthenticatedApi(baseURL);
   try {
@@ -60,6 +64,7 @@ test.beforeAll(async () => {
 });
 
 test.afterAll(async () => {
+  if (captureUnavailableReason()) return;
   const baseURL = process.env.FLUXOMNI_URL ?? 'http://localhost';
   const api = await createAuthenticatedApi(baseURL);
   try {
