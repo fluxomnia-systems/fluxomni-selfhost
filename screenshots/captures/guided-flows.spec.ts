@@ -171,7 +171,7 @@ async function addCallout(
               <path d="M 0 0 L 12 6 L 0 12 z" fill="#dc2626"></path>
             </marker>
           </defs>
-          <line x1="${startX}" y1="${startY}" x2="${targetX}" y2="${targetY}" stroke="#dc2626" stroke-width="4" marker-end="url(#docs-callout-arrow)" />
+          
           <rect x="${box.x - 4}" y="${box.y - 4}" width="${box.width + 8}" height="${box.height + 8}" rx="10" fill="none" stroke="#dc2626" stroke-width="3" />
         </svg>
         <div style="
@@ -387,7 +387,7 @@ test.describe('Create Route flow', () => {
     await newRouteButton.click();
 
     await page.waitForSelector(
-      '[role="dialog"], .modal, [data-testid="create-route-modal"]',
+      'dialog[open], [role="dialog"], .modal, [data-testid="create-route-modal"]',
       { timeout: 10_000 },
     );
     await page.waitForTimeout(800);
@@ -408,7 +408,7 @@ test.describe('Create Route flow', () => {
 
     // Step 3: Fill in route identity
     await fillCreateRouteDialog(page);
-    const dialog = page.locator('.modal-open, [role="dialog"]').first();
+    const dialog = page.locator('dialog[open], .modal-open, [role="dialog"]').first();
     const submitButton = getCreateRouteSubmit(dialog);
     await captureWithCallout(
       page,
@@ -538,7 +538,7 @@ test.describe('Guided videos', () => {
     await smoothFill(page, labelInput, `Main Broadcast ${SEED_PREFIX}`);
 
     await page.waitForTimeout(800);
-    const dialog = page.locator('.modal-open, [role="dialog"]').first();
+    const dialog = page.locator('dialog[open], .modal-open, [role="dialog"]').first();
     const submitButton = getCreateRouteSubmit(dialog);
     await holdCallout(page, submitButton, 'Save route', 'left');
     await smoothClick(page, submitButton);
