@@ -53,6 +53,8 @@ To automatically install Fluxomni on the new droplet, paste the following script
 curl -fsSL https://install.fluxomni.io | WITH_UFW=1 bash -s
 ```
 
+On a new Linux host that can enforce preparation limits, this also turns them on. The installer prints the CPU, memory, and thread budgets. Set `FLUXOMNI_PREPARATION_CGROUP_ENABLED=0` before `bash` to skip them.
+
 ![Provision](../images/do_1.5.jpg)
 
 ### 1.6. Select Authentication Method

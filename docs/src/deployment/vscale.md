@@ -72,6 +72,8 @@ Connect to your server via SSH and run the following command. Replace `your_serv
 ssh root@your_server_ip "curl -fsSL https://install.fluxomni.io | WITH_INITIAL_UPGRADE=1 WITH_UFW=1 bash -s"
 ```
 
+On a new Linux host that can enforce preparation limits, this also turns them on. The installer prints the CPU, memory, and thread budgets. Set `FLUXOMNI_PREPARATION_CGROUP_ENABLED=0` before `bash` to skip them.
+
 If you are using password authentication, you will be prompted to enter the password from the previous step.
 
 ## 2. Access Fluxomni

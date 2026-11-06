@@ -28,6 +28,7 @@ Existing installs:
   - Check preparation host requirements with: fluxomnictl preparation check
     (run "install.sh tools" first when the command is missing).
   - Changing preparation budgets on an existing install still needs that mode.
+  - A new install turns preparation limits on when the host can enforce them.
 EOF
 }
 
@@ -793,9 +794,41 @@ read_preparation_budget() {
   printf '%s' "$value"
 }
 
+# About 25% of CPU and RAM, with a floor and a ceiling, and 256 threads.
+suggest_preparation_budgets() {
+  local cpus mem_kib cpu memory
+  cpus="${FLUXOMNI_PREPARATION_DETECT_CPUS:-$(getconf _NPROCESSORS_ONLN 2>/dev/null || echo 2)}"
+  mem_kib="${FLUXOMNI_PREPARATION_DETECT_MEMORY_KIB:-}"
+  if [ -z "$mem_kib" ] && [ -r /proc/meminfo ]; then
+    mem_kib="$(awk '/MemTotal/ {print $2}' /proc/meminfo)"
+  fi
+  mem_kib="${mem_kib:-4194304}"
+  cpu=$(( cpus * 250 ))
+  cpu=$(( cpu / 50 * 50 ))
+  [ "$cpu" -lt 250 ] && cpu=250
+  [ "$cpu" -gt 64000 ] && cpu=64000
+  memory=$(( mem_kib / 1024 * 25 / 100 ))
+  [ "$memory" -lt 512 ] && memory=512
+  [ "$memory" -gt 262144 ] && memory=262144
+  PREPARATION_CPU="$cpu"
+  PREPARATION_MEMORY="$memory"
+  PREPARATION_TASKS=256
+}
+
 resolve_preparation_config() {
-  PREPARATION_ENABLED="${REQUESTED_PREPARATION_ENABLED:-$(read_env_file_value FLUXOMNI_PREPARATION_CGROUP_ENABLED "$CANDIDATE_ENV_FILE")}"
-  PREPARATION_ENABLED="${PREPARATION_ENABLED:-0}"
+  local saved_enabled fresh=0
+  saved_enabled="$(read_env_file_value FLUXOMNI_PREPARATION_CGROUP_ENABLED "$CANDIDATE_ENV_FILE")"
+  if [ -n "$REQUESTED_PREPARATION_ENABLED" ]; then
+    PREPARATION_ENABLED="$REQUESTED_PREPARATION_ENABLED"
+  elif [ -n "$saved_enabled" ]; then
+    PREPARATION_ENABLED="$saved_enabled"
+  elif [ ! -f "$CANDIDATE_ENV_FILE" ]; then
+    fresh=1
+    PREPARATION_ENABLED=1
+  else
+    # An older install has no saved flag. Do not turn limits on during an upgrade.
+    PREPARATION_ENABLED=0
+  fi
   PREPARATION_CPU="${REQUESTED_PREPARATION_CPU:-$(read_preparation_budget FLUXOMNI_PREPARATION_CPU_MILLICORES)}"
   PREPARATION_MEMORY="${REQUESTED_PREPARATION_MEMORY:-$(read_preparation_budget FLUXOMNI_PREPARATION_MEMORY_MIB)}"
   PREPARATION_TASKS="${REQUESTED_PREPARATION_TASKS:-$(read_preparation_budget FLUXOMNI_PREPARATION_TASKS)}"
@@ -803,6 +836,17 @@ resolve_preparation_config() {
     0|1) ;;
     *) echo 'Error: FLUXOMNI_PREPARATION_CGROUP_ENABLED must be 0 or 1.' >&2; exit 1 ;;
   esac
+  if [ "$fresh" = 1 ] && [ "$PREPARATION_ENABLED" = 1 ]; then
+    if ! preflight_preparation_host 0; then
+      echo "Preparation limits stay off: ${PREPARATION_SKIP_REASON}. Install continues." >&2
+      echo 'Set FLUXOMNI_PREPARATION_CGROUP_ENABLED=1 after the host is ready. An existing install also needs a maintenance mode.' >&2
+      PREPARATION_ENABLED=0
+    elif [ -z "${PREPARATION_CPU}${PREPARATION_MEMORY}${PREPARATION_TASKS}" ]; then
+      suggest_preparation_budgets
+      echo "Preparation limits are on by default: ${PREPARATION_CPU} millicores, ${PREPARATION_MEMORY} MiB, ${PREPARATION_TASKS} threads."
+      echo 'Set FLUXOMNI_PREPARATION_CGROUP_ENABLED=0 to install without them.'
+    fi
+  fi
   local value maximum label
   for label in CPU MEMORY TASKS; do
     case "$label" in
@@ -817,16 +861,28 @@ resolve_preparation_config() {
       exit 1
     fi
   done
-  if [ "$PREPARATION_ENABLED" = 1 ]; then
+  if [ "$PREPARATION_ENABLED" = 1 ] && [ "$fresh" != 1 ]; then
     preflight_preparation_host
   fi
 }
 
+preparation_refuse() {
+  local strict="$1" message="$2"
+  if [ "$strict" = 1 ]; then
+    echo "Error: $message" >&2
+    exit 1
+  fi
+  PREPARATION_SKIP_REASON="$message"
+  return 1
+}
+
 preflight_preparation_host() {
-  local endpoint info context
-  [ "$(uname -s)" = Linux ] || { echo 'Error: preparation cgroups require a Linux host.' >&2; exit 1; }
-  for tool in python3 systemctl stat; do require_cmd "$tool"; done
-  [ -x /usr/bin/python3 ] || { echo 'Error: preparation boot provisioning requires /usr/bin/python3.' >&2; exit 1; }
+  local strict="${1:-1}" endpoint info context controllers need
+  [ "$(uname -s)" = Linux ] || preparation_refuse "$strict" 'preparation cgroups require a Linux host.' || return 1
+  for tool in python3 systemctl stat; do
+    command -v "$tool" >/dev/null 2>&1 || preparation_refuse "$strict" "required command '$tool' was not found." || return 1
+  done
+  [ -x /usr/bin/python3 ] || preparation_refuse "$strict" 'preparation boot provisioning requires /usr/bin/python3.' || return 1
   if [ -n "${DOCKER_CONTEXT:-}" ]; then
     context="$DOCKER_CONTEXT"
     endpoint="$("${DOCKER_CMD[@]}" context inspect "$context" --format '{{.Endpoints.docker.Host}}')"
@@ -836,13 +892,16 @@ preflight_preparation_host() {
     context="$("${DOCKER_CMD[@]}" context show)"
     endpoint="$("${DOCKER_CMD[@]}" context inspect "$context" --format '{{.Endpoints.docker.Host}}')"
   fi
-  [[ "$endpoint" == unix://* ]] || { echo 'Error: preparation provisioning requires a local Unix Docker socket.' >&2; exit 1; }
+  [[ "$endpoint" == unix://* ]] || preparation_refuse "$strict" 'preparation provisioning requires a local Unix Docker socket.' || return 1
   info="$("${DOCKER_CMD[@]}" info --format '{{.CgroupVersion}} {{json .SecurityOptions}}')"
   if [[ "$info" != 2\ * || "$info" == *rootless* || "$info" == *userns* ]]; then
-    echo 'Error: preparation isolation requires rootful cgroup-v2 Docker without user namespace remapping.' >&2
-    exit 1
+    preparation_refuse "$strict" 'preparation isolation requires rootful cgroup-v2 Docker without user namespace remapping.' || return 1
   fi
-  [ "$(stat -fc %T /sys/fs/cgroup)" = cgroup2fs ] || { echo 'Error: host cgroup v2 is required.' >&2; exit 1; }
+  [ "$(stat -fc %T /sys/fs/cgroup)" = cgroup2fs ] || preparation_refuse "$strict" 'host cgroup v2 is required.' || return 1
+  controllers="$(python -c 'from pathlib import Path; p=Path("/sys/fs/cgroup/cgroup.subtree_control"); print(p.read_text() if p.is_file() else "")')"
+  for need in cpu memory pids; do
+    printf '%s' "$controllers" | grep -qw "$need" || preparation_refuse "$strict" 'cpu, memory, and pids controllers are not enabled.' || return 1
+  done
   run_privileged systemctl show-environment >/dev/null
 }
 
@@ -888,10 +947,6 @@ write_preparation_config() {
   upsert_env_value "$ENV_FILE" FLUXOMNI_PREPARATION_CGROUP_ENABLED "$PREPARATION_ENABLED"
   local tmp
   tmp="$(mktemp)"
-  # Disabled budgets are comments: env_file must not inject partial runtime
-  # configuration. Retain values for an explicit later re-enable.
-  awk '!/^(# SAVED_)?FLUXOMNI_PREPARATION_(CPU_MILLICORES|MEMORY_MIB|TASKS|CGROUP_ROOT|HOST_ROOT)=/' "$ENV_FILE" > "$tmp"
-  mv "$tmp" "$ENV_FILE"
   if [ "$PREPARATION_ENABLED" = 1 ]; then
     download_asset docker-compose.preparation-cgroup.yml "${FLUXOMNI_DIR}/docker-compose.preparation-cgroup.yml"
     download_asset scripts/preparation-cgroup.py "${FLUXOMNI_DIR}/preparation-cgroup.py"
@@ -903,14 +958,26 @@ write_preparation_config() {
     export FLUXOMNI_PREPARATION_CPU_MILLICORES="$PREPARATION_CPU"
     export FLUXOMNI_PREPARATION_MEMORY_MIB="$PREPARATION_MEMORY"
     export FLUXOMNI_PREPARATION_TASKS="$PREPARATION_TASKS"
-    upsert_env_value "$ENV_FILE" FLUXOMNI_PREPARATION_HOST_ROOT "$PREPARATION_HOST_ROOT"
-    upsert_env_value "$ENV_FILE" FLUXOMNI_PREPARATION_CPU_MILLICORES "$PREPARATION_CPU"
-    upsert_env_value "$ENV_FILE" FLUXOMNI_PREPARATION_MEMORY_MIB "$PREPARATION_MEMORY"
-    upsert_env_value "$ENV_FILE" FLUXOMNI_PREPARATION_TASKS "$PREPARATION_TASKS"
+    # Leave an unchanged .env alone so operator lines keep their place.
+    if [ "$(read_env_file_value FLUXOMNI_PREPARATION_HOST_ROOT "$ENV_FILE")" != "$PREPARATION_HOST_ROOT" ] ||
+       [ "$(read_env_file_value FLUXOMNI_PREPARATION_CPU_MILLICORES "$ENV_FILE")" != "$PREPARATION_CPU" ] ||
+       [ "$(read_env_file_value FLUXOMNI_PREPARATION_MEMORY_MIB "$ENV_FILE")" != "$PREPARATION_MEMORY" ] ||
+       [ "$(read_env_file_value FLUXOMNI_PREPARATION_TASKS "$ENV_FILE")" != "$PREPARATION_TASKS" ]; then
+      awk '!/^(# SAVED_)?FLUXOMNI_PREPARATION_(CPU_MILLICORES|MEMORY_MIB|TASKS|CGROUP_ROOT|HOST_ROOT)=/' "$ENV_FILE" > "$tmp"
+      mv "$tmp" "$ENV_FILE"
+      upsert_env_value "$ENV_FILE" FLUXOMNI_PREPARATION_HOST_ROOT "$PREPARATION_HOST_ROOT"
+      upsert_env_value "$ENV_FILE" FLUXOMNI_PREPARATION_CPU_MILLICORES "$PREPARATION_CPU"
+      upsert_env_value "$ENV_FILE" FLUXOMNI_PREPARATION_MEMORY_MIB "$PREPARATION_MEMORY"
+      upsert_env_value "$ENV_FILE" FLUXOMNI_PREPARATION_TASKS "$PREPARATION_TASKS"
+    fi
     cat >> "${FLUXOMNI_DIR}/docker-compose.yml" <<'YAML'
       - docker-compose.preparation-cgroup.yml
 YAML
   else
+    # Disabled budgets are comments: env_file must not inject partial runtime
+    # configuration. Retain values for an explicit later re-enable.
+    awk '!/^(# SAVED_)?FLUXOMNI_PREPARATION_(CPU_MILLICORES|MEMORY_MIB|TASKS|CGROUP_ROOT|HOST_ROOT)=/' "$ENV_FILE" > "$tmp"
+    mv "$tmp" "$ENV_FILE"
     [ -z "$PREPARATION_CPU" ] || printf '# SAVED_FLUXOMNI_PREPARATION_CPU_MILLICORES=%s\n' "$PREPARATION_CPU" >> "$ENV_FILE"
     [ -z "$PREPARATION_MEMORY" ] || printf '# SAVED_FLUXOMNI_PREPARATION_MEMORY_MIB=%s\n' "$PREPARATION_MEMORY" >> "$ENV_FILE"
     [ -z "$PREPARATION_TASKS" ] || printf '# SAVED_FLUXOMNI_PREPARATION_TASKS=%s\n' "$PREPARATION_TASKS" >> "$ENV_FILE"

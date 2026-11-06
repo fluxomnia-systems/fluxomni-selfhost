@@ -56,6 +56,8 @@ Expand the **Show advanced options** section. Go to the **Management** tab and p
 curl -fsSL https://install.fluxomni.io | WITH_FIREWALLD=1 bash -s
 ```
 
+On a new Linux host that can enforce preparation limits, this also turns them on. The installer prints the CPU, memory, and thread budgets. Set `FLUXOMNI_PREPARATION_CGROUP_ENABLED=0` before `bash` to skip them.
+
 ![Cloud-init script](../images/oci_1.5.2.png)
 
 Click **Create** to begin provisioning the VM instance.

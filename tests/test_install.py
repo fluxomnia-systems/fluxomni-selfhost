@@ -70,7 +70,10 @@ if name == "curl":
     shutil.copyfile(source, args[args.index("-o") + 1])
     if "--write-out" in args:
         print("200", end="")
-elif name == "python3":
+elif name in ("python3", "python"):
+    if args[:1] == ["-c"] and "cgroup.subtree_control" in args[1]:
+        print(os.environ.get("TEST_SUBTREE_CONTROL", "cpu memory pids"))
+        sys.exit(0)
     if len(args) > 1 and Path(args[0]).name == "preparation-cgroup.py" and args[1] in ("install", "disable"):
         with open(Path(os.environ["TEST_ASSETS"]).parent / "preparation.jsonl", "a") as log:
             log.write(json.dumps(args[1:]) + "\n")
@@ -205,7 +208,7 @@ else:
     raise AssertionError(name)
 ''')
     stub.chmod(0o755)
-    for name in ("docker", "curl", "hostname", "nc", "sudo", "apt-get", "ufw", "firewall-cmd", "systemctl", "python3", "uname", "stat"):
+    for name in ("docker", "curl", "hostname", "nc", "sudo", "apt-get", "ufw", "firewall-cmd", "systemctl", "python3", "python", "uname", "stat"):
         (commands / name).symlink_to(stub)
     destination = tmp_path / "installation"
     env = {
@@ -374,11 +377,42 @@ def started_node(destination):
     return json.loads((destination / 'started.json').read_text())['services']['media-node']
 
 
+def test_fresh_install_enables_preparation_with_detected_budgets(installation):
+    _, destination, run = installation
+    result = run("full", {"FLUXOMNI_PREPARATION_DETECT_CPUS": "4", "FLUXOMNI_PREPARATION_DETECT_MEMORY_KIB": str(8 * 1024 * 1024)})
+    assert result.returncode == 0, result.stdout + result.stderr
+    assert "Preparation limits are on by default: 1000 millicores, 2048 MiB, 256 threads." in result.stdout
+    node = started_node(destination)
+    assert node["cgroup"] == "host"
+    assert node["environment"]["FLUXOMNI_PREPARATION_CPU_MILLICORES"] == "1000"
+    assert node["environment"]["FLUXOMNI_PREPARATION_MEMORY_MIB"] == "2048"
+    assert node["environment"]["FLUXOMNI_PREPARATION_TASKS"] == "256"
+
+
+def test_fresh_install_skips_preparation_when_the_host_cannot_enforce_it(installation):
+    _, destination, run = installation
+    result = run("full", {"TEST_HOST_OS": "Darwin"})
+    assert result.returncode == 0, result.stdout + result.stderr
+    assert "Preparation limits stay off" in result.stderr
+    assert "cgroup" not in started_node(destination)
+
+
+def test_existing_install_without_a_saved_flag_does_not_turn_preparation_on(installation):
+    _, destination, run = installation
+    assert run("full", {"FLUXOMNI_PREPARATION_CGROUP_ENABLED": "0"}).returncode == 0
+    env = destination / ".env"
+    env.write_text("\n".join(line for line in env.read_text().splitlines() if not line.startswith("FLUXOMNI_PREPARATION_")) + "\n")
+    result = run("full")
+    assert result.returncode == 0, result.stdout + result.stderr
+    assert "cgroup" not in started_node(destination)
+
+
 # @lat: [[installation#Preparation installer regression coverage]]
 @pytest.mark.parametrize('target', ['full', 'media-node'])
 def test_preparation_enable_preserve_update_disable_reenable(installation, target):
     assets, destination, run = installation
-    assert run(target).returncode == 0
+    # Keep this lifecycle on an explicit off start. A fresh install now turns limits on.
+    assert run(target, {"FLUXOMNI_PREPARATION_CGROUP_ENABLED": "0"}).returncode == 0
     assert 'cgroup' not in started_node(destination)
     assert not any(k in started_node(destination)['environment'] for k in PREPARATION if k != 'FLUXOMNI_PREPARATION_CGROUP_ENABLED')
     first = run(target, PREPARATION)
