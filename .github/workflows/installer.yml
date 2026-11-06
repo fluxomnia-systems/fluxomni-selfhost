@@ -52,7 +52,7 @@ permissions:
 jobs:
   installer:
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    timeout-minutes: 10
     steps:
       - uses: actions/checkout@v6
       - uses: astral-sh/setup-uv@v7
@@ -70,4 +70,4 @@ jobs:
       - name: Type check helpers
         run: ./scripts/typecheck.sh
       - name: Test fresh installs and upgrades
-        run: uv run --no-project --with-requirements scripts/requirements-test.txt pytest -q tests
+        run: uv run --no-project --with-requirements scripts/requirements-test.txt pytest -n auto -q tests
