@@ -191,7 +191,7 @@ The public launcher selects installer code and Compose assets from one release b
 
 Explicit version values override the saved installation version; otherwise the default is latest. Latest resolves to the generated stable ref while retaining the latest image channel. Historical releases declare their root installer in release metadata. New releases and edge use scripts/install-runtime.sh. Missing files fail without falling back to main. Stable historical code owns its release's admission and update contract; the new runtime adds no legacy protocol adapter.
 
-Current stable v26.3.2 uses bundle f4a0b3b0c72da80dd889ef4a51f637537dd89406. Its installer and all helper/assets downloads share that SHA, retaining the file-limit, media-port and preparation fixes without requiring the newer capacity API. The image channel stays latest or the requested version. The manual installation example uses the same corrected asset SHA with the v26.3.2 image pin.
+Current stable v26.4.0 uses the release ref for installer code and assets (`scripts/install-runtime.sh`). v26.3.2 remains on bundle f4a0b3b0c72da80dd889ef4a51f637537dd89406. That release's installer and helper downloads share the SHA and keep the file-limit, media-port, and preparation fixes without the capacity API. The image channel stays latest or the requested version. The manual installation example uses the v26.4.0 asset ref and image pin.
 
 Release sync preserves declared historical installer paths and same-release bundle overrides and assigns the current path to new releases. Custom asset roots require the current runtime installer. Caller working directories never supply executable version maps. Enrollment commands cannot be sent to historical installers.
 

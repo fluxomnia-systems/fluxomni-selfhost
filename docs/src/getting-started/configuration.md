@@ -10,6 +10,7 @@ Configure Fluxomni with environment variables in `.env`.
 - `FLUXOMNI_VERSION`: image tag to deploy.
 - `FLUXOMNI_PUBLIC_HOST`: public hostname/IP used for the control surface and generated control-plane URLs.
 - `FLUXOMNI_PUBLIC_URL`: full public base URL including scheme (e.g. `https://stream.example.com`). Required for HTTPS deployments behind a TLS-terminating reverse proxy. Takes precedence over `FLUXOMNI_PUBLIC_HOST` + `FLUXOMNI_FRONTEND_HTTP_PORT`.
+- `FLUXOMNI_TRUSTED_PROXY_IPS`: exact IP addresses of reverse proxies that append or replace client-address headers. Required from 26.4.0 when Fluxomni is behind a proxy, so login limits stay per client. See [Client address](reverse-proxy.md#client-address).
 - `FLUXOMNI_MEDIA_NODE_PUBLIC_HOST`: public hostname/IP shown in generated RTMP, HLS, SRT, and WebRTC media URLs.
 - `FLUXOMNI_MEDIA_NODE_ID`: stable media-node identifier shown in fleet views.
 - `FLUXOMNI_MEDIA_NODE_NAME`: human-readable media-node name shown in the control-plane.

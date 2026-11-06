@@ -32,7 +32,7 @@ FLUXOMNI_VERSION=edge \
   bash
 ```
 
-To pin a stable release, set `FLUXOMNI_VERSION=v26.3.2` or another public `vYY.Q.N` tag. The versioned URL `https://install.fluxomni.io/v26.3.2` also pins that release and uses the same corrected installer bundle. Older public aliases pass the mapped core image tag to historical installers.
+To pin a stable release, set `FLUXOMNI_VERSION=v26.4.0` or another public `vYY.Q.N` tag. The versioned URL `https://install.fluxomni.io/v26.4.0` also pins that release. Older public aliases pass the mapped core image tag to historical installers. The `v26.3.2` pin still selects that release's corrected installer bundle.
 
 Use `FLUXOMNI_SELFHOST_REF` only when the config files must come from a different ref.
 
@@ -40,23 +40,13 @@ Use `FLUXOMNI_SELFHOST_REF` only when the config files must come from a differen
 
 Use the procedure for the same release as your control plane. The `media-node` install target remains supported by the public command.
 
-### Stable v26.3.2
+### Stable v26.4.0
 
-The current stable release uses its published HTTP control and shared-token contract. Run this on the remote host after exposing the control listener only to trusted node IPs:
+Fleet enrollment is the current way to add a media node. Use `v26.4.0` for the control plane and every node, and select `v26.4.0` in the Fleet join command. Existing v26.3.2 shared-token credentials are not imported. Use the [replacement procedure](capacity-upgrades.md) when moving an existing node.
 
-```bash
-curl -fsSL https://install.fluxomni.io | \
-FLUXOMNI_CONTROL_PLANE_RPC_ENDPOINT=http://control.example.com:50052 \
-FLUXOMNI_CONTROL_PLANE_INTERNAL_AUTH_TOKEN=replace-with-shared-token \
-FLUXOMNI_MEDIA_NODE_PUBLIC_HOST=media2.example.com \
-  bash -s -- media-node
-```
+The launcher selects the stable installer and assets together. For a pin, set `FLUXOMNI_VERSION=v26.4.0` on the `bash` side of the pipe, matching the control plane. Repeating that command uses the saved release and the same release's update behavior. `v26.3.2` remains a historical pin with HTTP control, a shared token, and its corrected installer bundle.
 
-The launcher selects the stable installer and assets together. The current v26.3.2 bundle is pinned to an immutable self-host snapshot that keeps the 65,536 file limit and published media-port fixes. For a pin, set the same published version as the control plane on the `bash` side of the pipe. Repeating that command uses the saved release and the same release's update behavior.
-
-### Fleet enrollment on edge and supporting releases
-
-Fleet enrollment requires matching control-plane and media-node images that support it. Until a supporting stable release is published, use `edge` for both and select `edge` in the Fleet join command. Existing stable credentials are not imported into the new control protocol. Use the documented [replacement procedure](capacity-upgrades.md) when moving an existing node.
+### Fleet enrollment
 
 Open Fleet → Add Node as an Admin and choose the node ID and name. You can open
 Fleet over HTTP, but the remote installer needs HTTPS to redeem the join code.
@@ -92,13 +82,13 @@ Current releases use these main pages:
 ## Manual Install
 
 ```bash
-ASSET_REF=f4a0b3b0c72da80dd889ef4a51f637537dd89406 # Corrected v26.3.2 assets.
+ASSET_REF=v26.4.0 # v26.4.0 self-host assets.
 mkdir -p ~/fluxomni
 cd ~/fluxomni
 curl -fsSL "https://raw.githubusercontent.com/fluxomnia-systems/fluxomni-selfhost/${ASSET_REF}/docker-compose.yml" -o docker-compose.yml
 curl -fsSL "https://raw.githubusercontent.com/fluxomnia-systems/fluxomni-selfhost/${ASSET_REF}/.env.example" -o .env.example
 AUTH_TOKEN="$(openssl rand -hex 24)"
-IMAGE_TAG=v26.3.2
+IMAGE_TAG=v26.4.0
 if [ "${IMAGE_TAG}" = "main" ]; then
   IMAGE_TAG="edge"
 elif [[ "${IMAGE_TAG#v}" =~ ^[0-9]{2}\.[1-4]\.[0-9]+$ ]]; then
@@ -180,4 +170,4 @@ The installer saves a replacement candidate before contacting the control plane.
 
 **Revoke credential** immediately rejects authentication and closes the connection. It does not prove FFmpeg stopped or release reserved capacity. A live boot or unreleased old execution blocks recovery; restore the old identity and finish verified withdrawal where possible. There is no force-release option in this workflow.
 
-Use matching edge runtime and installer assets until credential replacement is included in a public release.
+Credential rotation, recovery, and revocation are included in `v26.4.0`. Use that release's runtime and installer assets.

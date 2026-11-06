@@ -18,7 +18,7 @@ curl -fsSL https://install.fluxomni.io | bash
 
 By default, the installer uses the newest stable release and installs Fluxomni on one server.
 
-Use `FLUXOMNI_VERSION=edge` only when you want the newest main-branch build. Use a canonical public tag like `v26.3.2` when you need a pinned stable release. Retained image tags require a separately reviewed recovery procedure when state has migrated.
+Use `FLUXOMNI_VERSION=edge` only when you want the newest main-branch build. Use a canonical public tag like `v26.4.0` when you need a pinned stable release. Retained image tags require a separately reviewed recovery procedure when state has migrated.
 
 To add a remote media server, run the same installer on that server with `bash -s -- media-node`.
 
@@ -32,9 +32,9 @@ Choose a guide for your task:
 - **Operate routes and media nodes** — [User Guide](user-guide/overview.md)
 - **Automate an installation** — [API Automation](api/overview.md)
 
-## New in 26.3.2
+## New in 26.4.0
 
-Read the [release notes](changelog.md) and [upgrade guide](getting-started/upgrade-26.3.2.md) before updating custom API clients. The [sizing guide](getting-started/sizing.md) uses measurements to explain the different costs of empty routes, live inputs, and multiple outputs.
+Read the [release notes](changelog.md), [upgrade guide](getting-started/upgrade-26.4.0.md), and [capacity ledger procedure](getting-started/capacity-upgrades.md) before updating an existing installation or custom API clients. Pin `@fluxomni/api-client@26.4.0` when you automate this release. The [sizing guide](getting-started/sizing.md) uses measurements to explain the different costs of empty routes, live inputs, and multiple outputs.
 
 ## Documentation Sections
 

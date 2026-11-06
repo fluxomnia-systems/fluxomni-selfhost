@@ -2,7 +2,7 @@
 
 Fluxomni provides a public API preview for automating routes, playlists, artifacts, settings, and Fleet tasks.
 
-Use GraphQL at `/api` and subscriptions at `/api/subscriptions`. The API also provides the generated SDL at `/api/schema.graphql`, a bundled [release schema](schema.graphql), [automation recipes](automation-recipes.json), [LLM metadata](llms.txt), and the `@fluxomni/api-client` TypeScript package.
+Use GraphQL at `/api` and subscriptions at `/api/subscriptions`. The API also provides the generated SDL at `/api/schema.graphql`, a bundled [release schema](schema.graphql), [automation recipes](automation-recipes.json), [LLM metadata](llms.txt), and the `@fluxomni/api-client` TypeScript package. For 26.4.0 field removals, validate against the tagged schema linked from the [upgrade guide](../getting-started/upgrade-26.4.0.md#api-changes).
 
 Use the API for control-plane automation:
 
@@ -38,7 +38,7 @@ The public guides describe the API covered by compatibility support. Some authen
 Do not build public automation around:
 
 - loopback `Authorization: Bearer` credentials
-- `SystemSettingsMutation.setPassword`
+- `SystemSettingsMutation.setPassword`, removed in 26.4.0; use `createUser`, `changeMyPassword`, and session logout
 - media-node lifecycle ownership or private runtime protocols
 - legacy stream/restream route aliases
 - diagnostic runtime rows as persistent desired-state records

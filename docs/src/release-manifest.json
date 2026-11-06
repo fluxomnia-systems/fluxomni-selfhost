@@ -4,7 +4,7 @@
     "docsPath": "/edge/",
     "imageTag": "edge"
   },
-  "latestStable": "v26.3.2",
+  "latestStable": "v26.4.0",
   "releases": {
     "v26.1.0": {
       "coreVersion": "v0.10.0",
@@ -304,6 +304,53 @@
         "generatedFrom": "21ac644e"
       },
       "summary": "Browse large libraries, file pickers and recording lists in bounded pages. Search, tags, compatibility and sorting apply across the full catalog before paging; filtered queries and batched reference lookups avoid work for unrelated files."
+    },
+    "v26.4.0": {
+      "api": {
+        "automationDocsPath": "/api/",
+        "contract": "stable",
+        "schemaPath": "api/schema.graphql",
+        "typescriptClient": "@fluxomni/api-client@26.4.0"
+      },
+      "coreCommit": "acc117ffe7c5dbce257557a4b0e81035f798f170",
+      "coreVersion": "v26.4.0",
+      "docsStablePath": "/",
+      "docsVersionPath": "/v26.4.0/",
+      "highlights": [
+        {
+          "area": "Recordings, rundowns, and playlist programming",
+          "description": "Preserve and retain recordings in the Library, save reusable rundowns, and program playlists with stingers, timing, weekday schedules, preparation, slideshows, and thumbnails.",
+          "title": "Recordings, rundowns, and playlist programming"
+        },
+        {
+          "area": "Per-node capacity ledger",
+          "description": "Fleet shows per-node route and output ceilings. The first upgrade from v26.3.x with running or assigned execution must stop old execution and initialize the ledger before media starts.",
+          "title": "Per-node capacity ledger"
+        },
+        {
+          "area": "Private media nodes and Fleet enrollment",
+          "description": "Private media nodes open an authenticated outbound TLS control connection. Fleet enrolls a node with a one-time code and can rotate, recover, or revoke credentials without releasing reserved capacity.",
+          "title": "Private media nodes and Fleet enrollment"
+        },
+        {
+          "area": "API contract updates",
+          "description": "GraphQL POST requests use application/json. The filename-only DVR query and removal mutation and the legacy password mutation are removed. Slideshow mutations require a request ID. The pinned client is @fluxomni/api-client@26.4.0.",
+          "title": "API contract updates"
+        }
+      ],
+      "images": {
+        "controlPlane": "ghcr.io/fluxomnia-systems/fluxomni-control-plane:v26.4.0",
+        "frontend": "ghcr.io/fluxomnia-systems/fluxomni-frontend:v26.4.0",
+        "mediaNode": "ghcr.io/fluxomnia-systems/fluxomni-media-node:v26.4.0"
+      },
+      "installerPath": "scripts/install-runtime.sh",
+      "releasedAt": "2026-11-06",
+      "selfhostRef": "v26.4.0",
+      "source": {
+        "coreTag": "v26.4.0",
+        "generatedFrom": "acc117ff"
+      },
+      "summary": "Recordings and rundowns, playlist programming, a per-node capacity ledger, private outbound media nodes, and the 26.4.0 GraphQL contract. The pinned API client is @fluxomni/api-client@26.4.0."
     }
   },
   "schemaVersion": 1

@@ -66,7 +66,7 @@ If an enrollment response was lost, rerun the original command. If its first red
 
 For a running installation, use the [standalone maintenance mode](capacity-upgrades.md) before recreating containers. A changed node ID or control endpoint cannot reuse another saved identity directory.
 
-If the machine credential is permanently lost or damaged, stop the node and restore its credential from backup. Enrollment cannot rotate an existing node's credential or clear uncertain execution ownership.
+If the machine credential is permanently lost or damaged, stop the node and follow [Rotate or recover a node credential](quick-start.md#rotate-or-recover-a-node-credential). Revocation and recovery do not release reserved capacity or clear uncertain execution ownership.
 
 ## SRS Reports Too Few Open Files
 

@@ -31,7 +31,7 @@
   - [Fluxomni Connect](getting-started/connect.md)
   - [Private Access & Tunnels](getting-started/private-access.md)
 - [Capacity Ledger Upgrades](getting-started/capacity-upgrades.md)
-- [Upgrade to 26.3.2](getting-started/upgrade-26.3.2.md)
+- [Upgrade to 26.4.0](getting-started/upgrade-26.4.0.md)
 - [Server Sizing](getting-started/sizing.md)
 - [Monitoring](getting-started/monitoring.md)
 - [Backup & Restore](getting-started/backup.md)

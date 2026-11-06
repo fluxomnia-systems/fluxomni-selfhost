@@ -38,7 +38,7 @@ Automation uses the same role permissions as the UI:
 
 ## Session Expiry
 
-Session lifetime is controlled by the server `sessionTtlSeconds` setting. A value of `0` or `null` disables expiry. Other values set the number of seconds from login until the in-memory session expires.
+Session lifetime is controlled by the server `sessionTtlSeconds` setting. From 26.4.0, the default is 24 hours. Installations that already saved a TTL keep that value. A value of `0` or `null` disables expiry. Other values set the number of seconds from login until the in-memory session expires.
 
 Treat HTTP `401` or GraphQL `extensions.code: "UNAUTHORIZED"` as a signal to authenticate again using the configured mode. Issuer sessions and browser cookies have separate lifetimes; an expired cookie needs a new verified browser sign-in. Provider account changes do not independently revoke an already issued Fluxomni cookie; local revision changes, configured expiry or explicit local sign-out do.
 

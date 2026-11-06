@@ -105,6 +105,12 @@ Obtain a certificate with Certbot:
 sudo certbot --nginx -d stream.example.com
 ```
 
+## Client address
+
+From 26.4.0, reverse-proxy deployments must set `FLUXOMNI_TRUSTED_PROXY_IPS` to the exact IP addresses of the proxies in front of Fluxomni. Those proxies must append or replace the client-address headers. Without the setting, clients behind a proxy share one login limit.
+
+Apply the variable through [Capacity Ledger Upgrades](capacity-upgrades.md) when the control plane is already running.
+
 ## Media ports
 
 RTMP (TCP 1935), SRT (UDP 10080), and RTC media (UDP 8000) must be reachable over their respective protocols. HLS uses TCP 8000; WHIP signaling uses TCP 8003. Keep these ports published directly unless you deliberately proxy HLS or WHIP over HTTP. Proxying WHIP signaling does not proxy RTC UDP media. For custom ports, use the values from `.env`.
