@@ -280,3 +280,9 @@ The standard Docker installer accepts an explicit HTTPS portal origin for browse
 An explicit portal update uses a private temporary file and atomic rename. Installer rollback includes the prior gateway file for this requested update. Malformed retained or requested origins fail before services change. Custom files and non-Connect installations remain operator-owned.
 
 Public instructions use verification links, local identity/client review and automatic signed handoffs. Ownership registration does not approve an AI client. Native MCP works independently of Connect. The guided application build is required; this helper option cannot add browser handlers to an older image.
+
+## Build and agent qualification
+
+Identify a supported Connect setup by its image digests, matching application contracts and observed agent workflows. Moving tags and version labels alone are not qualification evidence.
+
+Keep the Installation ID, gateway trust, database and generated private RPC volumes together across drained upgrades. A standards-compatible AI agent can use Connect; native MCP remains independently configured. Codex is a qualification example, not an exclusive client requirement.

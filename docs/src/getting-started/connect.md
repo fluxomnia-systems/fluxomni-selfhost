@@ -14,6 +14,12 @@ If you use custom Compose files, confirm they already provide authenticated priv
 
 Give the frontend a public HTTPS origin with a trusted certificate. Route the Installation's browser and gateway HTTP requests to the frontend. Configure the same canonical HTTPS origin in the gateway JSON and in FLUXOMNI_PUBLIC_URL. Use the origin without a trailing slash in the JSON.
 
+## Builds and client versions
+
+Use the image versions qualified for your Connect environment and record their resolved digests. Moving `edge` or `latest` tags and the application's version label alone do not identify the tested build. Keep the saved Installation ID, keys, data and private RPC volumes during upgrades; follow [Drained maintenance](capacity-upgrades.md).
+
+Standards-compatible AI agents use their own remote MCP and OAuth settings. Record the actual agent version when checking its discovery, login, linking and read workflows. Native MCP remains a separate direct connection option.
+
 ## Standard installer
 
 To enable Connect during a fresh standard install, set `FLUXOMNI_PUBLIC_URL`, `FLUXOMNI_CONNECT_PORTAL_ORIGIN`, `FLUXOMNI_CONNECT_GATEWAY_KEY_ID` and `FLUXOMNI_CONNECT_GATEWAY_PUBLIC_KEY` in the installer environment. The installer creates the gateway configuration and checks the combined Compose files before starting services. Existing installations must use drained maintenance when enabling Connect.
