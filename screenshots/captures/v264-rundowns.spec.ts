@@ -9,6 +9,7 @@ import { waitForAppReady } from '../helpers/readiness';
 import { saveRecordedVideo } from '../helpers/video';
 import {
   captureStill,
+  expandPlaylistSettings,
   openPlaylistWorkspace,
   openRecordedPage,
   v264VideoDir,
@@ -82,15 +83,21 @@ test('rundown-apply.jpg — apply revision to an idle suite route', async ({ pag
   const data = requiredScenario();
   await editRundown(page, data);
   await openPlaylistWorkspace(page, data.applyRoute.id);
-  const settings = page.locator('details').filter({ hasText: 'Reusable rundown' }).first();
-  await settings.scrollIntoViewIfNeeded();
+  await expandPlaylistSettings(page);
+  const summary = page.locator('summary').filter({ hasText: 'Reusable rundown' }).first();
+  await summary.scrollIntoViewIfNeeded();
+  const settings = summary.locator('xpath=ancestor::details[1]');
   if (!(await settings.evaluate((node) => (node as HTMLDetailsElement).open))) {
-    await settings.locator('summary').click();
+    await summary.click();
   }
   await expect(page.getByText(/apply copies a saved revision/i)).toBeVisible();
   const picker = page.getByLabel('Saved rundown');
   await expect(picker).toBeVisible();
-  await picker.selectOption({ label: V264_RUNDOWN_NAME });
+  const option = picker.locator('option', { hasText: V264_RUNDOWN_NAME });
+  await expect(option).toBeAttached({ timeout: 15_000 });
+  const label = (await option.first().textContent())?.trim() ?? '';
+  if (!label) throw new Error(`Saved rundown ${V264_RUNDOWN_NAME} was not listed`);
+  await picker.selectOption({ label });
   const apply = page.getByRole('button', { name: 'Apply rundown' });
   await expect(apply).toBeEnabled({ timeout: 10_000 });
   await apply.click();
@@ -160,9 +167,15 @@ async function editRundown(
       await name.fill(rundownName);
     }
     const library = page.locator('details').filter({ hasText: 'Add Library media' }).first();
-    await library.locator('summary').click();
+    const list = library.getByTestId('artifact-picker-library');
     for (const fileName of data.videoNames) {
-      const row = library.getByText(fileName, { exact: true }).first();
+      // Adding a clip closes this panel. Open it again before the next row.
+      if (!(await library.evaluate((node) => (node as HTMLDetailsElement).open))) {
+        await library.locator('> summary').click();
+      }
+      await library.scrollIntoViewIfNeeded();
+      const row = list.getByText(fileName, { exact: true }).first();
+      await row.scrollIntoViewIfNeeded();
       await expect(row).toBeVisible({ timeout: 15_000 });
       await row.click();
     }

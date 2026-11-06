@@ -75,15 +75,16 @@ test('playlist-timing.jpg — planned durations and total', async ({ page }) => 
 test('playlist-stinger.jpg — choose a boundary clip', async ({ page }) => {
   const data = requiredScenario();
   await openPlaylistWorkspace(page, data.programRoute.id);
+  await expandPlaylistSettings(page);
   const stinger = page.getByLabel('Playlist stinger');
-  await expect(stinger).toBeVisible({ timeout: 15_000 });
   await stinger.scrollIntoViewIfNeeded();
+  await expect(stinger).toBeVisible({ timeout: 15_000 });
   const choose = stinger.getByRole('button', { name: /choose clip|change clip/i });
   await choose.click();
   const picker = page.getByTestId('playlist-stinger-picker');
   await expect(picker).toBeVisible();
   await picker.getByText(data.videoNames[0], { exact: true }).first().click();
-  await expect(stinger.getByText(data.videoNames[0])).toBeVisible({ timeout: 15_000 });
+  await expect(stinger.getByText(data.videoNames[0]).first()).toBeVisible({ timeout: 15_000 });
   const enable = stinger.getByLabel('Enable playlist stinger');
   if (!(await enable.isChecked())) await enable.check();
   await expect(enable).toBeChecked();
@@ -105,9 +106,7 @@ test('playlist-schedule.jpg — weekday schedule, zone, and next start', async (
 test('route-readiness.jpg — checklist without starting streams', async ({ page }) => {
   const data = requiredScenario();
   await openPlaylistWorkspace(page, data.programRoute.id);
-  const checklist = page.getByLabel('Route readiness checklist');
-  await expect(checklist).toBeVisible({ timeout: 15_000 });
-  await checklist.scrollIntoViewIfNeeded();
+  const checklist = await openReadinessChecklist(page);
   const flow = page.getByLabel('Intended flow');
   if (await flow.isVisible().catch(() => false)) {
     await flow.selectOption({ label: 'Playlist' });
@@ -183,7 +182,8 @@ test('playlist-programming.webm — stinger, timing, and schedule', async ({ bro
     const picker = page.getByTestId('playlist-stinger-picker');
     await expect(picker).toBeVisible();
     await picker.getByText(data.videoNames[0], { exact: true }).first().click();
-    await expect(stinger.getByText(data.videoNames[0])).toBeVisible({ timeout: 15_000 });
+    await expect(stinger.getByText(data.videoNames[0]).first()).toBeVisible({ timeout: 15_000 });
+    if (await picker.isVisible().catch(() => false)) await page.keyboard.press('Escape');
     await armWeekdaySchedule(page, data.programRoute.id);
     await holdCallout(
       page,
@@ -192,8 +192,7 @@ test('playlist-programming.webm — stinger, timing, and schedule', async ({ bro
       'left',
       1300,
     );
-    const checklist = page.getByLabel('Route readiness checklist');
-    await checklist.scrollIntoViewIfNeeded();
+    const checklist = await openReadinessChecklist(page);
     await holdCallout(page, checklist, 'Readiness checklist', 'right', 1100);
     await page.waitForTimeout(700);
   } finally {
@@ -209,6 +208,19 @@ test('playlist-programming.webm — stinger, timing, and schedule', async ({ bro
 function requiredScenario(): V264Scenario {
   if (!scenario) throw new Error('v26.4.0 scenario was not seeded');
   return scenario;
+}
+
+async function openReadinessChecklist(page: Page) {
+  const details = page.locator('details.readiness-panel').first();
+  await expect(details).toBeVisible({ timeout: 15_000 });
+  await details.scrollIntoViewIfNeeded();
+  if (!(await details.evaluate((node) => (node as HTMLDetailsElement).open))) {
+    await details.locator('> summary').click();
+  }
+  const checklist = page.getByLabel('Route readiness checklist');
+  await expect(checklist).toBeVisible({ timeout: 15_000 });
+  await checklist.scrollIntoViewIfNeeded();
+  return checklist;
 }
 
 async function armWeekdaySchedule(page: Page, routeId: string) {

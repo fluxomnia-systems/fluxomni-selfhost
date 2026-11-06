@@ -1,4 +1,4 @@
-import { expect, test } from '@playwright/test';
+import { expect, test, type Locator, type Page } from '@playwright/test';
 
 import { createAuthenticatedApi } from '../helpers/auth';
 import { captureUnavailableReason, gateCapture, skipIfCaptureUnavailable } from '../helpers/instance';
@@ -66,26 +66,15 @@ test('artifacts-slideshow.jpg — photo order and default timing, render not sta
   const fromPhotos = page.getByRole('button', { name: 'Video from photos' });
   await expect(fromPhotos).toBeVisible({ timeout: 10_000 });
   await fromPhotos.click();
-  const composer = page
-    .locator('[role="dialog"], .modal')
+  const legacy = page
+    .locator('[role="dialog"], .modal, dialog')
     .filter({ hasText: 'Choose photos in order' })
     .first();
-  await expect(composer).toBeVisible({ timeout: 10_000 });
-  const photo = composer.getByText(data.photoNames[0], { exact: true }).first();
-  await expect(photo).toBeVisible({ timeout: 15_000 });
-  await photo.click();
-  const timing = composer.getByText('Name and timing', { exact: true });
-  if (await timing.isVisible().catch(() => false)) await timing.click();
-  const videoName = composer.getByLabel('Video name');
-  await expect(videoName).toBeVisible();
-  await videoName.fill(`${V264_PREFIX} photo reel`);
-  const seconds = composer.getByLabel('Seconds per image');
-  await expect(seconds).toBeVisible();
-  const current = Number(await seconds.inputValue());
-  if (!Number.isFinite(current) || current <= 0) await seconds.fill('5');
-  await expect.poll(async () => Number(await seconds.inputValue())).toBe(5);
-  const create = composer.getByRole('button', { name: /^Create video$/ });
-  await expect(create).toBeVisible();
+  if (await legacy.isVisible().catch(() => false)) {
+    await composeLegacySlideshow(legacy, data.photoNames[0]);
+  } else {
+    await composeSlideshowDialog(page, data.photoNames[0]);
+  }
   await captureStill(page, 'artifacts-slideshow');
   await page.keyboard.press('Escape');
 });
@@ -155,4 +144,57 @@ test('artifacts-recording.jpg — preserve and preview when a recording exists',
 function requiredScenario(): V264Scenario {
   if (!scenario) throw new Error('v26.4.0 scenario was not seeded');
   return scenario;
+}
+
+async function composeLegacySlideshow(composer: Locator, photoName: string) {
+  const photo = composer.getByText(photoName, { exact: true }).first();
+  await expect(photo).toBeVisible({ timeout: 15_000 });
+  await photo.click();
+  const timing = composer.getByText('Name and timing', { exact: true });
+  if (await timing.isVisible().catch(() => false)) await timing.click();
+  await fillSlideshowTiming(composer);
+}
+
+async function composeSlideshowDialog(page: Page, photoName: string) {
+  const composer = page.getByRole('dialog', { name: 'Create video' });
+  await expect(composer).toBeVisible({ timeout: 10_000 });
+  const choose = composer.getByRole('button', { name: 'Choose from Library' });
+  await expect(choose).toBeVisible();
+  await expect
+    .poll(async () => composer.getByText('Checking object storage…').isVisible().catch(() => false), {
+      timeout: 15_000,
+    })
+    .toBe(false);
+  if (await choose.isEnabled().catch(() => false)) {
+    await choose.click();
+    const search = composer.getByLabel('Search images');
+    if (await search.isVisible().catch(() => false)) await search.fill(photoName);
+    const photo = composer.getByRole('button', { name: `Select image ${photoName}` });
+    await expect(photo).toBeVisible({ timeout: 15_000 });
+    await photo.click();
+  } else {
+    test.info().annotations.push({
+      type: 'gap',
+      description:
+        'The slideshow composer opened, but photo selection stayed disabled. Create video was not used.',
+    });
+  }
+  const timing = composer.getByText('Name and timing', { exact: true });
+  if (await timing.isVisible().catch(() => false)) await timing.click();
+  const videoName = composer.getByLabel('Video name');
+  if (await videoName.isEnabled().catch(() => false)) {
+    await fillSlideshowTiming(composer);
+  }
+  await expect(composer.getByRole('button', { name: /^Create video$/ })).toBeVisible();
+}
+
+async function fillSlideshowTiming(composer: Locator) {
+  const videoName = composer.getByLabel('Video name');
+  await expect(videoName).toBeVisible();
+  await videoName.fill(`${V264_PREFIX} photo reel`);
+  const seconds = composer.getByLabel('Seconds per image');
+  await expect(seconds).toBeVisible();
+  const current = Number(await seconds.inputValue());
+  if (!Number.isFinite(current) || current <= 0) await seconds.fill('5');
+  await expect.poll(async () => Number(await seconds.inputValue())).toBe(5);
 }
