@@ -6,6 +6,7 @@ import { test } from '@playwright/test';
 const __dirname = dirname(fileURLToPath(import.meta.url));
 
 import { createAuthenticatedApi } from '../helpers/auth';
+import { captureUnavailableReason, gateCapture, skipIfCaptureUnavailable } from '../helpers/instance';
 import { waitForAppReady } from '../helpers/readiness';
 import {
   cleanupSeededRoutes,
@@ -44,7 +45,10 @@ const SEED_PREFIX = 'docs-screenshot';
 
 let seededRoutes: SeededRoute[] = [];
 
+gateCapture();
+
 test.beforeAll(async () => {
+  skipIfCaptureUnavailable();
   const baseURL = process.env.FLUXOMNI_URL ?? 'http://localhost';
   const api = await createAuthenticatedApi(baseURL);
 
@@ -59,6 +63,7 @@ test.beforeAll(async () => {
 });
 
 test.afterAll(async () => {
+  if (captureUnavailableReason()) return;
   const baseURL = process.env.FLUXOMNI_URL ?? 'http://localhost';
   const api = await createAuthenticatedApi(baseURL);
 

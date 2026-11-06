@@ -6,6 +6,7 @@ import { expect, test, type Browser, type Locator, type Page } from '@playwright
 
 import { createAuthenticatedApi } from '../helpers/auth';
 import { requestGraphql } from '../helpers/graphql';
+import { captureUnavailableReason, gateCapture, skipIfCaptureUnavailable } from '../helpers/instance';
 import { waitForAppReady } from '../helpers/readiness';
 import { cleanupSeededRoutes } from '../helpers/seed';
 import { saveRecordedVideo } from '../helpers/video';
@@ -54,7 +55,10 @@ type ListedRoute = {
 test.describe('Overview video', () => {
   test.describe.configure({ timeout: 180_000 });
 
+  gateCapture();
+
   test.beforeAll(async () => {
+    skipIfCaptureUnavailable();
     const api = await createAuthenticatedApi(process.env.FLUXOMNI_URL ?? 'http://localhost');
     try {
       await cleanupSeededRoutes(api, SEED_PREFIX);
@@ -64,6 +68,7 @@ test.describe('Overview video', () => {
   });
 
   test.afterAll(async () => {
+    if (captureUnavailableReason()) return;
     const api = await createAuthenticatedApi(process.env.FLUXOMNI_URL ?? 'http://localhost');
     try {
       await cleanupSeededRoutes(api, SEED_PREFIX);

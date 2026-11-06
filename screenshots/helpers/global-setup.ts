@@ -3,6 +3,12 @@ import { fileURLToPath } from 'node:url';
 
 import { chromium, type FullConfig } from '@playwright/test';
 
+import {
+  clearCaptureUnavailable,
+  probeInstance,
+  writeCaptureUnavailable,
+} from './instance';
+
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const IMAGES_DIR = resolve(__dirname, '../../docs/src/images/user-guide');
 
@@ -15,7 +21,15 @@ export default async function globalSetup(_config: FullConfig) {
   const username = process.env.FLUXOMNI_ADMIN_USER ?? 'admin';
   const password = process.env.FLUXOMNI_ADMIN_PASSWORD ?? '';
 
-  // Check whether auth is required
+  const probe = await probeInstance(baseURL);
+  if (!probe.ok) {
+    const { writeFileSync } = await import('node:fs');
+    writeFileSync('./auth-state.json', JSON.stringify({ cookies: [], origins: [] }));
+    writeCaptureUnavailable(probe.reason);
+    return;
+  }
+  clearCaptureUnavailable();
+
   const res = await fetch(`${baseURL}/api/auth/status`);
   if (!res.ok) {
     throw new Error(`Cannot reach Fluxomni at ${baseURL} (status ${res.status})`);

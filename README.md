@@ -239,7 +239,7 @@ FLUXOMNI_URL=http://192.168.1.100 make screenshots
 FLUXOMNI_URL=http://192.168.1.100 FLUXOMNI_ADMIN_PASSWORD=secret make screenshots
 ```
 
-See `screenshots/README.md` for the full image list and capture details.
+See `screenshots/README.md` for the full image list and capture details. v26.4.0 operator stills and videos are regenerated with `npm run capture:v264` from `screenshots/` against a running v26.4.0 instance.
 
 Playlist normalization can use explicit per-node preparation CPU/memory/thread budgets.
 See [preparation resource limits](docs/src/getting-started/configuration.md#offline-preparation-resource-limits)
