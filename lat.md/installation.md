@@ -275,11 +275,13 @@ Release selection, aliases and custom asset sources apply to the capacity helper
 
 The standard Docker installer accepts an explicit HTTPS portal origin for browser handoffs while keeping the Installation identity and gateway verification key unchanged.
 
-`FLUXOMNI_CONNECT_PORTAL_ORIGIN` writes the native `portalOrigin` field only for installer-managed Connect. It must be canonical HTTPS and distinct from the Installation. Fresh setup still requires both gateway verification-key inputs. An omitted portal input preserves existing configuration bytes; it does not disable Connect or replace identity.
+Fresh installer-managed Connect uses `https://connect.fluxomni.io` as its portal. `FLUXOMNI_CONNECT_PORTAL_ORIGIN` overrides that address for staging or another Connect operator. It must be canonical HTTPS and distinct from the Installation. Fresh setup still requires both gateway verification-key inputs. An omitted portal input preserves existing configuration bytes, including older files without a portal; it does not enable Connect or replace identity.
 
 An explicit portal update uses a private temporary file and atomic rename. Installer rollback includes the prior gateway file for this requested update. Malformed retained or requested origins fail before services change. Custom files and non-Connect installations remain operator-owned.
 
 Public instructions use verification links, local identity/client review and automatic signed handoffs. Ownership registration does not approve an AI client. Native MCP works independently of Connect. The guided application build is required; this helper option cannot add browser handlers to an older image.
+
+The approved default-address slice delivers the official default for new gateway files, an advanced explicit override, unchanged retained files and rejection when the portal equals the Installation. Checks are pinned installer tests, Bash syntax, ShellCheck, strict docs lint, `lat check` and `git diff --check`, then this PR's Docs/Installer CI and current-head Codex review. Stop at those passing checks or a preserved concrete failure. Do not change running Installations or verification keys.
 
 ## Build and agent qualification
 

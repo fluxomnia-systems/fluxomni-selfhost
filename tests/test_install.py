@@ -785,6 +785,12 @@ def test_connect_portal_can_be_added_without_replacing_existing_identity(install
     assert result.returncode == 0, result.stdout + result.stderr
     path = destination / "gateway.json"
     original = json.loads(path.read_bytes())
+    original.pop("portalOrigin")
+    path.write_text(json.dumps(original, separators=(",", ":")) + "\n")
+    legacy_bytes = path.read_bytes()
+    result = run("full")
+    assert result.returncode == 0, result.stdout + result.stderr
+    assert path.read_bytes() == legacy_bytes
     result = run("full", {"FLUXOMNI_CONNECT_PORTAL_ORIGIN": "https://connect.example"})
     assert result.returncode == 0, result.stdout + result.stderr
     configured = json.loads(path.read_bytes())
@@ -794,6 +800,33 @@ def test_connect_portal_can_be_added_without_replacing_existing_identity(install
     result = run("full")
     assert result.returncode == 0, result.stdout + result.stderr
     assert path.read_bytes() == saved
+
+
+def test_fresh_connect_uses_official_portal_by_default(installation):
+    _, destination, run = installation
+    result = run("full", {
+        "FLUXOMNI_PUBLIC_URL": "https://installation.example",
+        "FLUXOMNI_CONNECT_GATEWAY_KEY_ID": "staging-key",
+        "FLUXOMNI_CONNECT_GATEWAY_PUBLIC_KEY": "A" * 43,
+    })
+    assert result.returncode == 0, result.stdout + result.stderr
+    path = destination / "gateway.json"
+    assert json.loads(path.read_bytes())["portalOrigin"] == "https://connect.fluxomni.io"
+    original = path.read_bytes()
+    result = run("full")
+    assert result.returncode == 0, result.stdout + result.stderr
+    assert path.read_bytes() == original
+
+
+def test_default_connect_portal_cannot_be_the_installation_origin(installation):
+    _, destination, run = installation
+    result = run("full", {
+        "FLUXOMNI_PUBLIC_URL": "https://connect.fluxomni.io",
+        "FLUXOMNI_CONNECT_GATEWAY_KEY_ID": "staging-key",
+        "FLUXOMNI_CONNECT_GATEWAY_PUBLIC_KEY": "A" * 43,
+    })
+    assert result.returncode != 0
+    assert not (destination / "gateway.json").exists()
 
 
 @pytest.mark.parametrize("portal", [

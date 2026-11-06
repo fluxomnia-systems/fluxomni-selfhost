@@ -1576,6 +1576,10 @@ if [ "$FLUXOMNI_INSTALL_TARGET" = full ]; then
   connect_key_id="${FLUXOMNI_CONNECT_GATEWAY_KEY_ID:-}"
   connect_public_key="${FLUXOMNI_CONNECT_GATEWAY_PUBLIC_KEY:-}"
   connect_portal="${FLUXOMNI_CONNECT_PORTAL_ORIGIN:-}"
+  if [ -n "$connect_key_id$connect_public_key" ] &&
+     [ ! -f compose.installer-connect.yml ] && [ -z "$connect_portal" ]; then
+    connect_portal=https://connect.fluxomni.io
+  fi
   if [ -n "$connect_portal" ]; then
     if ! validate_connect_origin "$connect_portal" || [ "$connect_portal" = "$PUBLIC_URL_DEFAULT" ]; then
       echo "Error: Connect portal must be a distinct canonical HTTPS origin." >&2
