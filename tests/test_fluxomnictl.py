@@ -456,9 +456,9 @@ def test_doctor_wrapper_calls_the_tool_by_absolute_path_with_its_own_folder(tmp_
     tool.write_text("#!/bin/sh\necho \"called: $*\"\n")
     tool.chmod(0o755)
     env = {"PATH": "/usr/bin:/bin", "HOME": str(tmp_path / "nohome")}
-    done = subprocess.run(["bash", str(wrapper)], env={**env, "FLUXOMNICTL": str(tool)}, capture_output=True, text=True)
+    done = subprocess.run(["bash", str(wrapper)], env={**env, "FLUXOMNICTL": str(tool)}, capture_output=True, text=True, check=False)
     assert done.returncode == 0 and done.stdout.strip() == f"called: --dir {folder.resolve()} doctor"
-    missing = subprocess.run(["bash", str(wrapper)], env=env, capture_output=True, text=True)
+    missing = subprocess.run(["bash", str(wrapper)], env=env, capture_output=True, text=True, check=False)
     assert missing.returncode == 1 and "bash install.sh tools" in missing.stderr
 
 

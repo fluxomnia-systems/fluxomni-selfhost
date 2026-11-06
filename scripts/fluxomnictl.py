@@ -443,7 +443,7 @@ def doctor(install, host, out=None, environ=None):
     standalone = False
     if env_file.is_file():
         report.check("pass", ".env file exists")
-        read = lambda key: read_env_value(env_file, key)  # noqa: E731
+        read = lambda key: read_env_value(env_file, key)
         token = read("FLUXOMNI_CONTROL_PLANE_INTERNAL_AUTH_TOKEN")
         if read("FLUXOMNI_NODE_CREDENTIAL_FILE"):
             standalone = True
@@ -475,7 +475,7 @@ def doctor(install, host, out=None, environ=None):
             for address in addresses:
                 report.say(f"   - {address}")
     else:
-        read = lambda key: ""  # noqa: E731
+        read = lambda key: ""
         report.check("fail", ".env file missing", "Run install.sh or create .env from .env.example")
     if compose_file.is_file():
         report.check("pass", "docker-compose.yml exists")
