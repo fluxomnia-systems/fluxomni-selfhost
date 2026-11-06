@@ -192,7 +192,10 @@ the switcher.
 To publish stable docs, merge the release sync, tag the self-host commit
 that contains the matching docs and install assets, and publish the GitHub
 release. Until the matching tag exists, Pages keeps serving the previous
-tagged release at the root.
+tagged release at the root. Pages keeps the first artifact deployed for a
+commit, so a retag of that same commit does not refresh the live site.
+Publish again from a new commit on main after the stable tag points at the
+docs to serve.
 
 To preview all versions locally, fetch the release tags and build into an
 empty directory with Python 3.12 or newer:
