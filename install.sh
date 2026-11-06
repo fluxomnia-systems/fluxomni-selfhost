@@ -27,8 +27,9 @@ Defaults:
 
 Existing installs:
   - Updating needs one --capacity-upgrade mode (see the capacity upgrade guide).
-  - To change offline preparation limits, use fluxomnictl preparation
+  - Check preparation host requirements with: fluxomnictl preparation check
     (run "install.sh tools" first when the command is missing).
+  - Changing preparation budgets on an existing install still needs that mode.
 USAGE
       exit 0
       ;;
