@@ -838,11 +838,18 @@ resolve_preparation_config() {
   esac
   if [ "$fresh" = 1 ] && [ "$PREPARATION_ENABLED" = 1 ]; then
     if ! preflight_preparation_host 0; then
-      echo "Preparation limits stay off: ${PREPARATION_SKIP_REASON}. Install continues." >&2
+      echo "Preparation limits stay off: ${PREPARATION_SKIP_REASON:-the host check failed}. Install continues." >&2
       echo 'Set FLUXOMNI_PREPARATION_CGROUP_ENABLED=1 after the host is ready. An existing install also needs a maintenance mode.' >&2
       PREPARATION_ENABLED=0
-    elif [ -z "${PREPARATION_CPU}${PREPARATION_MEMORY}${PREPARATION_TASKS}" ]; then
+    else
+      # Fill each empty budget. An explicit value still wins.
+      keep_cpu="$PREPARATION_CPU"
+      keep_memory="$PREPARATION_MEMORY"
+      keep_tasks="$PREPARATION_TASKS"
       suggest_preparation_budgets
+      [ -n "$keep_cpu" ] && PREPARATION_CPU="$keep_cpu"
+      [ -n "$keep_memory" ] && PREPARATION_MEMORY="$keep_memory"
+      [ -n "$keep_tasks" ] && PREPARATION_TASKS="$keep_tasks"
       echo "Preparation limits are on by default: ${PREPARATION_CPU} millicores, ${PREPARATION_MEMORY} MiB, ${PREPARATION_TASKS} threads."
       echo 'Set FLUXOMNI_PREPARATION_CGROUP_ENABLED=0 to install without them.'
     fi
@@ -898,11 +905,18 @@ preflight_preparation_host() {
     preparation_refuse "$strict" 'preparation isolation requires rootful cgroup-v2 Docker without user namespace remapping.' || return 1
   fi
   [ "$(stat -fc %T /sys/fs/cgroup)" = cgroup2fs ] || preparation_refuse "$strict" 'host cgroup v2 is required.' || return 1
-  controllers="$(python -c 'from pathlib import Path; p=Path("/sys/fs/cgroup/cgroup.subtree_control"); print(p.read_text() if p.is_file() else "")')"
+  if ! controllers="$(python3 -c 'from pathlib import Path; p=Path("/sys/fs/cgroup/cgroup.subtree_control"); print(p.read_text() if p.is_file() else "")' 2>/dev/null)"; then
+    preparation_refuse "$strict" 'python3 could not read cgroup controllers.' || return 1
+  fi
   for need in cpu memory pids; do
     printf '%s' "$controllers" | grep -qw "$need" || preparation_refuse "$strict" 'cpu, memory, and pids controllers are not enabled.' || return 1
   done
-  run_privileged systemctl show-environment >/dev/null
+  if [ "$strict" = 0 ] && [ "${EUID:-$(id -u)}" -ne 0 ] && ! command -v sudo >/dev/null 2>&1; then
+    preparation_refuse 0 'preparation provisioning requires root or sudo.' || return 1
+  fi
+  if ! run_privileged systemctl show-environment >/dev/null; then
+    preparation_refuse "$strict" 'systemd did not accept the preparation check.' || return 1
+  fi
 }
 
 # Roll back only installer-managed configuration if validation/provisioning fails.

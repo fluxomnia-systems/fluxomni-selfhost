@@ -70,7 +70,7 @@ if name == "curl":
     shutil.copyfile(source, args[args.index("-o") + 1])
     if "--write-out" in args:
         print("200", end="")
-elif name in ("python3", "python"):
+elif name == "python3":
     if args[:1] == ["-c"] and "cgroup.subtree_control" in args[1]:
         print(os.environ.get("TEST_SUBTREE_CONTROL", "cpu memory pids"))
         sys.exit(0)
@@ -95,6 +95,8 @@ elif name == "nc":
 elif name == "sudo":
     sys.exit(subprocess.run(args).returncode)
 elif name in ("apt-get", "ufw", "firewall-cmd", "systemctl"):
+    if name == "systemctl" and os.environ.get("TEST_SYSTEMCTL_FAIL"):
+        sys.exit(1)
     with open(Path(os.environ["TEST_ASSETS"]).parent / "firewall.jsonl", "a") as log:
         log.write(json.dumps([name, *args]) + "\n")
 elif name == "docker":
@@ -208,7 +210,7 @@ else:
     raise AssertionError(name)
 ''')
     stub.chmod(0o755)
-    for name in ("docker", "curl", "hostname", "nc", "sudo", "apt-get", "ufw", "firewall-cmd", "systemctl", "python3", "python", "uname", "stat"):
+    for name in ("docker", "curl", "hostname", "nc", "sudo", "apt-get", "ufw", "firewall-cmd", "systemctl", "python3", "uname", "stat"):
         (commands / name).symlink_to(stub)
     destination = tmp_path / "installation"
     env = {
@@ -387,6 +389,36 @@ def test_fresh_install_enables_preparation_with_detected_budgets(installation):
     assert node["environment"]["FLUXOMNI_PREPARATION_CPU_MILLICORES"] == "1000"
     assert node["environment"]["FLUXOMNI_PREPARATION_MEMORY_MIB"] == "2048"
     assert node["environment"]["FLUXOMNI_PREPARATION_TASKS"] == "256"
+
+
+def test_fresh_install_skips_when_controllers_are_missing(installation):
+    _, destination, run = installation
+    result = run("full", {"TEST_SUBTREE_CONTROL": ""})
+    assert result.returncode == 0, result.stdout + result.stderr
+    assert "controllers are not enabled" in result.stderr
+    assert "cgroup" not in started_node(destination)
+
+
+def test_fresh_install_skips_when_systemd_check_fails(installation):
+    _, destination, run = installation
+    result = run("full", {"TEST_SYSTEMCTL_FAIL": "1"})
+    assert result.returncode == 0, result.stdout + result.stderr
+    assert "systemd did not accept" in result.stderr
+    assert "cgroup" not in started_node(destination)
+
+
+def test_fresh_install_fills_only_the_empty_budgets(installation):
+    _, destination, run = installation
+    result = run("full", {
+        "FLUXOMNI_PREPARATION_TASKS": "512",
+        "FLUXOMNI_PREPARATION_DETECT_CPUS": "4",
+        "FLUXOMNI_PREPARATION_DETECT_MEMORY_KIB": str(8 * 1024 * 1024),
+    })
+    assert result.returncode == 0, result.stdout + result.stderr
+    node = started_node(destination)
+    assert node["environment"]["FLUXOMNI_PREPARATION_CPU_MILLICORES"] == "1000"
+    assert node["environment"]["FLUXOMNI_PREPARATION_MEMORY_MIB"] == "2048"
+    assert node["environment"]["FLUXOMNI_PREPARATION_TASKS"] == "512"
 
 
 def test_fresh_install_skips_preparation_when_the_host_cannot_enforce_it(installation):
