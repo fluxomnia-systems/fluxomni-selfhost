@@ -172,3 +172,14 @@ def test_manual_installation_inputs_match_the_declared_stable_bundle():
     command = assignments + '\nprintf "%s\\n" "$ASSET_REF" "$IMAGE_TAG"'
     result = subprocess.run(["bash", "-euo", "pipefail", "-c", command], capture_output=True, text=True, check=True)
     assert result.stdout.splitlines() == [release.get("installerBundleRef", release["selfhostRef"]), release["coreVersion"]]
+
+
+def test_launcher_help_matches_the_runtime_usage(launch):
+    _, _, requests, run = launch
+    result = run(["--help"])
+    runtime = subprocess.run(["bash", str(ROOT / "scripts/install-runtime.sh"), "--help"], capture_output=True, text=True, timeout=10)
+    assert result.returncode == 0
+    assert result.stdout == runtime.stdout
+    assert "fluxomnictl preparation" in result.stdout
+    assert "--capacity-upgrade drained" in result.stdout
+    assert not requests.exists()
