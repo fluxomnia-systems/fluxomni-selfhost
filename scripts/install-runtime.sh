@@ -1569,6 +1569,34 @@ validate_connect_origin() {
   fi
 }
 
+connect_origins_differ() {
+  python3 - "$1" "$2" <<'PY'
+import ipaddress
+import socket
+import sys
+from urllib.parse import urlsplit
+
+def origin(value):
+    parsed = urlsplit(value)
+    host = parsed.hostname
+    if not host:
+        raise ValueError("Origin has no host")
+    try:
+        host = ipaddress.ip_address(host).compressed
+    except ValueError:
+        try:
+            host = socket.inet_ntoa(socket.inet_aton(host))
+        except OSError:
+            pass
+    return host, parsed.port or 443
+
+try:
+    sys.exit(0 if origin(sys.argv[1]) != origin(sys.argv[2]) else 1)
+except ValueError:
+    sys.exit(1)
+PY
+}
+
 if [ "$FLUXOMNI_INSTALL_TARGET" = full ]; then
   connect_key_id_format='[A-Za-z0-9._-]{1,64}'
   connect_public_key_format='[A-Za-z0-9_-]{42}[AEIMQUYcgkosw048]'
@@ -1581,12 +1609,16 @@ if [ "$FLUXOMNI_INSTALL_TARGET" = full ]; then
     connect_portal=https://connect.fluxomni.io
   fi
   if [ -n "$connect_portal" ]; then
-    if ! validate_connect_origin "$connect_portal" || [ "$connect_portal" = "$PUBLIC_URL_DEFAULT" ]; then
+    if ! validate_connect_origin "$connect_portal"; then
       echo "Error: Connect portal must be a distinct canonical HTTPS origin." >&2
       exit 1
     fi
     if [ ! -f compose.installer-connect.yml ] && [ -z "$connect_key_id$connect_public_key" ]; then
       echo "Error: supply Connect gateway verification keys before setting its portal." >&2
+      exit 1
+    fi
+    if ! connect_origins_differ "$connect_portal" "$PUBLIC_URL_DEFAULT"; then
+      echo "Error: Connect portal must be a distinct canonical HTTPS origin." >&2
       exit 1
     fi
   fi
@@ -1656,7 +1688,7 @@ YAML
     retained_public_key="${BASH_REMATCH[4]}"
     retained_portal="${BASH_REMATCH[6]:-}"
     if [ -n "$retained_portal" ] &&
-       { ! validate_connect_origin "$retained_portal" || [ "$retained_portal" = "$PUBLIC_URL_DEFAULT" ]; }; then
+       { ! validate_connect_origin "$retained_portal" || ! connect_origins_differ "$retained_portal" "$PUBLIC_URL_DEFAULT"; }; then
       echo "Error: restore a valid Connect portal origin before restarting." >&2
       exit 1
     fi

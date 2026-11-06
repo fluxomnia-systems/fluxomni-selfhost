@@ -829,6 +829,38 @@ def test_default_connect_portal_cannot_be_the_installation_origin(installation):
     assert not (destination / "gateway.json").exists()
 
 
+@pytest.mark.parametrize("origin,portal", [
+    ("https://[2001:db8::1]", "https://[2001:0db8::1]"),
+    ("https://[2001:0db8::1]", "https://[2001:db8::1]"),
+    ("https://[::1]", "https://[0:0:0:0:0:0:0:1]"),
+    ("https://127.0.0.1", "https://127.1"),
+    ("https://127.0.0.1", "https://0x7f000001"),
+])
+def test_connect_rejects_equivalent_ip_origins(installation, origin, portal):
+    _, destination, run = installation
+    result = run("full", {
+        "FLUXOMNI_PUBLIC_URL": origin,
+        "FLUXOMNI_CONNECT_GATEWAY_KEY_ID": "staging-key",
+        "FLUXOMNI_CONNECT_GATEWAY_PUBLIC_KEY": "A" * 43,
+        "FLUXOMNI_CONNECT_PORTAL_ORIGIN": portal,
+    })
+    assert result.returncode != 0
+    assert "distinct canonical HTTPS origin" in result.stderr
+    assert not (destination / "gateway.json").exists()
+
+
+def test_connect_allows_distinct_ports_on_an_ipv6_host(installation):
+    _, destination, run = installation
+    result = run("full", {
+        "FLUXOMNI_PUBLIC_URL": "https://[2001:db8::1]",
+        "FLUXOMNI_CONNECT_GATEWAY_KEY_ID": "staging-key",
+        "FLUXOMNI_CONNECT_GATEWAY_PUBLIC_KEY": "A" * 43,
+        "FLUXOMNI_CONNECT_PORTAL_ORIGIN": "https://[2001:db8::1]:8443",
+    })
+    assert result.returncode == 0, result.stdout + result.stderr
+    assert json.loads((destination / "gateway.json").read_bytes())["portalOrigin"] == "https://[2001:db8::1]:8443"
+
+
 @pytest.mark.parametrize("portal", [
     "http://connect.example", "https://connect.example/", "https://connect.example/path",
     "https://user@connect.example", "https://Connect.example", "https://installation.example",

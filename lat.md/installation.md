@@ -279,6 +279,8 @@ Fresh installer-managed Connect uses `https://connect.fluxomni.io` as its portal
 
 An explicit portal update uses a private temporary file and atomic rename. Installer rollback includes the prior gateway file for this requested update. Malformed retained or requested origins fail before services change. Custom files and non-Connect installations remain operator-owned.
 
+Compare normalized IP literals and effective ports when checking that the portal differs from the Installation. Equivalent IPv6 or short/numeric IPv4 spellings cannot bypass the check. Different ports remain different origins. This comparison does not rewrite saved origin strings or resolve DNS.
+
 Public instructions use verification links, local identity/client review and automatic signed handoffs. Ownership registration does not approve an AI client. Native MCP works independently of Connect. The guided application build is required; this helper option cannot add browser handlers to an older image.
 
 The approved default-address slice delivers the official default for new gateway files, an advanced explicit override, unchanged retained files and rejection when the portal equals the Installation. Checks are pinned installer tests, Bash syntax, ShellCheck, strict docs lint, `lat check` and `git diff --check`, then this PR's Docs/Installer CI and current-head Codex review. Stop at those passing checks or a preserved concrete failure. Do not change running Installations or verification keys.
