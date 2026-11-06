@@ -905,3 +905,49 @@ def test_connect_portal_update_rolls_back_when_compose_validation_fails(installa
     assert "must retain /mcp-gateway/*" in result.stderr
     assert path.read_bytes() == original
     assert not list(destination.glob("gateway.json.*"))
+
+
+@pytest.mark.parametrize("target_exists", [False, True])
+def test_connect_portal_rejection_preserves_gateway_symlink(installation, target_exists):
+    _, destination, run = installation
+    result = run("full", {
+        "FLUXOMNI_PUBLIC_URL": "https://installation.example",
+        "FLUXOMNI_CONNECT_GATEWAY_KEY_ID": "staging-key",
+        "FLUXOMNI_CONNECT_GATEWAY_PUBLIC_KEY": "A" * 43,
+    })
+    assert result.returncode == 0, result.stdout + result.stderr
+    path = destination / "gateway.json"
+    original = path.read_bytes()
+    target = destination.parent / "operator-gateway.json"
+    if target_exists:
+        target.write_bytes(original)
+    path.unlink()
+    path.symlink_to(target)
+    result = run("full", {"FLUXOMNI_CONNECT_PORTAL_ORIGIN": "https://connect.example"})
+    assert result.returncode != 0
+    assert "restore gateway.json" in result.stderr
+    assert path.is_symlink() and path.readlink() == target
+    if target_exists:
+        assert target.read_bytes() == original
+    else:
+        assert not target.exists()
+
+
+def test_connect_reports_missing_python_before_writing_gateway(installation):
+    _, destination, run = installation
+    hook = destination.parent / "missing-python.sh"
+    hook.write_text('''command() {
+  if [ "$#" -eq 2 ] && [ "$1" = -v ] && [ "$2" = python3 ]; then return 1; fi
+  builtin command "$@"
+}
+''')
+    result = run("full", {
+        "FLUXOMNI_PUBLIC_URL": "https://installation.example",
+        "FLUXOMNI_CONNECT_GATEWAY_KEY_ID": "staging-key",
+        "FLUXOMNI_CONNECT_GATEWAY_PUBLIC_KEY": "A" * 43,
+        "BASH_ENV": str(hook),
+    })
+    assert result.returncode != 0
+    assert "required command 'python3' was not found" in result.stdout
+    assert "distinct canonical HTTPS origin" not in result.stderr
+    assert not (destination / "gateway.json").exists()

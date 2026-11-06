@@ -24,6 +24,8 @@ Standards-compatible AI agents use their own remote MCP and OAuth settings. Reco
 
 To enable Connect during a fresh standard install, set `FLUXOMNI_PUBLIC_URL`, `FLUXOMNI_CONNECT_GATEWAY_KEY_ID` and `FLUXOMNI_CONNECT_GATEWAY_PUBLIC_KEY` in the installer environment. The portal defaults to `https://connect.fluxomni.io`. The installer creates the gateway configuration and checks the combined Compose files before starting services. Existing installations must use drained maintenance when enabling Connect.
 
+Connect origin validation requires Python 3 on the host. Run the normal Bash/Docker installer; no separate Python installer command is needed.
+
 The public verification key comes from the operator of your Connect environment. It is public configuration, not a secret to generate yourself. The installer creates and retains the Installation ID; the Installation creates its own private ownership key. Do not put OAuth client secrets or AI-agent tokens into these fields.
 
 For staging or another Connect operator, set the advanced `FLUXOMNI_CONNECT_PORTAL_ORIGIN` override to its HTTPS origin without a trailing slash, for example `https://connect.example`. It must differ from the Installation origin. On an existing installer-managed installation, explicitly supplying it adds or updates only browser navigation; omitting it preserves the saved configuration, including older files without a portal address. It never replaces the Installation ID or gateway verification key. Keep existing keys and state on upgrades.

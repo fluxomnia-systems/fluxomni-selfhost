@@ -826,8 +826,8 @@ begin_config_transaction() {
      { [ -f "${FLUXOMNI_DIR}/compose.installer-connect.yml" ] ||
        [ -n "${FLUXOMNI_CONNECT_GATEWAY_KEY_ID:-}${FLUXOMNI_CONNECT_GATEWAY_PUBLIC_KEY:-}" ]; }; then
     INSTALL_MANAGED_FILES+=(compose.installer-connect.yml)
-    if { [ ! -e "${FLUXOMNI_DIR}/gateway.json" ] && [ ! -L "${FLUXOMNI_DIR}/gateway.json" ]; } ||
-       [ -n "${FLUXOMNI_CONNECT_PORTAL_ORIGIN:-}" ]; then
+    if [ ! -L "${FLUXOMNI_DIR}/gateway.json" ] &&
+       { [ ! -e "${FLUXOMNI_DIR}/gateway.json" ] || [ -n "${FLUXOMNI_CONNECT_PORTAL_ORIGIN:-}" ]; }; then
       INSTALL_MANAGED_FILES+=(gateway.json)
     fi
   fi
@@ -1617,6 +1617,7 @@ if [ "$FLUXOMNI_INSTALL_TARGET" = full ]; then
       echo "Error: supply Connect gateway verification keys before setting its portal." >&2
       exit 1
     fi
+    require_cmd python3
     if ! connect_origins_differ "$connect_portal" "$PUBLIC_URL_DEFAULT"; then
       echo "Error: Connect portal must be a distinct canonical HTTPS origin." >&2
       exit 1
@@ -1687,10 +1688,12 @@ YAML
     retained_key_id="${BASH_REMATCH[3]}"
     retained_public_key="${BASH_REMATCH[4]}"
     retained_portal="${BASH_REMATCH[6]:-}"
-    if [ -n "$retained_portal" ] &&
-       { ! validate_connect_origin "$retained_portal" || ! connect_origins_differ "$retained_portal" "$PUBLIC_URL_DEFAULT"; }; then
-      echo "Error: restore a valid Connect portal origin before restarting." >&2
-      exit 1
+    if [ -n "$retained_portal" ]; then
+      require_cmd python3
+      if ! validate_connect_origin "$retained_portal" || ! connect_origins_differ "$retained_portal" "$PUBLIC_URL_DEFAULT"; then
+        echo "Error: restore a valid Connect portal origin before restarting." >&2
+        exit 1
+      fi
     fi
     if [ -n "$connect_portal" ] && [ "$connect_portal" != "$retained_portal" ]; then
       (
