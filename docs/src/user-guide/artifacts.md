@@ -38,9 +38,7 @@ Uploaded videos and preserved recordings can show a small thumbnail in the Libra
 
 ![A library row showing the thumbnail state of an uploaded video](../images/user-guide/v264/artifacts-thumbnails.jpg)
 
-When the Library already contains a recording, open it to preview the file, including FLV, and use **Preserve to library** when that action is shown. Preservation copies the recording into an independent Library asset. The capture suite does not create a recording, so this still is produced only when one is already present.
-
-![A library recording with preview and preserve, when a recording exists](../images/user-guide/v264/artifacts-recording.jpg)
+When the Library already contains a recording, open it to preview the file, including FLV, and use **Preserve to library** when that action is shown. Preservation copies the recording into an independent Library asset. The current lab has no recording, so this guide does not show that row.
 
 ## Storage Backends
 

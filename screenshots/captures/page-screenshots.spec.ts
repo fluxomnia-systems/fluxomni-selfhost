@@ -109,7 +109,7 @@ test('create-route.jpg — Create Route dialog', async ({ page }) => {
   }
 
   // Wait for the modal/dialog to appear
-  await page.waitForSelector('[role="dialog"], .modal, [data-testid="create-route-modal"]', {
+  await page.waitForSelector('dialog[open], [role="dialog"], .modal, [data-testid="create-route-modal"]', {
     timeout: 10_000,
   });
   await page.waitForTimeout(800);
@@ -306,7 +306,7 @@ test('route-edit-advanced.jpg — Edit Route advanced routing', async ({ page })
   if (await editButton.isVisible()) {
     await editButton.click();
     await page.waitForSelector(
-      '[role="dialog"], .modal, [data-testid="edit-route-modal"]',
+      'dialog[open], [role="dialog"], .modal, [data-testid="edit-route-modal"]',
       { timeout: 10_000 },
     );
     await page.waitForTimeout(800);
@@ -323,7 +323,7 @@ test('route-edit-advanced.jpg — Edit Route advanced routing', async ({ page })
     }
 
     // Scroll dialog to show advanced routing options
-    const dialog = page.locator('[role="dialog"], .modal').first();
+    const dialog = page.locator('dialog[open], [role="dialog"], .modal').first();
     await dialog.evaluate((el) => el.scrollTo(0, el.scrollHeight));
     await page.waitForTimeout(600);
   }
