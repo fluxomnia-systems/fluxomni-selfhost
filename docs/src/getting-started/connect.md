@@ -4,7 +4,7 @@ Use this guide to enroll a public HTTPS Installation and approve read access for
 
 Connect is optional. An AI agent can also use [native MCP](../api/mcp.md) directly, with its separate local OAuth setup. Connect provides a shared cloud MCP endpoint and does not replace local permissions.
 
-This guide describes guided setup. Use matching control-plane and frontend builds that include this workflow; stable 26.3.2 alone is not its acceptance evidence. Use the reviewed image versions supplied for your environment.
+This guide describes guided setup. v26.4.0 includes this Connect workflow. Use matching v26.4.0 control-plane and frontend images, and record their resolved digests.
 
 Start with the distributed Compose installation. Confirm the control plane is healthy and that a named local Admin can sign in. A password-only Installation can use Connect. Local OIDC remains an independent option.
 

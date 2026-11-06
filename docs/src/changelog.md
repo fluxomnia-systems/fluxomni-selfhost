@@ -4,11 +4,87 @@ Operator-facing highlights from recent Fluxomni releases.
 
 The changelog is editorial release copy. Use `release-manifest.json` as the factual inventory for dates, module versions, images, and API client refs, but write the latest changelog entry by hand so it reads as operator-facing release notes instead of generated metadata.
 
-## Unreleased Installer Changes
+## v26.4.0 - 6 November 2026
 
-Existing installations now require an explicit capacity maintenance mode. The first ledger upgrade verifies global execution shutdown, persists initialization and removes its temporary acknowledgement before starting media; later upgrades require disabled routes and zero reservations.
+This release adds reusable rundowns, richer playlist programming, recording retention, and a per-node capacity ledger. Upgrade the frontend, control plane, and every media node together. See the [upgrade guide](getting-started/upgrade-26.4.0.md). `v26.3.2` predates the capacity-ledger contract.
 
-Automatic updates stop before maintenance inspection and stay stopped. Candidate failures preserve runtime data and stop the temporary control plane. Incomplete first bootstraps can retry while project containers are absent and runtime storage remains empty. Follow [Capacity Ledger Upgrades](getting-started/capacity-upgrades.md) and select a tested admission-capable build; `v26.3.2` predates this runtime contract.
+### Recordings and DVR retention
+
+Finalized FLV recordings can be preserved as independent Library assets, with visible progress and cancellation. Preserved files stay usable in playlists after the recording node is gone. Linux media nodes can rotate continuous recordings into independently finalized segments. Interrupted segments never become playable sources.
+
+Active outputs can opt into age and byte retention, with one budget across current and historical recording nodes. Archive ownership survives reassignment and restart. Unavailable archives defer deletion and show retry failures. The Fluxomni web app shows loading, empty, retry, and deletion states, and the Library preview plays FLV recordings, including on HTTPS pages. Downloads stream through the authenticated control plane. Administrators can find historical recordings after a route is removed.
+
+Publishers wait for the previous process to exit before restarting, so recordings finalize cleanly and SRS streams do not overlap.
+
+**API change:** list recordings through the artifact library by kind and output ID, and delete them by file ID. The filename-only DVR query and removal mutation are removed.
+
+### Rundowns
+
+The Fluxomni web app has a Rundowns page for reusable program rundowns. Operators can edit and duplicate media order, and apply an exact saved revision from a route playlist when the route is idle and has no schedule. Viewers get read-only access.
+
+Repeated clips keep their own placement identity through playback, cueing, timing, and completion history. The editor previews planned duration, offsets, and the finite total with the same timing calculation as route playlists. Saved references protect Library assets and recordings from deletion. Revision checks reject stale saves and applies. Unsaved edits are protected when you leave the page, switch rundowns, or reload saved data.
+
+### Playlist stingers, timing, and schedules
+
+Playlists can add an optional stinger clip from the artifact library. Sequential playback inserts it between completed content files. Manual controls skip it, and a failed stinger warns and continues. Recovery controls stay usable when a recording stinger is unavailable. Imports reject new unavailable stinger references.
+
+The playlist shows planned item durations, cumulative offsets, scheduled start and end times, and a finite program total. Unknown durations and loops stay marked as uncertain. Times show their zone and UTC offset. Start a playlist file at an exact timestamp from the progress line or by editing the elapsed time. Progress starts only after the new playback is confirmed.
+
+Routes can schedule playlist starts every day or on selected weekdays in an IANA time zone. The route shows the next start and the last confirmed, skipped, blocked, or failed occurrence, with pause, resume, and explicit replacement of one-shot schedules. Durable admission prevents duplicate starts across repeated ticks and restarts. DST gaps are skipped, repeated times fire once, and missed starts have a five-minute grace period. Existing one-shot starts survive the upgrade.
+
+### Playlist preparation
+
+Prepare playlist files ahead of playback into reusable H.264/AAC MPEG-TS variants that match the route baseline, including custom dimensions, fractional frame rates, and audio settings. The picker prepares selected files and the current queue together. Originals and incoming live streams are not changed. Playback waits for the complete queue, and verified preparation clears baseline mismatch alerts.
+
+Operators can give preparation its own Linux CPU, memory, and task budget while live video stays outside it. Fleet shows utilization, limits, and waiting work. If configured isolation is unavailable, preparation does not run unbounded. Media nodes report cgroup setup at startup so the installer can verify enforcement. See [Offline Preparation Resource Limits](getting-started/configuration.md#offline-preparation-resource-limits).
+
+### Slideshows and thumbnails
+
+Create reusable slideshow videos from PNG and JPEG images in the Library or the artifact picker. Order the photos, keep the five-second defaults or adjust names and timing, then preview, download, or reuse the finished MP4. Rendering publishes verified MP4 files to configured S3-compatible storage. Finished videos keep working after input deletion or render-node loss. Object storage is checked before composition.
+
+Small thumbnails are generated for stable uploaded videos and preserved recordings, and shown in the Library and the shared file picker. Loading, unsupported, and retry states keep playback controls, selection, and pagination working. Thumbnails inherit the visibility of their source and are removed when that asset is deleted.
+
+### Route readiness
+
+Routes show a compact readiness checklist for live, playlist, and relay flows. It lists prerequisites, stale or unavailable evidence, and links to the controls that fix each finding. It can preview placement and capacity rules without starting streams.
+
+### Per-node capacity ledger
+
+Administrators can set per-node route and output ceilings in Fleet and see starting, committed, and retiring demand. Route and output growth, imports, and placement reserve capacity atomically. A slot is released only after FFmpeg exit is proved and recorded.
+
+**Upgrade:** installations that already have running or assigned execution must follow [Capacity Ledger Upgrades](getting-started/capacity-upgrades.md) on the first boot of this release. Stop old execution containers and initialize the ledger before starting media. The installer verifies global shutdown, persists initialization, and removes its temporary acknowledgement before media starts. Later upgrades require disabled routes and zero reservations. Automatic updates stop before that inspection. `v26.3.2` does not provide this contract.
+
+### Private media nodes
+
+Private media nodes can open an authenticated TLS control connection to the control plane, with no inbound control port or VPN. Fleet shows control connection state separately from media access. Fleet generates one copy-and-run command that enrolls a node with a short-lived, one-time code. The installer downloads only over HTTPS. Admins can rotate, recover, and revoke node credentials while keeping the node ID and archive ownership. Revocation does not release reserved capacity.
+
+Fleet can also repair one cached relay-backed source on an explicitly isolated media node. Repair keeps source files and live playback intact.
+
+### Google Drive service accounts
+
+Administrators can connect a Google Drive service account under Settings → Artifacts → Connections and import shared private videos, or the videos directly inside a folder. Public API-key imports still work, with an explicit choice when both methods are configured. Credentials are encrypted and kept out of settings exports. Removing them keeps downloaded artifacts.
+
+### Native MCP and Fluxomni Connect
+
+Native MCP remains a preview. v26.4.0 can use the same verified issuer identity to sign in to the Fluxomni web app and to approve MCP clients. Approved clients can read the current user, visible routes, and flow readiness. An opt-in management scope can manage routes, Library files, playlists, and outputs, still under the current user's permissions. See [Native MCP access](api/mcp.md). Startup fails if MCP is configured without the matching browser client in `FLUXOMNI_OIDC_CONFIG`.
+
+Connected apps can register this Installation with Fluxomni Connect and give named accounts personal read access for AI clients. A named local Admin owns registration. Personal read access needs a separate browser approval for the exact client. See [Fluxomni Connect](getting-started/connect.md).
+
+### Relational storage
+
+Identities, Connected apps approvals, node credentials, rundowns, slideshows, playlists and schedules, preparation, thumbnails, recording preservation and archives, admission limits, and execution ownership now live in checked relational SQLite tables. Existing data is kept, and state changes commit together with their operator history. One SQLite baseline handles fresh installs and direct upgrades from released schema 11. Do not start an older release on a database this release has migrated.
+
+A change-history API returns stable sequence pages for operators and administrators, with declared coverage and redaction of protected values. History is bounded by a one-day age target and a 512 MiB soft size target. Undo commands and history screens are not part of this release.
+
+### API and sign-in
+
+`@fluxomni/api-client@26.4.0` is the pinned API client. GraphQL POST requests must use `application/json`. WebSocket connections that do not initialize within ten seconds are closed. The legacy password mutation is removed; use user creation, password rotation, and session logout. Slideshow mutations require a request ID. A retry returns the original command receipt, and the slideshow field is the current record.
+
+Browser sessions last 24 hours by default. Installations that already saved a session TTL keep it, and `0` still disables expiry. Reverse-proxy deployments must set `FLUXOMNI_TRUSTED_PROXY_IPS` to the exact proxy IPs, and proxies must append or replace client-address headers. Without that setting, clients behind a proxy share one login limit.
+
+Live subscription connections close when their session expires, logs out, or loses authority after a password, role, or user change.
+
+---
 
 ## v26.3.2 - 27 September 2026
 

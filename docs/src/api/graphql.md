@@ -51,4 +51,6 @@ Use the release-tagged `api/schema.graphql` from GitHub when pinning automation 
 
 ## Library Pagination
 
-In 26.3.2, `artifacts.libraryFiles` returns a page object. Select its `nodes` and follow `endCursor` while `hasNextPage` is true. The default page size is 50, with a maximum of 200. See the [upgrade guide's executable query](../getting-started/upgrade-26.3.2.md#api-changes).
+In 26.3.2, `artifacts.libraryFiles` returns a page object. Select its `nodes` and follow `endCursor` while `hasNextPage` is true. The default page size is 50, with a maximum of 200. See the [26.3.2 upgrade guide](../getting-started/upgrade-26.3.2.md#api-changes).
+
+In 26.4.0, POST requests must use `application/json`. The filename-only DVR query and removal mutation are removed. List recordings with `libraryFiles` filtered by artifact kind `RECORDING` and output ID, and delete them by file ID. Slideshow mutations require a request ID. The legacy `setPassword` mutation is removed. See the [26.4.0 upgrade guide](../getting-started/upgrade-26.4.0.md#api-changes).

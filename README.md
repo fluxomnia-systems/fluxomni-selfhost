@@ -8,14 +8,14 @@ Fluxomni runs live streams and file-based channels on your own servers. Send one
 
 This repository contains the files for self-hosted installs. Linux and macOS are supported on x64 and ARM64. Windows is supported through WSL2 with Ubuntu.
 
-## What's New in 26.3.2
+## What's New in 26.4.0
 
-- **More responsive control plane** — limits on persistence work and separate delivery to each node reduce the impact of slow storage and media nodes
-- **Less idle route work** — unused push routes start no FFmpeg workers; media nodes reuse source state when it has not changed, avoiding repeated catalog copies and scans
-- **Larger artifact libraries** — paginated queries and file subscriptions for specific routes or files limit catalog work; custom API clients need an update
-- **Clearer output readiness** — an output becomes LIVE after FFmpeg reports media progress, with a startup deadline if progress stops
+- **Recordings and rundowns** — preserve, rotate, and retain recordings in the Library; save reusable rundowns and apply them to an idle route
+- **Playlist programming** — stingers, planned timing, weekday schedules, ahead-of-playback preparation, slideshows, and automatic thumbnails
+- **Capacity ledger** — per-node route and output ceilings; the first upgrade from a running v26.3.x installation must stop old execution and initialize the ledger
+- **Private media nodes** — outbound TLS control and Fleet enrollment, with no inbound control port required
 
-Read the [26.3.2 upgrade guide](docs/src/getting-started/upgrade-26.3.2.md), [release notes](docs/src/changelog.md), and [measured sizing guidance](docs/src/getting-started/sizing.md).
+Read the [26.4.0 upgrade guide](docs/src/getting-started/upgrade-26.4.0.md), [capacity ledger procedure](docs/src/getting-started/capacity-upgrades.md), and [release notes](docs/src/changelog.md). Custom API clients should pin `@fluxomni/api-client@26.4.0`.
 
 ## Quick Install
 
@@ -49,7 +49,7 @@ Open Fleet → Add Node on the existing control plane as an Admin. Choose the no
 
 The installer exchanges a short-lived code over verified HTTPS and keeps the machine credential in owner-only `node-secrets/`. The node uses outbound TLS control; it needs no VPN, public address or inbound control port. Public media settings are optional.
 
-See [Attach Another Media Node](docs/src/getting-started/quick-start.md#attach-another-media-node) for the current stable setup and Fleet enrollment on supporting releases. Fleet enrollment uses matching edge images until a supporting stable release is published.
+See [Attach Another Media Node](docs/src/getting-started/quick-start.md#attach-another-media-node) for the current stable setup. Fleet enrollment uses matching `v26.4.0` images.
 
 ## Common Install Examples
 
@@ -61,7 +61,7 @@ FLUXOMNI_DIR=/opt/fluxomni \
 
 # Pin a specific stable release
 curl -fsSL https://install.fluxomni.io | \
-FLUXOMNI_VERSION=v26.3.2 \
+FLUXOMNI_VERSION=v26.4.0 \
   bash
 
 # Use the newest main-branch build
@@ -112,7 +112,7 @@ The installer manages:
 
 The public launcher selects installer code and assets from the same release. `latest` uses the published stable installer; `edge` uses the new runtime installer. Version pins and saved versions keep their release-specific workflow.
 
-Use `latest` unless you need a pinned release or a test build. The current stable public release is `v26.3.2`. Retained image tags are available for separately reviewed recovery; migrated state must not be restarted with predecessor images.
+Use `latest` unless you need a pinned release or a test build. The current stable public release is `v26.4.0`. Retained image tags are available for separately reviewed recovery; migrated state must not be restarted with predecessor images.
 
 See the What's New section above for recent changes.
 
@@ -137,7 +137,7 @@ docker compose --profile auto-update stop --timeout 30
 
 If you used a custom directory or installed only a media node, run these commands from that directory.
 
-Installer reruns preserve data and known `.env` settings. Stable v26.3.2 keeps its release-specific rerun behavior; builds with the capacity ledger require an explicit maintenance mode. Follow the [capacity upgrade guide](docs/src/getting-started/capacity-upgrades.md) for initial upgrades, later drained upgrades and standalone nodes.
+Installer reruns preserve data and known `.env` settings. v26.3.2 keeps its release-specific rerun behavior. v26.4.0 requires an explicit capacity maintenance mode on established installations. Follow the [capacity upgrade guide](docs/src/getting-started/capacity-upgrades.md) for initial upgrades, later drained upgrades and standalone nodes.
 
 For SRS open-file errors, rerun the latest installer; see [troubleshooting](docs/src/getting-started/troubleshooting.md#srs-reports-too-few-open-files).
 
@@ -186,7 +186,7 @@ This repository builds the published docs website from the `docs/` mdBook.
 Changes on `main` appear under `/edge/`. The site root comes from the
 `latestStable` entry in `docs/src/release-manifest.json` and its matching
 self-host tag. Each listed release with a tagged book also gets a permanent
-path, such as `/v26.3.2/`. Releases without a tagged book are omitted from
+path, such as `/v26.4.0/`. Releases without a tagged book are omitted from
 the switcher.
 
 To publish stable docs, merge the release sync, tag the self-host commit

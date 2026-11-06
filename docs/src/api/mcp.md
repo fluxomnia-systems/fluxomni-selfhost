@@ -2,7 +2,7 @@
 
 Use native MCP to ask a client for your current user, visible routes and selected-flow readiness. Fluxomni keeps the client read-only and applies your current role plus an independent local approval.
 
-This is a preview integration. It requires a Fluxomni build containing [the native MCP runtime](https://github.com/fluxomnia-systems/fluxomni/pull/437), including its matching frontend and the [unified sign-in implementation](https://github.com/fluxomnia-systems/fluxomni/issues/439). Stable 26.3.2 alone does not provide this feature. The isolated issuer and Codex CLI workflow are verified; an actual web-chat connection remains an acceptance gate.
+This is a preview integration. v26.4.0 includes the [native MCP runtime](https://github.com/fluxomnia-systems/fluxomni/pull/437) and the [unified sign-in implementation](https://github.com/fluxomnia-systems/fluxomni/issues/439). Use matching control-plane and frontend images from that release. The isolated issuer and Codex CLI workflow are verified; an actual web-chat connection remains an acceptance gate.
 
 Native MCP connects an AI agent directly to this Installation. It does not require Fluxomni Connect. Use the separate [Connect guide](../getting-started/connect.md) when you want the cloud endpoint and per-Installation linking. The two paths keep independent OAuth and approval requirements.
 
