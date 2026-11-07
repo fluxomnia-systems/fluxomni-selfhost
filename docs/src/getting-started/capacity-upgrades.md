@@ -6,6 +6,44 @@ These builds preserve capacity until the previous execution has proved it stoppe
 
 `v26.4.0` is the tested stable release with the capacity ledger and Fleet enrollment. Upgrade the control plane, frontend, and every media node together, and use matching installer assets. The installer rejects older candidates, including `v26.3.2`, that cannot provide the admission API and initialization proof. Keep backups and record the enabled route IDs before maintenance.
 
+## Choose the command
+
+Use one mode. Do not run a plain `bash install.sh` on an existing install.
+
+- First move from an older release, including v26.3.x: `bash install.sh full --capacity-upgrade initial --confirm-execution-stopped`
+- A later upgrade, after this release has initialized the ledger, routes are disabled, and Fleet shows zero reservations: `bash install.sh full --capacity-upgrade drained`
+- A standalone media node, only after the control-plane step succeeds: `bash install.sh media-node --capacity-upgrade node --confirm-control-plane-ready`
+
+`initial` creates the ledger. It refuses a ledger that already exists. `drained` refuses a ledger that is missing, and it refuses enabled routes or remaining reservations. `--confirm-execution-stopped` means you stopped the old execution containers and updaters on other hosts. The installer cannot see those hosts.
+
+Set `FLUXOMNI_DIR` when the install is not `~/fluxomni` or `~/fluxomni-media-node`. Set `FLUXOMNI_VERSION=v26.4.0` so the installer and images come from the same release.
+
+## The existing control-plane container
+
+The upgrade reads the existing control-plane container. It uses that container's mounts to find the database and to prove this is the install being upgraded. It does not guess from the data folder alone, and it does not create a missing container.
+
+The container may be stopped. It must still exist. In the install directory, this command must print one container ID:
+
+```bash
+cd ~/fluxomni
+docker compose --profile auto-update ps --all --quiet control-plane
+```
+
+`docker compose ps --all` shows the same container with its state. One `control-plane` row is required.
+
+If the command prints nothing, the container was removed. Do not delete `data/` or its volumes. This run has not replaced `docker-compose.yml`. Start the existing service again, then rerun the same upgrade command:
+
+```bash
+cd ~/fluxomni
+docker compose up -d --no-deps control-plane
+```
+
+If that file was already replaced, restore the saved Compose file first. Do not start a new image on the old database by hand.
+
+If the command prints more than one ID, do not delete volumes. Leave one `control-plane` container and remove only the extra stopped container. Then rerun the upgrade.
+
+If the service is not named `control-plane`, this automated upgrade does not apply. Keep the data and use a separately reviewed manual recovery.
+
 ## First Capacity Upgrade
 
 Stop every external execution container before initializing the control-plane ledger.

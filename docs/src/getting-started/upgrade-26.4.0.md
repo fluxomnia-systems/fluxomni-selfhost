@@ -26,6 +26,8 @@ FLUXOMNI_DIR="$HOME/fluxomni" FLUXOMNI_VERSION=v26.4.0 \
 
 `--confirm-execution-stopped` asserts that every external predecessor execution container and updater is stopped. The installer controls its local node. It cannot inspect other hosts. Do not put `FLUXOMNI_CAPACITY_UPGRADE_STOPPED` in `.env` or pass it as an installer environment variable. The installer applies that acknowledgement only inside initial mode and removes it before starting media.
 
+The old control-plane container must still exist, even if it is stopped. The installer reads that container to find the database. If it reports that exactly one control-plane container is required, follow [The existing control-plane container](capacity-upgrades.md#the-existing-control-plane-container). Do not delete the data to make the install look new.
+
 After the control-plane step succeeds, update each already stopped standalone media node with the same release:
 
 ```bash
