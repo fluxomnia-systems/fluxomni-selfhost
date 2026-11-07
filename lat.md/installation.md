@@ -118,6 +118,10 @@ A rerun that only sets preparation variables, and omits the maintenance mode, st
 
 The helper reads the actual control-plane bind-mounted SQLite through a WAL-aware read-only transaction and verifies its current assignment marker and persisted route state.
 
+## Capacity container identity
+
+[[scripts/capacity-upgrade.py#Docker#owner]] requires exactly one existing control-plane container, including a stopped one. It reads that container's mounts to find the database and refuses zero or several. It does not create a missing container.
+
 [[scripts/capacity-upgrade.py#read_ledger]] never edits SQLite. Initialized ledgers always reject initial mode. Drained mode requires disabled routes and no capacity reservations. Storage resolution compares candidate Compose and actual owner mounts; custom commands, ambiguous mounts, symlinks and remote Docker fail closed.
 
 When the SQLx execution tables exist, the helper reads initialization from `execution_control` and checks for any row in `capacity_claims`. A partial schema or invalid singleton fails closed. Schema discovery uses `sqlite_master` so older host SQLite builds can read either ledger.

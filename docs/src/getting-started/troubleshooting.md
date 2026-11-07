@@ -257,6 +257,17 @@ If you are locked out of the Control Surface:
 - If you forgot the admin password, current installs store user accounts in `data/state.db`, not `data/state.json`. Stop the stack first, back up `data/`, and use `sqlite3 data/state.db` only as a last resort if you need to inspect or repair the `users` table before restarting.
 - If no user accounts exist, Fluxomni uses the open admin shell. After emergency recovery, use Settings to create a new admin account before re-enabling named-user sign-in.
 
+## Upgrade Requires One Control-Plane Container
+
+`Exactly one existing control-plane container is required` means Compose does not see one `control-plane` container in the install directory. The upgrade reads that container to find the database. A stopped container counts. A removed container does not. The installer does not create it, and it does not restore execution.
+
+```bash
+cd ~/fluxomni
+docker compose --profile auto-update ps --all --quiet control-plane
+```
+
+That command must print one container ID. If it prints nothing, keep `data/` and start the existing service again with `docker compose up -d --no-deps control-plane`. If it prints more than one ID, leave one container and do not delete volumes. Then rerun the same upgrade command. See [The existing control-plane container](capacity-upgrades.md#the-existing-control-plane-container) for the command choice and the restore rule.
+
 ## Rollback to a Previous Version
 
 Retain the database and diagnose the candidate using [Capacity Ledger Upgrades](capacity-upgrades.md#failure-and-retry). A predecessor image may not understand migrated state or durable capacity ownership; changing the image tag and recreating containers is not a verified rollback.
