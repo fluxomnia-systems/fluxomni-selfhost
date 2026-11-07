@@ -35,8 +35,8 @@ A media node processes and delivers media:
 
 In a single-host install, one media node runs with the control-plane
 and communicates through the Docker network. In distributed
-deployments, additional media nodes run on separate servers and connect
-back to the control-plane over its published gRPC port (TCP 50052).
+deployments, additional media nodes run on separate servers and open
+their own TLS connection to the control plane, normally on TCP 50052.
 
 ### SRS (Simple Realtime Server)
 

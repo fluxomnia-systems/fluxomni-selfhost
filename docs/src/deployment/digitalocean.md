@@ -15,15 +15,9 @@ Open the [droplet creation page][2].
 
 Select **Ubuntu 24.04 LTS**.
 
-Supported platforms:
-
-- Linux x64 / ARM64
-- macOS x64 / Apple Silicon
-- Windows (WSL2 Ubuntu)
-
 ### 1.2. Choose a Plan
 
-The cheapest plan should be enough for simple restreaming. Choose a more powerful plan for many streams or transcoding.
+Budget the whole droplet with the [sizing guide](../getting-started/sizing.md). One measured media container used 1 CPU and 2 GiB, and that figure excludes the OS, Docker, frontend, and control plane. Transcoding, playlist playback, and recording need their own test.
 
 ![Server resources](../images/do_1.2.jpg)
 
@@ -36,7 +30,7 @@ Recording live streams may need more disk space than the default disk provides. 
 ![Add volume](../images/do_1.3.1.jpg)
 ![Setup volume](../images/do_1.3.2.jpg)
 
-The installer will automatically detect and use the attached volume for Fluxomni.
+The installer does not detect or mount this volume. Format it, mount it, and point `FLUXOMNI_CONTROL_PLANE_DATA_DIR` and `FLUXOMNI_MEDIA_NODE_DATA_DIR` at directories on that mount before you store recordings there. See [Configuration](../getting-started/configuration.md).
 
 ### 1.4. Choose a Datacenter Region
 

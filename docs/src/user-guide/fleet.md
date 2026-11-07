@@ -52,7 +52,7 @@ Each node advertises its supported protocols and features as tags:
 
 - **Protocols**: RTMP, SRT, HLS, WEBRTC
 - **Visibility**: Public, local
-- **Functions**: Artifact compute, Public ingest, Public egress, Ingest Public, Egress Public
+- **Functions**: Artifact compute, Public ingest, Public egress. Architecture names these `ARTIFACT_COMPUTE`, `PUBLIC_INGEST`, and `PUBLIC_EGRESS`. A node can also advertise `GPU_TRANSCODE`.
 
 ### Routes
 
@@ -88,18 +88,18 @@ Each node reports **Control connection** separately from media reachability. A p
 
 ## Admission ceilings
 
-Open a node to set **Route limit** and **Output limit**. Blank means unlimited. Zero prevents new demand. The same panel shows routes and outputs already reserved, including work that is starting or retiring. **Save limits** writes the ceilings. The still shows the form and does not save.
+Open a node to set **Route limit** and **Output limit**. Blank means unlimited. Zero prevents new demand. The same panel shows routes and outputs already reserved, including work that is starting or retiring. **Save limits** writes the ceilings.
 
 ![Per-node route and output ceilings with reserved demand](../images/user-guide/v264/fleet-capacity.jpg)
 
 ## Preparation resources
 
-The node page includes **Preparation resources** when the node has a preparation budget. It shows CPU, memory, tasks, the preparation queue, and **enforced** when the limits are active. The figures describe offline preparation. They do not predict how many additional routes or outputs will fit. The capture does not start a preparation job. See [Offline Preparation Resource Limits](../getting-started/configuration.md#offline-preparation-resource-limits) to turn the budget on.
+The node page includes **Preparation resources** when the node has a preparation budget. It shows CPU, memory, tasks, the preparation queue, and **enforced** when the limits are active. The figures describe offline preparation. They do not predict how many additional routes or outputs will fit. See [Offline Preparation Resource Limits](../getting-started/configuration.md#offline-preparation-resource-limits) to turn the budget on.
 
 ![Preparation CPU, memory, tasks, and queue on a media node](../images/user-guide/v264/fleet-preparation.jpg)
 
 ## Add a private node
 
-**Add Node** opens the enrollment form. Set **Enrollment URL** to the control plane HTTPS address the new node can reach. **Generate join command** creates a one-time code and a copy-and-run installer command. The still is taken before that button is used. Commands, one-time codes, private keys, and private hosts are masked in the capture. Follow [Attach Another Media Node](../getting-started/quick-start.md#attach-another-media-node) for the install itself.
+**Add Node** opens the enrollment form. Set **Enrollment URL** to the control plane HTTPS address the new node can reach. **Generate join command** creates a one-time code and a copy-and-run installer command. Follow [Attach Another Media Node](../getting-started/quick-start.md#attach-another-media-node) for the install itself.
 
 ![The Add Node form before a join command is generated](../images/user-guide/v264/fleet-enroll.jpg)

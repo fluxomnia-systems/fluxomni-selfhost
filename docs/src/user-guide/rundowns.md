@@ -24,7 +24,7 @@ Library files used by a saved rundown stay protected from ordinary deletion unti
 
 ## Duplicate
 
-**Duplicate** saves an independent copy. The copy name adds “ copy” to the original name. Routes that already applied the original keep that revision.
+**Duplicate** saves an independent copy. The new name is the original name, a space, and `copy`. Routes that already applied the original keep that revision.
 
 ![A duplicated rundown listed beside the original](../images/user-guide/v264/rundown-duplicate.jpg)
 

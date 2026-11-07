@@ -1,4 +1,4 @@
-# Power creator beyond SaaS caps
+# One feed to many destinations
 
 ## Who this is for
 

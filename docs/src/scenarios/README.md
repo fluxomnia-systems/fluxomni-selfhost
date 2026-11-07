@@ -8,4 +8,4 @@ Choose the guide closest to your work. Each explains the setup and the limits yo
 - [Linear channel (24/7 broadcast)](linear-channel-24-7.md)
 - [Distributed fleet with regional failover](distributed-fleet.md)
 - [Artifact library for playout assets](artifact-library.md)
-- [Power creator beyond SaaS caps](power-creator.md)
+- [One feed to many destinations](power-creator.md)

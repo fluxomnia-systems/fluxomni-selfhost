@@ -16,15 +16,9 @@ After logging in, open the "[Servers]" page, select "[Create another instance]",
 
 ![Create Virtual Server](../images/vscale_1.0.png)
 
-Supported platforms:
-
-- Linux x64 / ARM64
-- macOS x64 / Apple Silicon
-- Windows (WSL2 Ubuntu)
-
 ### 1.1. Choose a Configuration
 
-The smallest configuration is usually enough for simple restreaming. Choose a more powerful server for many streams.
+Budget the whole server with the [sizing guide](../getting-started/sizing.md). One measured media container used 1 CPU and 2 GiB, and that figure excludes the OS, Docker, frontend, and control plane. Transcoding and many concurrent streams need their own test.
 
 ![Server Configuration](../images/vscale_1.1.png)
 

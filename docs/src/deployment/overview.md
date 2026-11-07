@@ -66,19 +66,9 @@ curl -fsSL https://install.fluxomni.io | WITH_UFW=1 FLUXOMNI_VERSION=edge bash -
 
 ### Media-node mode
 
-Open Fleet → Add Node as an Admin. Choose the node ID and name, then select Generate join command. Copy the command and run it on the remote node host.
+Open Fleet → Add Node as an Admin. **Enrollment URL** has to be the control plane HTTPS address the new node can reach, or **Generate join command** stays disabled. Copy the command and run it on the remote host.
 
-The command contains a fifteen-minute, single-use enrollment code. The installer creates and saves a machine credential before redeeming the code over verified HTTPS. The control plane stores its hash; the machine secret never passes through the browser.
-
-The enrollment HTTPS origin and outbound control endpoint must be reachable from the node. Their certificates must match their hostnames. Fleet includes the control listener's public certificate; use Advanced settings for a private enrollment HTTPS CA.
-
-A VPN, public node address and inbound node control port are optional. Leave the public host and HTTP relay host empty for a private node with no published ports. Configure media hosts only when publishers, viewers or HTTP relays need them.
-
-Fleet distinguishes a consumed code from a connected node. After redemption, the existing outbound TLS handshake completes registration. Codes can be cancelled in Add Node, and expired codes can be replaced before successful enrollment.
-
-The installer keeps credentials in owner-only `node-secrets/` under `~/fluxomni-media-node`. Repeating an interrupted installation reuses the saved secret. For a node that already started, follow [Capacity Ledger Upgrades](../getting-started/capacity-upgrades.md) before recreating it; maintenance reruns do not repeat enrollment.
-
-The command sets `FLUXOMNI_ENROLLMENT_URL`, `FLUXOMNI_ENROLLMENT_CODE`, `FLUXOMNI_CONTROL_PLANE_RPC_ENDPOINT` and the chosen node ID. These short-lived installer values do not replace the saved machine credential.
+The command sets `FLUXOMNI_ENROLLMENT_URL`, `FLUXOMNI_ENROLLMENT_CODE`, `FLUXOMNI_CONTROL_PLANE_RPC_ENDPOINT`, and the node ID. Those values are short-lived installer inputs. The machine credential stays in `node-secrets/`. Follow [Attach Another Media Node](../getting-started/quick-start.md#attach-another-media-node).
 
 ## Release Channels
 

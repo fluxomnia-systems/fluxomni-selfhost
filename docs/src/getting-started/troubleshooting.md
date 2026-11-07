@@ -165,7 +165,7 @@ If Docker fails with an error like:
 failed to bind port 0.0.0.0:80/tcp: Error starting userland proxy: listen tcp4 0.0.0.0:80: bind: address already in use
 ```
 
-Another service on the host is already listening on that port. This is common on NAS devices (Synology, QNAP, Unraid) where the built-in web UI occupies port 80. Port 8000 (HLS TCP / RTC UDP) is another frequent conflict — Synology DSM uses it as an alternative HTTP port, and media apps like Plex or Jellyfin may also bind to it.
+Another service on the host is already listening on that port. This is common on NAS devices (Synology, QNAP, Unraid) where the built-in web UI occupies port 80. Port 8000 (HLS TCP / RTC UDP) is another frequent conflict: Synology DSM uses it as an alternative HTTP port, and media apps like Plex or Jellyfin may also bind to it.
 
 **Fix:** override the conflicting host ports in `.env` without editing `docker-compose.yml`:
 
@@ -183,25 +183,16 @@ echo 'FLUXOMNI_MEDIA_NODE_WHIP_PORT=8803' >> .env
 
 Apply the changes using [Capacity Ledger Upgrades](capacity-upgrades.md). For an already running installation, drain routes before recreating containers.
 
-Access the Control Surface at `http://<HOST-IP>:8080`. If you also set `FLUXOMNI_PUBLIC_URL`, make sure it includes the new port (e.g. `http://nas.local:8080`).
+Access the Control Surface at `http://<HOST-IP>:8080`. If you also set `FLUXOMNI_PUBLIC_URL`, include the new port, for example `http://nas.local:8080`.
 
 ## Multi-Subnet and NAT Environments
 
-In environments with multiple networks (e.g. cloud VPCs, complex office LANs, or behind NAT), the Web UI might be unreachable if the public-facing address is misconfigured.
+The browser times out when `FLUXOMNI_PUBLIC_HOST` is not the address the browser uses. This shows up with more than one network, NAT, or a loopback public host. `fluxomnictl doctor` warns when that host is `127.0.0.1` or `localhost`.
 
-The **Self-Host Doctor** (`fluxomnictl doctor`) detects your local IP addresses and warns you if `FLUXOMNI_PUBLIC_HOST` is set to a restricted loopback address.
-
-**Symptoms:**
-
-- Browser shows "Connection Timed Out" or "Connection Refused".
-- The doctor script warns that `FLUXOMNI_PUBLIC_HOST` does not match any local IP.
-
-**Resolution:**
-
-1. **Run the Doctor:** `fluxomnictl doctor` to see the recommended IPs for your host.
-2. **Set the correct Public Host:** ensure `FLUXOMNI_PUBLIC_HOST` in `.env` is set to the IP or hostname that your **browser** uses to reach the server.
-3. **Bind to all interfaces:** if you want the Control Plane to be reachable from any network connected to the server, ensure `FLUXOMNI_CONTROL_PLANE_HTTP_BIND` is set to `0.0.0.0:<port>` (default in most setups).
-4. **Check NAT Reflection:** if you are accessing the server via a public IP from inside the same LAN, ensure your router supports NAT reflection (Hairpin NAT).
+1. Run `fluxomnictl doctor` and use one of the addresses it prints.
+2. Set `FLUXOMNI_PUBLIC_HOST` in `.env` to the IP or hostname the browser uses to reach the server.
+3. Publish the UI with `FLUXOMNI_FRONTEND_HTTP_PORT`. The default is `80`. `FLUXOMNI_CONTROL_PLANE_HTTP_BIND` is not a Compose setting and does not change the bind. To keep the UI on localhost, set `FLUXOMNI_FRONTEND_HTTP_PORT=127.0.0.1:8080`. See [Private Access](private-access.md).
+4. From inside the same LAN, opening the public IP requires NAT reflection (hairpin NAT) on the router.
 
 If you are using a reverse proxy (Nginx, Traefik, Caddy), set `FLUXOMNI_PUBLIC_URL` to the full proxy URL:
 
@@ -209,7 +200,7 @@ If you are using a reverse proxy (Nginx, Traefik, Caddy), set `FLUXOMNI_PUBLIC_U
 FLUXOMNI_PUBLIC_URL=https://fluxomni.example.com
 ```
 
-All port mappings in `docker-compose.yml` support the same pattern — override via the corresponding `FLUXOMNI_*` variable in `.env`:
+All port mappings in `docker-compose.yml` support the same pattern. Override the host port with the matching `FLUXOMNI_*` variable in `.env`:
 
 | Variable | Default | Service |
 | -------- | ------- | ------- |

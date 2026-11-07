@@ -20,7 +20,7 @@ By default, the installer uses the newest stable release and installs Fluxomni o
 
 Use `FLUXOMNI_VERSION=edge` only when you want the newest main-branch build. Use a canonical public tag like `v26.4.0` when you need a pinned stable release. Retained image tags require a separately reviewed recovery procedure when state has migrated.
 
-To add a remote media server, run the same installer on that server with `bash -s -- media-node`.
+To add a remote media server, open Fleet → Add Node on the control plane, generate a join command, and run that command on the remote host. See [Attach Another Media Node](getting-started/quick-start.md#attach-another-media-node).
 
 After installation, open `http://<your-server-ip>/routes` and follow [First Stream](getting-started/first-stream.md). It shows how to create the first admin account, accept an RTMP source, add an output, check playback, and create your first backup.
 

@@ -78,17 +78,9 @@ The operator UI is served from the frontend host:
 
 ## Attach an External Media Node
 
-Open Fleet → Add Node as an Admin. Choose the node ID and name, then select Generate join command. Copy the command and run it on the remote node host.
+Open Fleet → Add Node as an Admin. If **Enrollment URL** is an HTTP address, **Generate join command** stays disabled. Enter the control plane HTTPS address the new node can reach, including `/api/node-enrollment/redeem`, then copy the command and run it on the remote host.
 
-The command contains a fifteen-minute, single-use enrollment code. The installer creates and saves a machine credential before redeeming the code over verified HTTPS. The control plane stores its hash; the machine secret never passes through the browser.
-
-The enrollment HTTPS origin and outbound control endpoint must be reachable from the node. Their certificates must match their hostnames. Fleet includes the control listener's public certificate; use Advanced settings for a private enrollment HTTPS CA.
-
-A VPN, public node address and inbound node control port are optional. Leave the public host and HTTP relay host empty for a private node with no published ports. Configure media hosts only when publishers, viewers or HTTP relays need them.
-
-Fleet distinguishes a consumed code from a connected node. After redemption, the existing outbound TLS handshake completes registration. Codes can be cancelled in Add Node, and expired codes can be replaced before successful enrollment.
-
-The installer keeps credentials in owner-only `node-secrets/` under `~/fluxomni-media-node`. Repeating an interrupted installation reuses the saved secret. For a node that already started, follow [Capacity Ledger Upgrades](capacity-upgrades.md) before recreating it; maintenance reruns do not repeat enrollment.
+The command carries a fifteen-minute, single-use code. Certificate pinning, `node-secrets/`, and recovery are in [Attach Another Media Node](quick-start.md#attach-another-media-node).
 
 ## Update an Existing Installation
 
