@@ -58,7 +58,7 @@ The route key and publish key are generated automatically when the route is save
 
 Choose the ingest protocol for the route:
 
-- **RTMP** — the best default for OBS, FFmpeg, and most hardware encoders.
+- **RTMP** — the usual choice for OBS, FFmpeg, and most hardware encoders.
 - **SRT** — useful for contribution over less stable networks.
 - **WebRTC** — low-latency browser publishing.
 
@@ -183,11 +183,11 @@ Open **Playlist settings** to see the planned program. Each queue row can show i
 
 ![A weekday playlist schedule with its time zone and next occurrence](../images/user-guide/v264/playlist-schedule.jpg)
 
-When playback is confirmed, **Edit playback time** opens the timestamp editor on the progress line. You can also scrub **Playback position**. Until playback is confirmed, the progress line stays idle and the timestamp editor is not available. The still shows the state the route is in. Capturing it does not start playout.
+When playback is confirmed, **Edit playback time** opens the timestamp editor on the progress line. You can also scrub **Playback position**. Until playback is confirmed, the progress line stays idle and the timestamp editor is not available.
 
 ![Playlist progress, including the timestamp editor when cueing is enabled](../images/user-guide/v264/playlist-cue.jpg)
 
-**Add** opens the Library picker. **Playback preparation** can prepare the selected videos, and the current queue, for this route baseline. Leave **Prepare selected videos for this baseline** unchecked when you only want to inspect the option. Checking it, or choosing **Normalize files**, starts preparation.
+**Add** opens the Library picker. **Playback preparation** can prepare the selected videos, and the current queue, for this route baseline. Checking **Prepare selected videos for this baseline**, or choosing **Normalize files**, starts preparation.
 
 ![The playlist picker with preparation available and left unchecked](../images/user-guide/v264/playlist-prepare.jpg)
 
@@ -212,7 +212,7 @@ When adding an output destination, Fluxomni supports several destination URL fam
 
 ## Mix-ins (Audio Mixing)
 
-Outputs support **mix-ins** — extra audio sources mixed into the output before it reaches the destination. Use them for background music, commentary, or TeamSpeak/VoIP audio.
+Outputs support mix-ins: extra audio sources mixed into the output before it reaches the destination. Use them for background music, commentary, or TeamSpeak/VoIP audio.
 
 Each mix-in can define:
 

@@ -392,7 +392,7 @@ def test_doctor_passes_on_a_healthy_full_install(tmp_path, capsys):
     assert ctl.doctor(install, doctor_host(), environ={}) == 0
     output = capsys.readouterr().out
     assert "Internal Auth Token configured" in output and "control-plane container" in output
-    assert "Port 80 (Web UI) available" in output and "looks good" in output
+    assert "Port 80 (Web UI) available" in output and "No failed checks." in output
 
 
 def test_doctor_reports_failures_and_exit_code(tmp_path, capsys):
@@ -403,7 +403,7 @@ def test_doctor_reports_failures_and_exit_code(tmp_path, capsys):
     assert ctl.doctor(install, host, environ={}) == 1
     output = capsys.readouterr().out
     assert "Internal Auth Token MISSING" in output and "frontend container NOT running" in output
-    assert "Some issues were detected" in output
+    assert "Checks failed." in output
 
 
 def test_doctor_standalone_node_credential_and_private_node(tmp_path, capsys):

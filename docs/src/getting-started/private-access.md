@@ -2,7 +2,7 @@
 
 Run Fluxomni on a private overlay network when the Control Surface and media ports should be reachable only from your own devices or servers.
 
-This page shows Tailscale first because it is the easiest private-network option for most self-host deployments. For every option, set the advertised hosts to addresses that your publishers, viewers, and extra media nodes can reach.
+This page starts with Tailscale. For every option, set the advertised hosts to addresses that your publishers, viewers, and extra media nodes can reach.
 
 ## When to Use This
 
@@ -117,7 +117,7 @@ sudo tailscale serve --bg --tcp=1935 tcp://127.0.0.1:1935
 sudo tailscale serve --bg --tcp=8000 tcp://127.0.0.1:8000
 sudo tailscale serve --bg --tcp=8003 tcp://127.0.0.1:8003
 
-# Control-plane gRPC for standalone media-node registration.
+# Outbound TLS control listener for standalone media nodes.
 sudo tailscale serve --bg --tcp=50052 tcp://127.0.0.1:50052
 
 # Inspect or reset the current Serve config.

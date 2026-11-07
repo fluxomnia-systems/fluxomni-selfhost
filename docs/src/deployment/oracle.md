@@ -29,15 +29,9 @@ Click **Change image** and select **Canonical Ubuntu 24.04**.
 
 ![Change image](../images/oci_1.2.1.png)
 
-Supported platforms:
-
-- Linux x64 / ARM64
-- macOS x64 / Apple Silicon
-- Windows (WSL2 Ubuntu)
-
 ### 1.3. Choose a Shape
 
-For simple restreaming, a [Free Tier] eligible shape (e.g., `VM.Standard.A1.Flex`) should be sufficient. For more demanding workloads, choose a more powerful shape.
+Match a Free Tier shape such as `VM.Standard.A1.Flex` against the [sizing guide](../getting-started/sizing.md). The bandwidth note above is the Free Tier limit to plan around. Transcoding, playlist playback, and recording need their own test.
 
 ![Server resources](../images/oci_1.3.png)
 

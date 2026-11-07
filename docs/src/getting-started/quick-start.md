@@ -70,6 +70,8 @@ Fleet distinguishes a consumed code from a connected node. After redemption, the
 
 The installer keeps credentials in owner-only `node-secrets/` under `~/fluxomni-media-node`. Repeating an interrupted installation reuses the saved secret. For a node that already started, follow [Capacity Ledger Upgrades](capacity-upgrades.md) before recreating it; maintenance reruns do not repeat enrollment.
 
+If redemption loses its response, the installer keeps the same credential and confirms it through the outbound control connection. Rerun the original command after an interrupted install. Never delete `node-secrets/` to retry.
+
 ## Access the Operator UI
 
 After Fluxomni starts, open `http://<your-server-ip>`.
@@ -135,19 +137,6 @@ To stop an updater enabled by an earlier deployment:
 docker compose --profile auto-update stop watchtower
 ```
 
-## Next Steps
-
-- Complete [First Stream](first-stream.md) to create an account, publish a route, add an output, and verify playback
-- Configure [authentication and settings](../user-guide/settings.md)
-- Use [private access and tunnels](private-access.md) for Tailscale or Cloudflare Tunnel deployments
-- Review [cloud deployment guides](../deployment/)
-- Use [troubleshooting](troubleshooting.md) if startup fails. `fluxomnictl doctor` checks the install from any directory
-
-For per-node playlist normalization CPU/memory/thread budgets, see
-[Offline Preparation Resource Limits](configuration.md#offline-preparation-resource-limits).
-
-If redemption loses its response, the installer keeps the same credential and confirms it through the outbound control connection. Rerun the original command after an interrupted install. Never delete `node-secrets/` to retry.
-
 ## Legacy shared-token nodes
 
 Legacy shared-token nodes require replacement enrollment; the installer does not import shared tokens or retain the old HTTP control protocol.
@@ -171,3 +160,12 @@ The installer saves a replacement candidate before contacting the control plane.
 **Revoke credential** immediately rejects authentication and closes the connection. It does not prove FFmpeg stopped or release reserved capacity. A live boot or unreleased old execution blocks recovery; restore the old identity and finish verified withdrawal where possible. There is no force-release option in this workflow.
 
 Credential rotation, recovery, and revocation are included in `v26.4.0`. Use that release's runtime and installer assets.
+
+## Next Steps
+
+- Complete [First Stream](first-stream.md) to create an account, publish a route, add an output, and verify playback
+- Configure [authentication and settings](../user-guide/settings.md)
+- Set per-node playlist normalization budgets in [Offline Preparation Resource Limits](configuration.md#offline-preparation-resource-limits)
+- Use [private access and tunnels](private-access.md) for Tailscale or Cloudflare Tunnel deployments
+- Review [cloud deployment guides](../deployment/)
+- Use [troubleshooting](troubleshooting.md) if startup fails. `fluxomnictl doctor` checks the install from any directory

@@ -23,15 +23,9 @@ Choose a location near both your stream source and destinations to reduce latenc
 
 Select **Ubuntu 24.04**.
 
-Supported platforms:
-
-- Linux x64 / ARM64
-- macOS x64 / Apple Silicon
-- Windows (WSL2 Ubuntu)
-
 ### 1.3. Choose a Type
 
-The cheapest plan, such as `CX11`, should be enough for simple restreaming. Choose a more powerful server for many streams or transcoding.
+Pick a current Hetzner server type. `CX11` is no longer available to order. Budget the whole server with the [sizing guide](../getting-started/sizing.md). One measured media container used 1 CPU and 2 GiB, and that figure excludes the OS, Docker, frontend, and control plane. Transcoding, playlist playback, and recording need their own test.
 
 ![Server resources](../images/hcloud_1.3.jpg)
 
@@ -44,7 +38,7 @@ Recording live streams may need more disk space than the default disk provides. 
 ![Add volume](../images/hcloud_1.4.1.jpg)
 ![Setup volume](../images/hcloud_1.4.2.jpg)
 
-The installer will automatically detect and use the attached volume for Fluxomni.
+The installer does not detect or mount this volume. Format it, mount it, and point `FLUXOMNI_CONTROL_PLANE_DATA_DIR` and `FLUXOMNI_MEDIA_NODE_DATA_DIR` at directories on that mount before you store recordings there. See [Configuration](../getting-started/configuration.md).
 
 ### 1.5. Add User Data
 

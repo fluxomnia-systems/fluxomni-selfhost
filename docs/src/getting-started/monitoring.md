@@ -20,9 +20,7 @@ without leaving the UI.
 The [Fleet](../user-guide/fleet.md) page shows per-node telemetry:
 
 - **Heartbeat** — time since the last heartbeat from each media node.
-  A stale heartbeat (configurable via
-  `FLUXOMNI_MEDIA_NODE_STALE_HEARTBEAT_SECS`) indicates the node may
-  be unreachable.
+  A heartbeat that stops advancing means Fleet has lost contact with that node.
 - **Worker** — active worker process count.
 - **Assignments** — number of routes placed on the node.
 - **Cache** — number of cached playlist files.

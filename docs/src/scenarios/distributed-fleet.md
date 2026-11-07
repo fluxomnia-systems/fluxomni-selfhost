@@ -18,8 +18,8 @@ Control plane (orchestration + UI)
 ## Setup
 
 1. Install the control plane on the server that will manage the fleet: `curl -fsSL https://install.fluxomni.io | bash`.
-2. Install a media-node on each regional host. Point it at the control plane with `FLUXOMNI_CONTROL_PLANE_RPC_ENDPOINT`. See [Configuration](../getting-started/configuration.md).
-3. Set each node's `FLUXOMNI_MEDIA_NODE_LABELS` and `FLUXOMNI_MEDIA_NODE_ZONE` when installing it, then confirm the advertised labels and zone in [Fleet](../user-guide/fleet.md).
+2. On each regional host, run the join command from Fleet → Add Node. Use the same release as the control plane. See [Attach Another Media Node](../getting-started/quick-start.md#attach-another-media-node).
+3. Include `FLUXOMNI_MEDIA_NODE_LABELS` and `FLUXOMNI_MEDIA_NODE_ZONE` on that command when the node must advertise them, then confirm the labels and zone in [Fleet](../user-guide/fleet.md).
 4. Set route placement in **Advanced routing** when a route must use a specific media node. See [Routes](../user-guide/routes.md#advanced-routing).
 5. Configure [ingress failover](../user-guide/routes.md) per route (primary → backup → file-backup → playlist).
 

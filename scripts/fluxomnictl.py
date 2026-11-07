@@ -527,7 +527,7 @@ def doctor(install, host, out=None, environ=None):
     else:
         report.check("warn", "data/ directory missing", "Will be created on first start")
     report.say()
-    report.say("Fluxomni self-host environment looks good!" if not report.failed else "Some issues were detected in your self-host setup.")
+    report.say("No failed checks." if not report.failed else "Checks failed.")
     return 1 if report.failed else 0
 
 

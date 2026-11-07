@@ -128,7 +128,7 @@ WebSocket connections keep retrying recoverable failures and report healthy only
 
 ### Program Playback and Relay Controls
 
-Program supports low-latency WebRTC playback with automatic HLS fallback and a standalone player. Relay / Distribution workspaces expose safe playback and ingest endpoints, clearer viewer counts, grouped sessions, and per-session controls. Program playback enforces route ownership — named users cannot play another user's private route.
+Program supports low-latency WebRTC playback with automatic HLS fallback and a standalone player. Relay / Distribution workspaces expose safe playback and ingest endpoints, clearer viewer counts, grouped sessions, and per-session controls. Program playback enforces route ownership. Named users cannot play another user's private route.
 
 ### Quarterly Release Versions
 
@@ -182,7 +182,7 @@ Route media profiles are configurable from Settings and can be learned from obse
 
 Artifact storage, playlists, and route workspaces now share durable media-library policy for duplicate imports, private object fetches, derived artifacts, file-operation concurrency, and safe catalog cleanup after backend configuration changes.
 
-### More Compact Operations UI
+### Tighter route workspace layout
 
 Route workspace panels, playlist controls, diagnostics, route cards, and sidebar telemetry are tighter and less repetitive. Completed one-shot and sequential playlist items stay marked as played without blocking replay or playlist clearing.
 
@@ -204,15 +204,11 @@ Public GraphQL automation now uses Route and Artifacts vocabulary across the sch
 
 ### API-Visible Route Telemetry
 
-Automation and operators can read clearer source freshness, bitrate, viewer activity, and availability signals through the API and Control Surface. Playlist route workflows also expose baseline mismatch details through Attention and route workspace issue affordances, so automations can converge routes without scraping UI state.
+Automation and operators can read source freshness, bitrate, viewer activity, and availability through the API and Control Surface. Playlist routes can teach or enforce media baselines, reject incompatible live or playlist sources earlier, and show mismatch details in Attention and the route workspace. Automations can converge on those states without scraping the UI.
 
 ### Split Frontend Image
 
-The web UI now has its own image alongside the control-plane and media-node images. This makes reverse-proxy and split-runtime deployments easier to reason about while preserving the embedded control-plane UI as a fallback.
-
-### Safer Playlist Automation
-
-Playlist routes can teach or enforce media baselines, reject incompatible live or playlist sources earlier, and surface mismatch details through Attention and route workspace issue affordances. Automations can converge routes against these states without scraping UI-only signals.
+The web UI has its own image alongside the control-plane and media-node images. Reverse-proxy and split-runtime deployments can route HTTP to that image. The embedded control-plane UI remains a fallback.
 
 ---
 
@@ -224,9 +220,9 @@ The new Artifacts page gives operators one place to upload files, import Drive a
 
 ### Storage-Aware Uploads
 
-Uploads and imports now surface usable capacity, configured headroom, top consumers, and recent storage rejections before operators start large transfers. Full-storage responses become upload toasts and Attention storage alerts so operators can free space before retrying.
+Uploads and imports show usable capacity, configured headroom, the files using the most space, and recent storage rejections before operators start large transfers. Full-storage responses become upload toasts and Attention storage alerts so operators can free space before retrying.
 
-### Cleaner Asset Operations
+### Bulk tagging and protected deletes
 
 Bulk tagging, filtered selection, protected deletes, route references, and route-baseline compatibility indicators make larger content libraries safer to manage during live channel operations.
 
@@ -268,7 +264,7 @@ Self-hosted webapp builds no longer initialize PostHog by default. Analytics onl
 
 Publish credentials now live inside the route spec. Each RTMP, SRT, and WebRTC push ingress gets stable `publish_token` and `internal_namespace` values at creation, and older routes are backfilled automatically. Operators can rotate a token without recreating the route, and import/export preserves the new fields.
 
-### Simplified Fleet Onboarding
+### Add Node keeps three required variables visible
 
 The Add Node flow now focuses on the three required environment variables and hides optional settings behind advanced controls. `FLUXOMNI_PUBLIC_URL` can carry the full external scheme, host, and port for proxy deployments. Media nodes unregister cleanly on shutdown so stale nodes disappear immediately. Operators can permanently remove an offline node from Fleet with the new `removeMediaNode` action.
 
@@ -276,7 +272,7 @@ The Add Node flow now focuses on the three required environment variables and hi
 
 Successful `main` builds now publish immutable `main-<shortsha>` image tags alongside `edge`. Pin a known main build without rebuilding.
 
-### Smarter Cold-Start Probes
+### Cold-start ffprobe uses three 3000 ms attempts
 
 File-ingress ffprobe now uses a 3000 ms per-attempt timeout over 3 attempts with exponential backoff. Cold-start timeouts no longer paint false errors on a healthy publisher in the operator UI.
 
@@ -294,7 +290,7 @@ Named user accounts with per-user passwords, role-based access control (admin an
 
 #### Secure Publish Credentials
 
-Each route gets rotatable `pk_` publish tokens scoped to a specific ingress. Raw stream keys are no longer exposed — operators can rotate or revoke tokens from the route workspace without reconfiguring the route itself.
+Each route gets rotatable `pk_` publish tokens scoped to a specific ingress. Raw stream keys are no longer exposed. Operators can rotate or revoke tokens from the route workspace without reconfiguring the route itself.
 
 #### Route Ownership
 
@@ -304,7 +300,7 @@ Routes belong to the user who created them. Non-admin operators only see and edi
 
 A dedicated alert surface aggregates route-health and fleet-node issues in one place. Operators can dismiss known issues, drill into the affected route or node, and see an all-clear state when everything is healthy.
 
-#### Redesigned Operator UI
+#### Compact route cards and routed settings
 
 Compact route cards with structured signal tiles, inline search, density controls, dark/light theme sync, and a unified header across all surfaces. The sidebar is regrouped into Operate, Fleet, and Control sections. Settings moved to dedicated routed pages at `/settings`.
 
@@ -318,13 +314,13 @@ Routes can be hard-pinned to a specific media node from the route modal. Pinned 
 
 #### Graceful Shutdown
 
-The control plane handles SIGINT and SIGTERM cleanly — HTTP connections drain and gRPC calls complete before the process exits. Active streams are not dropped during planned restarts.
+The control plane handles SIGINT and SIGTERM cleanly: HTTP connections drain and gRPC calls complete before the process exits. Active streams are not dropped during planned restarts.
 
 ### Core 0.9.0 - 13 March 2026
 
 #### Distributed Media-Node Orchestration
 
-Standalone media nodes register with the control plane, receive typed execution manifests, and report runtime status back over gRPC. Scale by adding nodes across regions.
+Standalone media nodes register with the control plane, receive typed execution manifests, and report runtime status back over gRPC.
 
 #### Fleet Monitoring
 
