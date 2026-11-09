@@ -52,7 +52,7 @@ curl -fsSL https://install.fluxomni.io | WITH_UFW=1 FLUXOMNI_VERSION=edge bash -
 - `WITH_UFW=1` — install and configure ufw with the required Fluxomni ports
 - `WITH_FIREWALLD=1` — install and configure firewalld instead of ufw (required for Oracle Cloud)
 - `ALLOWED_IPS` — comma-separated list of IPs to allow through the firewall (default: `*` for all)
-- `WITH_AUTO_HTTPS=1` — add a Caddy service that issues a Let's Encrypt certificate for `FLUXOMNI_PUBLIC_HOST` automatically: ordinary ACME for a public domain, the short-lived IP profile for a public IP. Private addresses stay on HTTP. See [Automatic HTTPS](getting-started/reverse-proxy.md#automatic-https)
+- `WITH_AUTO_HTTPS=1` — add a Caddy service that issues a Let's Encrypt certificate for `FLUXOMNI_PUBLIC_HOST` automatically: ordinary ACME for a public domain, the short-lived IP profile for a public IP. Private addresses stay on HTTP. See [Automatic HTTPS](../getting-started/reverse-proxy.md#automatic-https)
 
 ### Install target
 
