@@ -1,0 +1,10 @@
+{
+  "schemaVersion": 2,
+  "parent": "01a1b194-a615-72bc-8b2e-dac19cd32f20",
+  "telemetry": {
+    "correlationId": "0979b078-8f00-4daf-b599-02070f31cda7",
+    "mode": "straight",
+    "trafficOrigin": "unknown"
+  },
+  "states": {}
+}
