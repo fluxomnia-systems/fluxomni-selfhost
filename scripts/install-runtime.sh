@@ -476,7 +476,10 @@ generate_internal_auth_token() {
     return
   fi
 
-  date +%s%N
+  # Fail closed: a timestamp token is predictable, so never write one.
+  echo "Error: cannot generate a secure FLUXOMNI_CONTROL_PLANE_INTERNAL_AUTH_TOKEN on this host." >&2
+  echo "Install openssl, or run on Linux (reads /proc/sys/kernel/random/uuid), then retry." >&2
+  exit 1
 }
 
 read_env_file_value() {
