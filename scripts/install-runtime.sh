@@ -178,6 +178,7 @@ REQUESTED_WATCHTOWER_CONTAINER_NAME="${FLUXOMNI_WATCHTOWER_CONTAINER_NAME:-}"
 WITH_INITIAL_UPGRADE="${WITH_INITIAL_UPGRADE:-0}"
 WITH_FIREWALLD="${WITH_FIREWALLD:-0}"
 WITH_UFW="${WITH_UFW:-0}"
+WITH_AUTO_HTTPS="${WITH_AUTO_HTTPS:-0}"
 ALLOWED_IPS="${ALLOWED_IPS:-*}"
 SELFHOST_REPO="${FLUXOMNI_SELFHOST_REPO:-fluxomnia-systems/fluxomni-selfhost}"
 SELFHOST_REF_OVERRIDE="${FLUXOMNI_SELFHOST_REF:-}"
@@ -937,7 +938,7 @@ preflight_preparation_host() {
 begin_config_transaction() {
   INSTALL_BACKUP="$(mktemp -d)"
   INSTALL_CONFIG_COMMITTED=0
-  INSTALL_MANAGED_FILES=(node-credentials.py node-enrollment.sh compose.node-media.yml .install-pending docker-compose.yml compose.release.yml compose.defaults.yml .env .env.example doctor.sh docker-compose.preparation-cgroup.yml preparation-cgroup.py verify-preparation-compose.py)
+  INSTALL_MANAGED_FILES=(node-credentials.py node-enrollment.sh auto-https.sh Caddyfile.auto-https docker-compose.https.yml compose.node-media.yml .install-pending docker-compose.yml compose.release.yml compose.defaults.yml .env .env.example doctor.sh docker-compose.preparation-cgroup.yml preparation-cgroup.py verify-preparation-compose.py)
   if [ "$FLUXOMNI_INSTALL_TARGET" = full ] &&
      { [ -f "${FLUXOMNI_DIR}/compose.installer-connect.yml" ] ||
        [ -n "${FLUXOMNI_CONNECT_GATEWAY_KEY_ID:-}${FLUXOMNI_CONNECT_GATEWAY_PUBLIC_KEY:-}" ]; }; then
@@ -1521,6 +1522,9 @@ if [ "$FLUXOMNI_INSTALL_TARGET" = "media-node" ]; then
   MEDIA_NODE_DVR_PORT_DEFAULT="${MEDIA_NODE_DVR_PORT_DEFAULT:-8004}"
   download_asset scripts/node-enrollment.sh "${FLUXOMNI_DIR}/node-enrollment.sh"
   bash -n "${FLUXOMNI_DIR}/node-enrollment.sh"
+  download_asset scripts/auto-https.sh "${FLUXOMNI_DIR}/auto-https.sh"
+  chmod +x "${FLUXOMNI_DIR}/auto-https.sh"
+  bash -n "${FLUXOMNI_DIR}/auto-https.sh"
   source "${FLUXOMNI_DIR}/node-enrollment.sh"
   if [ -n "${FLUXOMNI_CREDENTIAL_MODE:-}" ]; then
     download_asset scripts/node-credentials.py "${FLUXOMNI_DIR}/node-credentials.py"
@@ -1655,6 +1659,29 @@ ENVVARS
   upsert_env_value "$ENV_FILE" "FLUXOMNI_CONTROL_PLANE_DATA_DIR" "$CONTROL_PLANE_DATA_DIR_DEFAULT"
   upsert_env_value "$ENV_FILE" "FLUXOMNI_MEDIA_NODE_DATA_DIR" "$MEDIA_NODE_DATA_DIR_DEFAULT"
   upsert_env_value "$ENV_FILE" "FLUXOMNI_SHARED_VIDEO_DIR" "$SHARED_VIDEO_DIR_DEFAULT"
+
+  if [ "$WITH_AUTO_HTTPS" = "1" ]; then
+    if [ "$FLUXOMNI_INSTALL_TARGET" != "full" ]; then
+      echo 'Error: WITH_AUTO_HTTPS=1 only applies to full installs.' >&2
+      exit 1
+    fi
+    AUTO_HTTPS_MODE="$(sh "${FLUXOMNI_DIR}/auto-https.sh" classify "$PUBLIC_HOST_DEFAULT")"
+    case "$AUTO_HTTPS_MODE" in
+      domain|public-ip)
+        sh "${FLUXOMNI_DIR}/auto-https.sh" render-caddyfile "$PUBLIC_HOST_DEFAULT" "${FLUXOMNI_DIR}/Caddyfile.auto-https"
+        sh "${FLUXOMNI_DIR}/auto-https.sh" compose-override "${FLUXOMNI_DIR}"
+        upsert_env_value "$ENV_FILE" "FLUXOMNI_PUBLIC_URL" "https://$PUBLIC_HOST_DEFAULT"
+        upsert_env_value "$ENV_FILE" "FLUXOMNI_TRUSTED_PROXY_IPS" "127.0.0.1"
+        upsert_env_value "$ENV_FILE" "FLUXOMNI_FRONTEND_HTTP_PORT" "127.0.0.1:18080"
+        export COMPOSE_FILE="docker-compose.yml:docker-compose.https.yml"
+        echo "Auto-HTTPS: ${AUTO_HTTPS_MODE} ${PUBLIC_HOST_DEFAULT} -> https://${PUBLIC_HOST_DEFAULT} (Caddy on 80/443)"
+        ;;
+      local)
+        rm -f "${FLUXOMNI_DIR}/Caddyfile.auto-https" "${FLUXOMNI_DIR}/docker-compose.https.yml"
+        echo "Auto-HTTPS: ${PUBLIC_HOST_DEFAULT} is not a public address; staying on HTTP."
+        ;;
+    esac
+  fi
 
   if [ -n "$REQUESTED_FRONTEND_CONTAINER_NAME" ]; then
     upsert_env_value "$ENV_FILE" "FLUXOMNI_FRONTEND_CONTAINER_NAME" "$REQUESTED_FRONTEND_CONTAINER_NAME"
