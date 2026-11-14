@@ -158,6 +158,8 @@ Useful standalone media-node overrides:
 - `FLUXOMNI_MEDIA_NODE_ID`
 - `FLUXOMNI_MEDIA_NODE_NAME`
 - `FLUXOMNI_MEDIA_NODE_LABELS`
+- `FLUXOMNI_MEDIA_NODE_CAPABILITIES` — optional declared capabilities
+- `FLUXOMNI_MEDIA_NODE_PRIVATE_NETWORK_ONLY` — optional private-network flag
 - `FLUXOMNI_MEDIA_NODE_ZONE`
 
 ## Documentation
