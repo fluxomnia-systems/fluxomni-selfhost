@@ -65,6 +65,16 @@ The installer maps canonical public pins to the matching core image tag when nat
 - `FLUXOMNI_SHARED_VIDEO_DIR`: host directory mounted read-only into the media-node video cache path.
 - `FLUXOMNI_OTLP_ENDPOINT`: OpenTelemetry collector endpoint (e.g. `http://collector:4318`).
 
+## Recording retention
+
+Default `.env.example` does not set recording retention. The control-plane image keeps age and byte caps off, and uses a 3600 second interval. Zero age or bytes disables that cap. Zero interval disables the loop.
+
+These names are not Settings controls. The control-plane service reads `.env` through `env_file`, so an entry there overrides the image default after a control-plane restart:
+
+- `FLUXOMNI_DVR_RETENTION_MAX_AGE_SECS`
+- `FLUXOMNI_DVR_RETENTION_MAX_BYTES`
+- `FLUXOMNI_DVR_RETENTION_INTERVAL_SECS`
+
 For single-host installs, keep both data-directory variables on `./data` unless you need separate storage locations.
 If you move `FLUXOMNI_MEDIA_NODE_DATA_DIR` elsewhere, keep `FLUXOMNI_SHARED_VIDEO_DIR` pointed at the control-plane video cache so downloaded or imported playlist files remain readable from the media-node.
 
