@@ -177,6 +177,9 @@ REQUESTED_FRONTEND_CONTAINER_NAME="${FLUXOMNI_FRONTEND_CONTAINER_NAME:-}"
 REQUESTED_CONTROL_PLANE_CONTAINER_NAME="${FLUXOMNI_CONTROL_PLANE_CONTAINER_NAME:-}"
 REQUESTED_MEDIA_NODE_CONTAINER_NAME="${FLUXOMNI_MEDIA_NODE_CONTAINER_NAME:-}"
 REQUESTED_WATCHTOWER_CONTAINER_NAME="${FLUXOMNI_WATCHTOWER_CONTAINER_NAME:-}"
+REQUESTED_DVR_RETENTION_MAX_AGE_SECS="${FLUXOMNI_DVR_RETENTION_MAX_AGE_SECS:-}"
+REQUESTED_DVR_RETENTION_MAX_BYTES="${FLUXOMNI_DVR_RETENTION_MAX_BYTES:-}"
+REQUESTED_DVR_RETENTION_INTERVAL_SECS="${FLUXOMNI_DVR_RETENTION_INTERVAL_SECS:-}"
 WITH_INITIAL_UPGRADE="${WITH_INITIAL_UPGRADE:-0}"
 WITH_FIREWALLD="${WITH_FIREWALLD:-0}"
 WITH_UFW="${WITH_UFW:-0}"
@@ -494,6 +497,30 @@ read_env_file_value() {
   fi
 
   grep -E "^${key}=" "$env_file" | tail -n1 | cut -d= -f2- || true
+}
+
+require_retention_integer() {
+  local name="$1"
+  local value="$2"
+  local normalized
+
+  if [ -z "$value" ]; then
+    return 0
+  fi
+  if [[ ! "$value" =~ ^[0-9]+$ ]] || [ "${#value}" -gt 20 ]; then
+    echo "Error: ${name} must be a non-negative integer." >&2
+    exit 1
+  fi
+  normalized="$value"
+  while [ "${#normalized}" -gt 1 ] && [ "${normalized#0}" != "$normalized" ]; do
+    normalized="${normalized#0}"
+  done
+  # Equal-length digit strings sort in numeric order. Bash -gt cannot hold a u64.
+  # shellcheck disable=SC2071
+  if [ "${#normalized}" -eq 20 ] && [[ "$normalized" > 18446744073709551615 ]]; then
+    echo "Error: ${name} must be a non-negative integer." >&2
+    exit 1
+  fi
 }
 
 upsert_env_value() {
@@ -1553,6 +1580,9 @@ EXISTING_MEDIA_NODE_SRS_CALLBACK_PORT="$(read_env_file_value "FLUXOMNI_MEDIA_NOD
 EXISTING_CONTROL_PLANE_DATA_DIR="$(read_env_file_value "FLUXOMNI_CONTROL_PLANE_DATA_DIR" "$ENV_FILE")"
 EXISTING_MEDIA_NODE_DATA_DIR="$(read_env_file_value "FLUXOMNI_MEDIA_NODE_DATA_DIR" "$ENV_FILE")"
 EXISTING_SHARED_VIDEO_DIR="$(read_env_file_value "FLUXOMNI_SHARED_VIDEO_DIR" "$ENV_FILE")"
+EXISTING_DVR_RETENTION_MAX_AGE_SECS="$(read_env_file_value "FLUXOMNI_DVR_RETENTION_MAX_AGE_SECS" "$ENV_FILE")"
+EXISTING_DVR_RETENTION_MAX_BYTES="$(read_env_file_value "FLUXOMNI_DVR_RETENTION_MAX_BYTES" "$ENV_FILE")"
+EXISTING_DVR_RETENTION_INTERVAL_SECS="$(read_env_file_value "FLUXOMNI_DVR_RETENTION_INTERVAL_SECS" "$ENV_FILE")"
 
 AUTH_TOKEN_DEFAULT="${FLUXOMNI_CONTROL_PLANE_INTERNAL_AUTH_TOKEN:-${EXISTING_AUTH_TOKEN:-}}"
 PUBLIC_URL_DEFAULT="${REQUESTED_PUBLIC_URL:-${EXISTING_PUBLIC_URL:-}}"
@@ -1741,6 +1771,21 @@ ENVVARS
   upsert_env_value "$ENV_FILE" "FLUXOMNI_CONTROL_PLANE_DATA_DIR" "$CONTROL_PLANE_DATA_DIR_DEFAULT"
   upsert_env_value "$ENV_FILE" "FLUXOMNI_MEDIA_NODE_DATA_DIR" "$MEDIA_NODE_DATA_DIR_DEFAULT"
   upsert_env_value "$ENV_FILE" "FLUXOMNI_SHARED_VIDEO_DIR" "$SHARED_VIDEO_DIR_DEFAULT"
+  DVR_RETENTION_MAX_AGE_SECS="${REQUESTED_DVR_RETENTION_MAX_AGE_SECS:-$EXISTING_DVR_RETENTION_MAX_AGE_SECS}"
+  DVR_RETENTION_MAX_BYTES="${REQUESTED_DVR_RETENTION_MAX_BYTES:-$EXISTING_DVR_RETENTION_MAX_BYTES}"
+  DVR_RETENTION_INTERVAL_SECS="${REQUESTED_DVR_RETENTION_INTERVAL_SECS:-$EXISTING_DVR_RETENTION_INTERVAL_SECS}"
+  require_retention_integer FLUXOMNI_DVR_RETENTION_MAX_AGE_SECS "$DVR_RETENTION_MAX_AGE_SECS"
+  require_retention_integer FLUXOMNI_DVR_RETENTION_MAX_BYTES "$DVR_RETENTION_MAX_BYTES"
+  require_retention_integer FLUXOMNI_DVR_RETENTION_INTERVAL_SECS "$DVR_RETENTION_INTERVAL_SECS"
+  if [ -n "$DVR_RETENTION_MAX_AGE_SECS" ]; then
+    upsert_env_value "$ENV_FILE" FLUXOMNI_DVR_RETENTION_MAX_AGE_SECS "$DVR_RETENTION_MAX_AGE_SECS"
+  fi
+  if [ -n "$DVR_RETENTION_MAX_BYTES" ]; then
+    upsert_env_value "$ENV_FILE" FLUXOMNI_DVR_RETENTION_MAX_BYTES "$DVR_RETENTION_MAX_BYTES"
+  fi
+  if [ -n "$DVR_RETENTION_INTERVAL_SECS" ]; then
+    upsert_env_value "$ENV_FILE" FLUXOMNI_DVR_RETENTION_INTERVAL_SECS "$DVR_RETENTION_INTERVAL_SECS"
+  fi
   # Persist join-command reachability settings so later runs and manual
   # compose invocations keep the node's advertised capabilities and privacy.
   if [ -n "$REQUESTED_MEDIA_NODE_CAPABILITIES" ]; then

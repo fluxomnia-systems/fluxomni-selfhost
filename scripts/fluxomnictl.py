@@ -384,6 +384,15 @@ class Report:
         print(text, file=self.out)
 
 
+def retention_integer(value):
+    """True when value is empty or a u64. Matches the installer check."""
+    if value == "":
+        return True
+    if not value.isdigit() or len(value) > 20:
+        return False
+    return int(value) <= 18446744073709551615
+
+
 def read_env_value(path, key):
     """First KEY=value line, quotes removed, like the old doctor.sh."""
     value = ""
@@ -456,6 +465,15 @@ def doctor(install, host, out=None, environ=None):
             report.check("pass", "Internal Auth Token configured")
         else:
             report.check("fail", "Internal Auth Token MISSING", "Set FLUXOMNI_CONTROL_PLANE_INTERNAL_AUTH_TOKEN in .env")
+        if not standalone:
+            for name in (
+                "FLUXOMNI_DVR_RETENTION_MAX_AGE_SECS",
+                "FLUXOMNI_DVR_RETENTION_MAX_BYTES",
+                "FLUXOMNI_DVR_RETENTION_INTERVAL_SECS",
+            ):
+                value = read(name)
+                if value and not retention_integer(value):
+                    report.check("fail", f"{name} is not a non-negative integer", value)
         public = read("FLUXOMNI_PUBLIC_HOST")
         addresses = host_addresses(host)
         if public:
