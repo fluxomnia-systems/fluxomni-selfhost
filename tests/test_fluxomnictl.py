@@ -395,6 +395,15 @@ def test_doctor_passes_on_a_healthy_full_install(tmp_path, capsys):
     assert "Port 80 (Web UI) available" in output and "No failed checks." in output
 
 
+def test_doctor_rejects_invalid_dvr_retention(tmp_path, capsys):
+    install = doctor_install(
+        tmp_path,
+        extra_env="FLUXOMNI_CONTROL_PLANE_INTERNAL_AUTH_TOKEN=t\nFLUXOMNI_DVR_RETENTION_MAX_BYTES=1.5\n",
+    )
+    assert ctl.doctor(install, doctor_host(), environ={}) == 1
+    assert "FLUXOMNI_DVR_RETENTION_MAX_BYTES is not a non-negative integer" in capsys.readouterr().out
+
+
 def test_doctor_reports_failures_and_exit_code(tmp_path, capsys):
     install = doctor_install(tmp_path)
     host = doctor_host()

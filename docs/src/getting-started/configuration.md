@@ -69,7 +69,7 @@ The installer maps canonical public pins to the matching core image tag when nat
 
 Default `.env.example` does not set recording retention. The control-plane image keeps age and byte caps off, and uses a 3600 second interval. Zero age or bytes disables that cap. Zero interval disables the loop.
 
-These names are not Settings controls. The control-plane service reads `.env` through `env_file`, so an entry there overrides the image default after a control-plane restart:
+These names are not Settings controls. The installer writes a value from its environment into `.env` and keeps an existing `.env` value when the environment is unset. The control-plane service reads `.env` through `env_file`, so the saved value overrides the image default after a control-plane restart:
 
 - `FLUXOMNI_DVR_RETENTION_MAX_AGE_SECS`
 - `FLUXOMNI_DVR_RETENTION_MAX_BYTES`

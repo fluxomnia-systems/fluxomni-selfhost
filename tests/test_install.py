@@ -375,6 +375,31 @@ def test_publish_ports_preserve_mapping_advertisement_and_firewall(installation,
         assert commands.count(expected) == 2
 
 
+def test_full_install_persists_dvr_retention_and_rejects_invalid(installation):
+    _, destination, run = installation
+    overrides = {
+        "FLUXOMNI_DVR_RETENTION_MAX_AGE_SECS": "86400",
+        "FLUXOMNI_DVR_RETENTION_MAX_BYTES": "1048576",
+        "FLUXOMNI_DVR_RETENTION_INTERVAL_SECS": "0",
+    }
+    result = run("full", overrides)
+    assert result.returncode == 0, result.stdout + result.stderr
+    env = (destination / ".env").read_text()
+    started = json.loads((destination / "started.json").read_text())
+    control = started["services"]["control-plane"]["environment"]
+    for name, value in overrides.items():
+        assert f"{name}={value}" in env
+        assert control[name] == value
+    result = run("full")
+    assert result.returncode == 0, result.stdout + result.stderr
+    control = json.loads((destination / "started.json").read_text())["services"]["control-plane"]["environment"]
+    assert control["FLUXOMNI_DVR_RETENTION_MAX_AGE_SECS"] == "86400"
+    result = run("full", {"FLUXOMNI_DVR_RETENTION_MAX_AGE_SECS": "nope"})
+    assert result.returncode != 0
+    assert "FLUXOMNI_DVR_RETENTION_MAX_AGE_SECS must be a non-negative integer." in result.stdout + result.stderr
+    assert "FLUXOMNI_DVR_RETENTION_MAX_AGE_SECS=86400" in (destination / ".env").read_text()
+
+
 PREPARATION = {
     'FLUXOMNI_PREPARATION_CGROUP_ENABLED': '1',
     'FLUXOMNI_PREPARATION_CPU_MILLICORES': '500',
