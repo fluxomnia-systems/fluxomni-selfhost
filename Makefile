@@ -34,7 +34,7 @@ serve: docs.serve
 clean: docs.clean
 
 # Python helpers: same tools and files as the installer CI job.
-PY_FILES = scripts/capacity-upgrade.py tests/test_capacity_upgrade.py scripts/node-credentials.py tests/test_node_credentials.py scripts/fluxomnictl.py tests/test_fluxomnictl.py
+PY_FILES = scripts/capacity-upgrade.py tests/test_capacity_upgrade.py scripts/node-credentials.py tests/test_node_credentials.py scripts/fluxomnictl.py tests/test_fluxomnictl.py scripts/object-storage.py tests/test_object_storage.py
 
 py.lint:
 	uvx ruff@latest check --no-cache $(PY_FILES)

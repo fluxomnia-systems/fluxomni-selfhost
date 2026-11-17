@@ -941,7 +941,7 @@ preflight_preparation_host() {
 begin_config_transaction() {
   INSTALL_BACKUP="$(mktemp -d)"
   INSTALL_CONFIG_COMMITTED=0
-  INSTALL_MANAGED_FILES=(node-credentials.py node-enrollment.sh auto-https.sh Caddyfile.auto-https docker-compose.https.yml compose.node-media.yml .install-pending docker-compose.yml compose.release.yml compose.defaults.yml .env .env.example doctor.sh docker-compose.preparation-cgroup.yml preparation-cgroup.py verify-preparation-compose.py)
+  INSTALL_MANAGED_FILES=(node-credentials.py node-enrollment.sh auto-https.sh Caddyfile.auto-https docker-compose.https.yml compose.node-media.yml .install-pending docker-compose.yml compose.release.yml compose.defaults.yml .env .env.example doctor.sh docker-compose.preparation-cgroup.yml preparation-cgroup.py verify-preparation-compose.py docker-compose.object-storage.yml scripts/object-storage.py)
   if [ "$FLUXOMNI_INSTALL_TARGET" = full ] &&
      { [ -f "${FLUXOMNI_DIR}/compose.installer-connect.yml" ] ||
        [ -n "${FLUXOMNI_CONNECT_GATEWAY_KEY_ID:-}${FLUXOMNI_CONNECT_GATEWAY_PUBLIC_KEY:-}" ]; }; then
@@ -953,7 +953,10 @@ begin_config_transaction() {
   fi
   local file
   for file in "${INSTALL_MANAGED_FILES[@]}"; do
-    if [ -e "${FLUXOMNI_DIR}/$file" ]; then cp -p "${FLUXOMNI_DIR}/$file" "$INSTALL_BACKUP/$file"; fi
+    if [ -e "${FLUXOMNI_DIR}/$file" ]; then
+      mkdir -p "$INSTALL_BACKUP/$(dirname "$file")"
+      cp -p "${FLUXOMNI_DIR}/$file" "$INSTALL_BACKUP/$file"
+    fi
   done
   trap finish_config_transaction EXIT
 }
@@ -963,6 +966,7 @@ finish_config_transaction() {
   if [ "$INSTALL_CONFIG_COMMITTED" = 0 ]; then
     for file in "${INSTALL_MANAGED_FILES[@]}"; do
       if [ -e "$INSTALL_BACKUP/$file" ]; then
+        mkdir -p "${FLUXOMNI_DIR}/$(dirname "$file")"
         cp -p "$INSTALL_BACKUP/$file" "${FLUXOMNI_DIR}/$file"
       else
         rm -f "${FLUXOMNI_DIR}/$file"
@@ -1017,6 +1021,52 @@ YAML
 }
 
 # @lat: [[installation#Preparation Compose enforcement]]
+# Garage object storage for artifact backends. Full installs enable it by
+# default; set FLUXOMNI_OBJECT_STORAGE_ENABLED=0 in .env to disable. Only full
+# installs have a control-plane to configure, so media-node installs refuse an
+# explicit enable.
+configure_object_storage() {
+  local enabled
+  enabled="$(read_env_file_value FLUXOMNI_OBJECT_STORAGE_ENABLED "$ENV_FILE")"
+  [ -n "${FLUXOMNI_OBJECT_STORAGE_ENABLED:-}" ] && enabled="$FLUXOMNI_OBJECT_STORAGE_ENABLED"
+  if [ "$FLUXOMNI_INSTALL_TARGET" != "full" ]; then
+    if [ "$enabled" = 1 ] || [ "$enabled" = true ]; then
+      echo 'Error: object storage requires a full install with a control-plane.' >&2
+      return 1
+    fi
+    return 0
+  fi
+  case "$enabled" in
+    0|false)
+      # Disabled: drop a previously added include line but keep saved values.
+      if [ -f "${FLUXOMNI_DIR}/docker-compose.yml" ]; then
+        local tmp
+        tmp="$(mktemp)"
+        awk '!/docker-compose\.object-storage\.yml/' "${FLUXOMNI_DIR}/docker-compose.yml" > "$tmp"
+        mv "$tmp" "${FLUXOMNI_DIR}/docker-compose.yml"
+      fi
+      return 0
+      ;;
+    *)
+      download_asset docker-compose.object-storage.yml "${FLUXOMNI_DIR}/docker-compose.object-storage.yml"
+      mkdir -p "${FLUXOMNI_DIR}/scripts"
+      download_asset scripts/object-storage.py "${FLUXOMNI_DIR}/scripts/object-storage.py"
+      # Downloaded code is syntax checked before it runs.
+      python3 -c 'import ast,sys; ast.parse(open(sys.argv[1]).read())' "${FLUXOMNI_DIR}/scripts/object-storage.py"
+      python3 "${FLUXOMNI_DIR}/scripts/object-storage.py" init --dir "$FLUXOMNI_DIR"
+      local line
+      while IFS= read -r line; do
+        upsert_env_value "$ENV_FILE" "${line%%=*}" "${line#*=}"
+      done < <(python3 "${FLUXOMNI_DIR}/scripts/object-storage.py" env --dir "$FLUXOMNI_DIR")
+      upsert_env_value "$ENV_FILE" FLUXOMNI_OBJECT_STORAGE_ENABLED 1
+      if ! grep -q 'docker-compose.object-storage.yml' "${FLUXOMNI_DIR}/docker-compose.yml"; then
+        printf '      - docker-compose.object-storage.yml\n' >> "${FLUXOMNI_DIR}/docker-compose.yml"
+      fi
+      echo "Object storage enabled: Garage overlay included, scoped key generated in object-storage/."
+      ;;
+  esac
+}
+
 verify_preparation_compose() {
   if [ "$PREPARATION_ENABLED" = 1 ]; then
     "${DOCKER_CMD[@]}" compose config --format json | python3 "${FLUXOMNI_DIR}/verify-preparation-compose.py" "$PREPARATION_HOST_ROOT" "$PREPARATION_CPU" "$PREPARATION_MEMORY" "$PREPARATION_TASKS"
@@ -1701,6 +1751,7 @@ ENVVARS
 fi
 
 write_preparation_config
+configure_object_storage || exit 1
 if [ "$FLUXOMNI_INSTALL_TARGET" = media-node ]; then
   {
     printf 'services:\n  media-node:\n    ports:'
@@ -1951,6 +2002,10 @@ fi
 
 assert_compose_services_match_target
 verify_preparation_compose
+if [ "$(read_env_file_value FLUXOMNI_OBJECT_STORAGE_ENABLED "$ENV_FILE")" = 1 ]; then
+  "${DOCKER_CMD[@]}" compose config --format json | python3 "${FLUXOMNI_DIR}/scripts/object-storage.py" verify-compose \
+    || { echo 'Error: rendered Compose weakens the object-storage security contract.' >&2; exit 1; }
+fi
 
 if [ "$FLUXOMNI_INSTALL_TARGET" = "media-node" ]; then
   preflight_media_node_connectivity "$(read_env_file_value "FLUXOMNI_CONTROL_PLANE_RPC_ENDPOINT" .env)"
