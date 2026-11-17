@@ -515,6 +515,8 @@ require_retention_integer() {
   while [ "${#normalized}" -gt 1 ] && [ "${normalized#0}" != "$normalized" ]; do
     normalized="${normalized#0}"
   done
+  # Equal-length digit strings sort in numeric order. Bash -gt cannot hold a u64.
+  # shellcheck disable=SC2071
   if [ "${#normalized}" -eq 20 ] && [[ "$normalized" > 18446744073709551615 ]]; then
     echo "Error: ${name} must be a non-negative integer." >&2
     exit 1
