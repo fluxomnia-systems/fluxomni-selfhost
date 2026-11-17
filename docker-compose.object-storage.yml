@@ -1,0 +1,64 @@
+# Optional Garage object storage for self-hosted artifact backends.
+# Opt in with FLUXOMNI_OBJECT_STORAGE_ENABLED=1 in .env; the installer then
+# downloads this file, generates ./object-storage secrets, and includes it.
+# Manual installs: add this file to COMPOSE_FILE and run
+#   python3 scripts/object-storage.py init --dir .
+# Security contract: the control plane receives a dedicated access key that is
+# allowed read/write on exactly one bucket (no owner, no create-bucket), the
+# bucket has a size/object quota, no public bucket alias or website is ever
+# created, and both the S3 and admin endpoints publish on loopback only.
+services:
+  control-plane:
+    depends_on:
+      garage:
+        condition: service_healthy
+      garage-init:
+        condition: service_completed_successfully
+    environment:
+      FLUXOMNI_STORAGE_BACKEND: ${FLUXOMNI_STORAGE_BACKEND:-id=object_storage,label=Object storage,location_type=OBJECT_STORAGE,kind=s3,bucket=${FLUXOMNI_OBJECT_STORAGE_BUCKET:?set FLUXOMNI_OBJECT_STORAGE_BUCKET in .env},region=us-east-1,endpoint_url=http://garage:3900,path_style=true,fetch_mode=presigned,presign_ttl_seconds=300}
+      AWS_ACCESS_KEY_ID: ${FLUXOMNI_OBJECT_STORAGE_ACCESS_KEY:?run scripts/object-storage.py init}
+      AWS_SECRET_ACCESS_KEY: ${FLUXOMNI_OBJECT_STORAGE_SECRET_KEY:?run scripts/object-storage.py init}
+      AWS_REGION: us-east-1
+      AWS_EC2_METADATA_DISABLED: "true"
+
+  garage:
+    image: dxflrs/garage:v2.5.0@sha256:677e5b758e4425a325b811c425c026bf35a4bf42f7ddbaa773de3f4fd779a5a5
+    container_name: ${FLUXOMNI_GARAGE_CONTAINER_NAME:-fluxomni-garage}
+    restart: unless-stopped
+    entrypoint: ["/garage"]
+    command: ["server", "--single-node"]
+    environment:
+      GARAGE_CONFIG_FILE: /etc/garage.toml
+      RUST_LOG: garage=info
+    volumes:
+      - ./object-storage/config.toml:/etc/garage.toml:ro
+      - ${FLUXOMNI_OBJECT_STORAGE_DATA_DIR:-./data/garage}:/var/lib/garage
+    ports:
+      # Loopback only, for the installer provisioner and operator debugging.
+      # Never bind these to 0.0.0.0; the control plane uses http://garage:3900.
+      - "127.0.0.1:${FLUXOMNI_OBJECT_STORAGE_API_PORT:-3900}:3900"
+      - "127.0.0.1:${FLUXOMNI_GARAGE_ADMIN_PORT:-3903}:3903"
+    healthcheck:
+      test: ["CMD", "/garage", "status"]
+      interval: 5s
+      timeout: 5s
+      retries: 24
+
+  garage-init:
+    image: python:3.12-slim-bookworm@sha256:935c3c5b12357a7e10caa9c1e6ca5692344d97cf229832ef584be2cec9fc03df
+    depends_on:
+      garage:
+        condition: service_healthy
+    entrypoint: ["python3", "/opt/object-storage/object-storage.py", "provision"]
+    environment:
+      FLUXOMNI_OBJECT_STORAGE_DIR: /opt/object-storage
+      FLUXOMNI_OBJECT_STORAGE_ADMIN_URL: http://garage:3903
+      FLUXOMNI_OBJECT_STORAGE_S3_URL: http://garage:3900
+      FLUXOMNI_OBJECT_STORAGE_BUCKET: ${FLUXOMNI_OBJECT_STORAGE_BUCKET:?set FLUXOMNI_OBJECT_STORAGE_BUCKET in .env}
+      FLUXOMNI_OBJECT_STORAGE_ACCESS_KEY: ${FLUXOMNI_OBJECT_STORAGE_ACCESS_KEY:?run scripts/object-storage.py init}
+      FLUXOMNI_OBJECT_STORAGE_SECRET_KEY: ${FLUXOMNI_OBJECT_STORAGE_SECRET_KEY:?run scripts/object-storage.py init}
+      FLUXOMNI_OBJECT_STORAGE_QUOTA_SIZE: ${FLUXOMNI_OBJECT_STORAGE_QUOTA_SIZE:-10737418240}
+      FLUXOMNI_OBJECT_STORAGE_QUOTA_OBJECTS: ${FLUXOMNI_OBJECT_STORAGE_QUOTA_OBJECTS:-100000}
+    volumes:
+      - ./scripts/object-storage.py:/opt/object-storage/object-storage.py:ro
+      - ./object-storage/config.toml:/opt/object-storage/config.toml:ro

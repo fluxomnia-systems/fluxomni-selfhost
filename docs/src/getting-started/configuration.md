@@ -14,7 +14,9 @@ Configure Fluxomni with environment variables in `.env`.
 - `FLUXOMNI_MEDIA_NODE_PUBLIC_HOST`: public hostname/IP shown in generated RTMP, HLS, SRT, and WebRTC media URLs.
 - `FLUXOMNI_MEDIA_NODE_ID`: stable media-node identifier shown in fleet views.
 - `FLUXOMNI_MEDIA_NODE_NAME`: human-readable media-node name shown in the control-plane.
-- `FLUXOMNI_MEDIA_NODE_LABELS`: optional comma-separated capability labels for routing and fleet filters.
+- `FLUXOMNI_MEDIA_NODE_LABELS`: optional comma-separated tags shown in fleet views. Each label is 1-70 characters with no commas or control characters; the node refuses to start with an invalid label. Labels do not grant capabilities.
+- `FLUXOMNI_MEDIA_NODE_CAPABILITIES`: optional comma-separated capabilities the node declares: `gpu_transcode`, `public_ingest`, `public_egress`.
+- `FLUXOMNI_MEDIA_NODE_PRIVATE_NETWORK_ONLY`: set to `true` to keep the node on a private network. The control plane then does not derive public ingest or egress from its ports.
 - `FLUXOMNI_MEDIA_NODE_ZONE`: optional placement zone used to describe where the node runs.
 
 `FLUXOMNI_MEDIA_NODE_PUBLIC_HOST` advertises media URLs only. It is optional for a private node and does not participate in control registration. `FLUXOMNI_MEDIA_NODE_HTTP_HOST` independently advertises an HTTP media relay.

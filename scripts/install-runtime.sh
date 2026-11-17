@@ -168,6 +168,8 @@ REQUESTED_MEDIA_NODE_ID="${FLUXOMNI_MEDIA_NODE_ID:-}"
 REQUESTED_MEDIA_NODE_NAME="${FLUXOMNI_MEDIA_NODE_NAME:-}"
 REQUESTED_MEDIA_NODE_LABELS="${FLUXOMNI_MEDIA_NODE_LABELS:-}"
 REQUESTED_MEDIA_NODE_ZONE="${FLUXOMNI_MEDIA_NODE_ZONE:-}"
+REQUESTED_MEDIA_NODE_CAPABILITIES="${FLUXOMNI_MEDIA_NODE_CAPABILITIES:-}"
+REQUESTED_MEDIA_NODE_PRIVATE_NETWORK_ONLY="${FLUXOMNI_MEDIA_NODE_PRIVATE_NETWORK_ONLY:-}"
 REQUESTED_CONTROL_PLANE_DATA_DIR="${FLUXOMNI_CONTROL_PLANE_DATA_DIR:-}"
 REQUESTED_MEDIA_NODE_DATA_DIR="${FLUXOMNI_MEDIA_NODE_DATA_DIR:-}"
 REQUESTED_SHARED_VIDEO_DIR="${FLUXOMNI_SHARED_VIDEO_DIR:-}"
@@ -941,7 +943,7 @@ preflight_preparation_host() {
 begin_config_transaction() {
   INSTALL_BACKUP="$(mktemp -d)"
   INSTALL_CONFIG_COMMITTED=0
-  INSTALL_MANAGED_FILES=(node-credentials.py node-enrollment.sh auto-https.sh Caddyfile.auto-https docker-compose.https.yml compose.node-media.yml .install-pending docker-compose.yml compose.release.yml compose.defaults.yml .env .env.example doctor.sh docker-compose.preparation-cgroup.yml preparation-cgroup.py verify-preparation-compose.py)
+  INSTALL_MANAGED_FILES=(node-credentials.py node-enrollment.sh auto-https.sh Caddyfile.auto-https docker-compose.https.yml compose.node-media.yml .install-pending docker-compose.yml compose.release.yml compose.defaults.yml .env .env.example doctor.sh docker-compose.preparation-cgroup.yml preparation-cgroup.py verify-preparation-compose.py docker-compose.object-storage.yml scripts/object-storage.py)
   if [ "$FLUXOMNI_INSTALL_TARGET" = full ] &&
      { [ -f "${FLUXOMNI_DIR}/compose.installer-connect.yml" ] ||
        [ -n "${FLUXOMNI_CONNECT_GATEWAY_KEY_ID:-}${FLUXOMNI_CONNECT_GATEWAY_PUBLIC_KEY:-}" ]; }; then
@@ -953,7 +955,10 @@ begin_config_transaction() {
   fi
   local file
   for file in "${INSTALL_MANAGED_FILES[@]}"; do
-    if [ -e "${FLUXOMNI_DIR}/$file" ]; then cp -p "${FLUXOMNI_DIR}/$file" "$INSTALL_BACKUP/$file"; fi
+    if [ -e "${FLUXOMNI_DIR}/$file" ]; then
+      mkdir -p "$INSTALL_BACKUP/$(dirname "$file")"
+      cp -p "${FLUXOMNI_DIR}/$file" "$INSTALL_BACKUP/$file"
+    fi
   done
   trap finish_config_transaction EXIT
 }
@@ -963,6 +968,7 @@ finish_config_transaction() {
   if [ "$INSTALL_CONFIG_COMMITTED" = 0 ]; then
     for file in "${INSTALL_MANAGED_FILES[@]}"; do
       if [ -e "$INSTALL_BACKUP/$file" ]; then
+        mkdir -p "${FLUXOMNI_DIR}/$(dirname "$file")"
         cp -p "$INSTALL_BACKUP/$file" "${FLUXOMNI_DIR}/$file"
       else
         rm -f "${FLUXOMNI_DIR}/$file"
@@ -1017,6 +1023,69 @@ YAML
 }
 
 # @lat: [[installation#Preparation Compose enforcement]]
+# Garage object storage for artifact backends. Full installs enable it by
+# default; set FLUXOMNI_OBJECT_STORAGE_ENABLED=0 in .env to disable. Only full
+# installs have a control-plane to configure, so media-node installs refuse an
+# explicit enable.
+configure_object_storage() {
+  local enabled
+  enabled="$(read_env_file_value FLUXOMNI_OBJECT_STORAGE_ENABLED "$ENV_FILE")"
+  [ -n "${FLUXOMNI_OBJECT_STORAGE_ENABLED:-}" ] && enabled="$FLUXOMNI_OBJECT_STORAGE_ENABLED"
+  if [ "$FLUXOMNI_INSTALL_TARGET" != "full" ]; then
+    if [ "$enabled" = 1 ] || [ "$enabled" = true ]; then
+      echo 'Error: object storage requires a full install with a control-plane.' >&2
+      return 1
+    fi
+    return 0
+  fi
+  case "$enabled" in
+    0|false)
+      # Disabled: drop a previously added include line but keep saved values.
+      if [ -f "${FLUXOMNI_DIR}/docker-compose.yml" ]; then
+        local tmp
+        tmp="$(mktemp)"
+        awk '!/docker-compose\.object-storage\.yml/' "${FLUXOMNI_DIR}/docker-compose.yml" > "$tmp"
+        mv "$tmp" "${FLUXOMNI_DIR}/docker-compose.yml"
+      fi
+      return 0
+      ;;
+    *)
+      download_asset docker-compose.object-storage.yml "${FLUXOMNI_DIR}/docker-compose.object-storage.yml"
+      mkdir -p "${FLUXOMNI_DIR}/scripts"
+      download_asset scripts/object-storage.py "${FLUXOMNI_DIR}/scripts/object-storage.py"
+      # Downloaded code is syntax checked before it runs.
+      python3 -c 'import ast,sys; ast.parse(open(sys.argv[1]).read())' "${FLUXOMNI_DIR}/scripts/object-storage.py"
+      # Honor operator-preconfigured bucket and quota values instead of defaults.
+      local init_args=(--dir "$FLUXOMNI_DIR")
+      local requested_bucket requested_quota_size requested_quota_objects
+      requested_bucket="$(read_env_file_value FLUXOMNI_OBJECT_STORAGE_BUCKET "$ENV_FILE")"
+      [ -n "${FLUXOMNI_OBJECT_STORAGE_BUCKET:-}" ] && requested_bucket="$FLUXOMNI_OBJECT_STORAGE_BUCKET"
+      requested_quota_size="$(read_env_file_value FLUXOMNI_OBJECT_STORAGE_QUOTA_SIZE "$ENV_FILE")"
+      [ -n "${FLUXOMNI_OBJECT_STORAGE_QUOTA_SIZE:-}" ] && requested_quota_size="$FLUXOMNI_OBJECT_STORAGE_QUOTA_SIZE"
+      requested_quota_objects="$(read_env_file_value FLUXOMNI_OBJECT_STORAGE_QUOTA_OBJECTS "$ENV_FILE")"
+      [ -n "${FLUXOMNI_OBJECT_STORAGE_QUOTA_OBJECTS:-}" ] && requested_quota_objects="$FLUXOMNI_OBJECT_STORAGE_QUOTA_OBJECTS"
+      [ -n "$requested_bucket" ] && init_args+=(--bucket "$requested_bucket")
+      [ -n "$requested_quota_size" ] && init_args+=(--quota-size "$requested_quota_size")
+      [ -n "$requested_quota_objects" ] && init_args+=(--quota-objects "$requested_quota_objects")
+      python3 "${FLUXOMNI_DIR}/scripts/object-storage.py" init "${init_args[@]}"
+      # Persist the selected data directory so later compose runs reuse it.
+      local requested_data_dir
+      requested_data_dir="$(read_env_file_value FLUXOMNI_OBJECT_STORAGE_DATA_DIR "$ENV_FILE")"
+      [ -n "${FLUXOMNI_OBJECT_STORAGE_DATA_DIR:-}" ] && requested_data_dir="$FLUXOMNI_OBJECT_STORAGE_DATA_DIR"
+      upsert_env_value "$ENV_FILE" FLUXOMNI_OBJECT_STORAGE_DATA_DIR "${requested_data_dir:-./data/garage}"
+      local line
+      while IFS= read -r line; do
+        upsert_env_value "$ENV_FILE" "${line%%=*}" "${line#*=}"
+      done < <(python3 "${FLUXOMNI_DIR}/scripts/object-storage.py" env --dir "$FLUXOMNI_DIR")
+      upsert_env_value "$ENV_FILE" FLUXOMNI_OBJECT_STORAGE_ENABLED 1
+      if ! grep -q 'docker-compose.object-storage.yml' "${FLUXOMNI_DIR}/docker-compose.yml"; then
+        printf '      - docker-compose.object-storage.yml\n' >> "${FLUXOMNI_DIR}/docker-compose.yml"
+      fi
+      echo "Object storage enabled: Garage overlay included, scoped key generated in object-storage/."
+      ;;
+  esac
+}
+
 verify_preparation_compose() {
   if [ "$PREPARATION_ENABLED" = 1 ]; then
     "${DOCKER_CMD[@]}" compose config --format json | python3 "${FLUXOMNI_DIR}/verify-preparation-compose.py" "$PREPARATION_HOST_ROOT" "$PREPARATION_CPU" "$PREPARATION_MEMORY" "$PREPARATION_TASKS"
@@ -1558,6 +1627,8 @@ FLUXOMNI_MEDIA_NODE_WHIP_PORT=${MEDIA_NODE_WHIP_PORT_DEFAULT}
 FLUXOMNI_MEDIA_NODE_SRT_PORT=${MEDIA_NODE_SRT_PORT_DEFAULT}
 FLUXOMNI_MEDIA_NODE_SRS_CALLBACK_PORT=${MEDIA_NODE_SRS_CALLBACK_PORT_DEFAULT}
 FLUXOMNI_MEDIA_NODE_DATA_DIR=${MEDIA_NODE_DATA_DIR_DEFAULT}
+FLUXOMNI_MEDIA_NODE_CAPABILITIES=${FLUXOMNI_MEDIA_NODE_CAPABILITIES:-}
+FLUXOMNI_MEDIA_NODE_PRIVATE_NETWORK_ONLY=${FLUXOMNI_MEDIA_NODE_PRIVATE_NETWORK_ONLY:-false}
 ENVVARS
     echo "Created ${FLUXOMNI_DIR}/.env"
   else
@@ -1580,6 +1651,12 @@ ENVVARS
   upsert_env_value "$ENV_FILE" "FLUXOMNI_MEDIA_NODE_SRT_PORT" "$MEDIA_NODE_SRT_PORT_DEFAULT"
   upsert_env_value "$ENV_FILE" "FLUXOMNI_MEDIA_NODE_SRS_CALLBACK_PORT" "$MEDIA_NODE_SRS_CALLBACK_PORT_DEFAULT"
   upsert_env_value "$ENV_FILE" "FLUXOMNI_MEDIA_NODE_DATA_DIR" "$MEDIA_NODE_DATA_DIR_DEFAULT"
+  if [ -n "$REQUESTED_MEDIA_NODE_CAPABILITIES" ]; then
+    upsert_env_value "$ENV_FILE" "FLUXOMNI_MEDIA_NODE_CAPABILITIES" "$REQUESTED_MEDIA_NODE_CAPABILITIES"
+  fi
+  if [ -n "$REQUESTED_MEDIA_NODE_PRIVATE_NETWORK_ONLY" ]; then
+    upsert_env_value "$ENV_FILE" "FLUXOMNI_MEDIA_NODE_PRIVATE_NETWORK_ONLY" "$REQUESTED_MEDIA_NODE_PRIVATE_NETWORK_ONLY"
+  fi
 
   if [ -n "$REQUESTED_MEDIA_NODE_CONTAINER_NAME" ]; then
     upsert_env_value "$ENV_FILE" "FLUXOMNI_MEDIA_NODE_CONTAINER_NAME" "$REQUESTED_MEDIA_NODE_CONTAINER_NAME"
@@ -1633,6 +1710,8 @@ FLUXOMNI_MEDIA_NODE_SRT_PORT=${MEDIA_NODE_SRT_PORT_DEFAULT}
 FLUXOMNI_MEDIA_NODE_DATA_DIR=${MEDIA_NODE_DATA_DIR_DEFAULT}
 FLUXOMNI_CONTROL_PLANE_DATA_DIR=${CONTROL_PLANE_DATA_DIR_DEFAULT}
 FLUXOMNI_SHARED_VIDEO_DIR=${SHARED_VIDEO_DIR_DEFAULT}
+FLUXOMNI_MEDIA_NODE_CAPABILITIES=${FLUXOMNI_MEDIA_NODE_CAPABILITIES:-}
+FLUXOMNI_MEDIA_NODE_PRIVATE_NETWORK_ONLY=${FLUXOMNI_MEDIA_NODE_PRIVATE_NETWORK_ONLY:-false}
 ENVVARS
     echo "Created ${FLUXOMNI_DIR}/.env"
   else
@@ -1662,6 +1741,14 @@ ENVVARS
   upsert_env_value "$ENV_FILE" "FLUXOMNI_CONTROL_PLANE_DATA_DIR" "$CONTROL_PLANE_DATA_DIR_DEFAULT"
   upsert_env_value "$ENV_FILE" "FLUXOMNI_MEDIA_NODE_DATA_DIR" "$MEDIA_NODE_DATA_DIR_DEFAULT"
   upsert_env_value "$ENV_FILE" "FLUXOMNI_SHARED_VIDEO_DIR" "$SHARED_VIDEO_DIR_DEFAULT"
+  # Persist join-command reachability settings so later runs and manual
+  # compose invocations keep the node's advertised capabilities and privacy.
+  if [ -n "$REQUESTED_MEDIA_NODE_CAPABILITIES" ]; then
+    upsert_env_value "$ENV_FILE" "FLUXOMNI_MEDIA_NODE_CAPABILITIES" "$REQUESTED_MEDIA_NODE_CAPABILITIES"
+  fi
+  if [ -n "$REQUESTED_MEDIA_NODE_PRIVATE_NETWORK_ONLY" ]; then
+    upsert_env_value "$ENV_FILE" "FLUXOMNI_MEDIA_NODE_PRIVATE_NETWORK_ONLY" "$REQUESTED_MEDIA_NODE_PRIVATE_NETWORK_ONLY"
+  fi
 
   if [ "$WITH_AUTO_HTTPS" = "1" ]; then
     if [ "$FLUXOMNI_INSTALL_TARGET" != "full" ]; then
@@ -1701,6 +1788,7 @@ ENVVARS
 fi
 
 write_preparation_config
+configure_object_storage || exit 1
 if [ "$FLUXOMNI_INSTALL_TARGET" = media-node ]; then
   {
     printf 'services:\n  media-node:\n    ports:'
@@ -1951,6 +2039,10 @@ fi
 
 assert_compose_services_match_target
 verify_preparation_compose
+if [ "$(read_env_file_value FLUXOMNI_OBJECT_STORAGE_ENABLED "$ENV_FILE")" = 1 ]; then
+  "${DOCKER_CMD[@]}" compose config --format json | python3 "${FLUXOMNI_DIR}/scripts/object-storage.py" verify-compose \
+    || { echo 'Error: rendered Compose weakens the object-storage security contract.' >&2; exit 1; }
+fi
 
 if [ "$FLUXOMNI_INSTALL_TARGET" = "media-node" ]; then
   preflight_media_node_connectivity "$(read_env_file_value "FLUXOMNI_CONTROL_PLANE_RPC_ENDPOINT" .env)"

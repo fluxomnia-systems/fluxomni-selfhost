@@ -94,6 +94,22 @@ Compose v2 omits false booleans from rendered JSON; an existing bind-options obj
 
 Installer overrides that weaken these properties fail before container recreation. After startup, runtime-written CPU/memory/swap/thread limits, a positive enforcement signal from the current start and isolation warnings are checked before reporting success. Retained policy files cannot prove an older image supports isolation. Fleet's enforced state remains the operator confirmation of actual runtime attachment.
 
+## Object storage
+
+Full installs enable Garage S3-compatible artifact storage by default (`FLUXOMNI_OBJECT_STORAGE_ENABLED=0` disables it). The installer generates `object-storage/` secrets (0700/0600, idempotent) and writes the scoped key into `.env`.
+
+Media-node-only installs refuse an explicit enable. The Garage service runs the pinned `dxflrs/garage:v2.5.0` digest with `--single-node`. The S3 and admin ports publish on loopback only; the control plane uses the private `http://garage:3900` endpoint with presigned fetches. `garage-init` provisions a dedicated access key allowed read/write on exactly one bucket (no owner, no create-bucket), sets the bucket quota, and verifies a SHA-256 checksummed round-trip. No bucket alias or website is created, so buckets are never public.
+
+## Object storage Compose enforcement
+
+`object-storage.py verify-compose` rejects rendered Compose that unpins the Garage image, publishes a Garage port off loopback, drops presigned private-endpoint fetches, uses ambient credentials, or enables the default-bucket bootstrap.
+
+The installer runs it after rendering when the overlay is enabled.
+
+## Object storage regression coverage
+
+[[tests/test_object_storage.py]] covers credential generation, idempotent init, Compose contract rejections, the SigV4 signer, provisioning against a fake server, and a live Garage container round-trip.
+
 ## Preparation installer regression coverage
 
 Installer tests cover both targets, enable/update/disable/re-enable, persisted budgets, unsupported hosts, bad overrides, failed provisioning and runtime rejection.

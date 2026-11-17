@@ -57,6 +57,8 @@ Expand the panel to inspect:
 
 Fluxomni rejects uploads before they exceed the backend admission limit. The rejected upload also appears in Attention as a storage alert so operators can free space or move content before retrying.
 
+For durable artifact storage beyond the local disk, enable the S3-compatible backend: see [Object Storage (Garage)](../getting-started/object-storage.md).
+
 ## Playlist Reuse
 
 Route playlists use the same library picker. Open a route, switch to **Playlist**, then choose **From library** to add existing artifacts without uploading or importing the same file again.

@@ -28,6 +28,7 @@
 ## Maintain Your Installation
 
 - [Configuration](getting-started/configuration.md)
+  - [Object Storage (Garage)](getting-started/object-storage.md)
   - [Reverse Proxy & TLS](getting-started/reverse-proxy.md)
   - [Fluxomni Connect](getting-started/connect.md)
   - [Private Access & Tunnels](getting-started/private-access.md)
