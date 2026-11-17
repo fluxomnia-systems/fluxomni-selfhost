@@ -89,10 +89,28 @@ def init(directory: Path, bucket: str, quota_size: int, quota_objects: int, forc
     config_path = storage / "config.toml"
     credentials_path = storage / "credentials.env"
     if not force and config_path.exists() and credentials_path.exists():
-        # Idempotent: keep existing credentials so reruns never rotate them.
+        # Idempotent: keep existing credentials, but apply changed bucket/quota.
+        existing = dict(
+            line.split("=", 1)
+            for line in credentials_path.read_text().splitlines()
+            if "=" in line
+        )
+        write_private(
+            credentials_path,
+            "\n".join(
+                [
+                    f"FLUXOMNI_OBJECT_STORAGE_BUCKET={bucket}",
+                    f"FLUXOMNI_OBJECT_STORAGE_ACCESS_KEY={existing['FLUXOMNI_OBJECT_STORAGE_ACCESS_KEY']}",
+                    f"FLUXOMNI_OBJECT_STORAGE_SECRET_KEY={existing['FLUXOMNI_OBJECT_STORAGE_SECRET_KEY']}",
+                    f"FLUXOMNI_OBJECT_STORAGE_QUOTA_SIZE={quota_size}",
+                    f"FLUXOMNI_OBJECT_STORAGE_QUOTA_OBJECTS={quota_objects}",
+                    "",
+                ]
+            ),
+        )
         return storage
     if force and (config_path.exists() or credentials_path.exists()):
-        print("Warning: --force rotates the object-storage credentials; reprovision with `provision` after the next start.", file=sys.stderr)
+        print("Warning: --force rotates the object-storage credentials; provision revokes the previous key.", file=sys.stderr)
     rpc_secret = secrets.token_hex(32)
     admin_token = secrets.token_urlsafe(32)
     write_private(config_path, CONFIG_TEMPLATE.format(rpc_secret=rpc_secret, admin_token=admin_token))
@@ -197,6 +215,12 @@ def provision(config_path: Path, admin_url: str, s3_url: str, bucket: str, acces
     if not token:
         raise SystemExit("Error: config.toml has no admin token.")
     admin_request(admin_url, token, "ImportKey", {"accessKeyId": access_key, "secretAccessKey": secret_key, "name": "fluxomni"}, allow_conflict=True)
+    # Revoke any previous "fluxomni" key so a rotated (--force) credential
+    # cannot keep access to the bucket.
+    keys = admin_request(admin_url, token, "ListKeysInfo") or []
+    for stale in keys:
+        if stale.get("name") == "fluxomni" and stale.get("accessKeyId") != access_key:
+            admin_request(admin_url, token, "DeleteKey", body={}, query=f"?id={stale['accessKeyId']}")
     admin_request(admin_url, token, "CreateBucket", {"globalAlias": bucket}, allow_conflict=True)
     info = admin_request(admin_url, token, "GetBucketInfo", query=f"?globalAlias={bucket}")
     bucket_id = info["id"]
@@ -209,7 +233,7 @@ def provision(config_path: Path, admin_url: str, s3_url: str, bucket: str, acces
     admin_request(admin_url, token, "UpdateBucket", {"quotas": {"maxSize": quota_size, "maxObjects": quota_objects}}, query=f"?id={bucket_id}")
     # Verified checksums: write a probe object, read it back, compare SHA-256.
     payload = b"fluxomni-garage-probe"
-    key = "provision-probe.txt"
+    key = f"provision-probe-{secrets.token_hex(8)}.txt"
     status, body, _ = s3_request("PUT", f"{s3_url}/{bucket}/{key}", access_key, secret_key, payload)
     if status != 200:
         raise SystemExit(f"Error: S3 probe upload failed with HTTP {status}: {body.decode(errors='replace')[:200]}")

@@ -1068,6 +1068,11 @@ configure_object_storage() {
       [ -n "$requested_quota_size" ] && init_args+=(--quota-size "$requested_quota_size")
       [ -n "$requested_quota_objects" ] && init_args+=(--quota-objects "$requested_quota_objects")
       python3 "${FLUXOMNI_DIR}/scripts/object-storage.py" init "${init_args[@]}"
+      # Persist the selected data directory so later compose runs reuse it.
+      local requested_data_dir
+      requested_data_dir="$(read_env_file_value FLUXOMNI_OBJECT_STORAGE_DATA_DIR "$ENV_FILE")"
+      [ -n "${FLUXOMNI_OBJECT_STORAGE_DATA_DIR:-}" ] && requested_data_dir="$FLUXOMNI_OBJECT_STORAGE_DATA_DIR"
+      upsert_env_value "$ENV_FILE" FLUXOMNI_OBJECT_STORAGE_DATA_DIR "${requested_data_dir:-./data/garage}"
       local line
       while IFS= read -r line; do
         upsert_env_value "$ENV_FILE" "${line%%=*}" "${line#*=}"
@@ -1622,6 +1627,8 @@ FLUXOMNI_MEDIA_NODE_WHIP_PORT=${MEDIA_NODE_WHIP_PORT_DEFAULT}
 FLUXOMNI_MEDIA_NODE_SRT_PORT=${MEDIA_NODE_SRT_PORT_DEFAULT}
 FLUXOMNI_MEDIA_NODE_SRS_CALLBACK_PORT=${MEDIA_NODE_SRS_CALLBACK_PORT_DEFAULT}
 FLUXOMNI_MEDIA_NODE_DATA_DIR=${MEDIA_NODE_DATA_DIR_DEFAULT}
+FLUXOMNI_MEDIA_NODE_CAPABILITIES=${FLUXOMNI_MEDIA_NODE_CAPABILITIES:-}
+FLUXOMNI_MEDIA_NODE_PRIVATE_NETWORK_ONLY=${FLUXOMNI_MEDIA_NODE_PRIVATE_NETWORK_ONLY:-false}
 ENVVARS
     echo "Created ${FLUXOMNI_DIR}/.env"
   else
@@ -1703,6 +1710,8 @@ FLUXOMNI_MEDIA_NODE_SRT_PORT=${MEDIA_NODE_SRT_PORT_DEFAULT}
 FLUXOMNI_MEDIA_NODE_DATA_DIR=${MEDIA_NODE_DATA_DIR_DEFAULT}
 FLUXOMNI_CONTROL_PLANE_DATA_DIR=${CONTROL_PLANE_DATA_DIR_DEFAULT}
 FLUXOMNI_SHARED_VIDEO_DIR=${SHARED_VIDEO_DIR_DEFAULT}
+FLUXOMNI_MEDIA_NODE_CAPABILITIES=${FLUXOMNI_MEDIA_NODE_CAPABILITIES:-}
+FLUXOMNI_MEDIA_NODE_PRIVATE_NETWORK_ONLY=${FLUXOMNI_MEDIA_NODE_PRIVATE_NETWORK_ONLY:-false}
 ENVVARS
     echo "Created ${FLUXOMNI_DIR}/.env"
   else

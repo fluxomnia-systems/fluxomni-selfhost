@@ -63,7 +63,7 @@ class TestInit:
     def test_init_is_idempotent_and_keeps_credentials(self, tmp_path):
         object_storage.init(tmp_path, "fluxomni-artifacts", 1024, 10)
         first = (tmp_path / "object-storage/credentials.env").read_text()
-        object_storage.init(tmp_path, "other-bucket", 2048, 20)
+        object_storage.init(tmp_path, "fluxomni-artifacts", 1024, 10)
         assert (tmp_path / "object-storage/credentials.env").read_text() == first
 
     def test_init_force_rotates_credentials(self, tmp_path):
@@ -71,6 +71,14 @@ class TestInit:
         first = (tmp_path / "object-storage/credentials.env").read_text()
         object_storage.init(tmp_path, "fluxomni-artifacts", 1024, 10, force=True)
         assert (tmp_path / "object-storage/credentials.env").read_text() != first
+
+    def test_init_rerun_updates_quota_but_keeps_credentials(self, tmp_path):
+        object_storage.init(tmp_path, "fluxomni-artifacts", 1024, 10)
+        first = (tmp_path / "object-storage/credentials.env").read_text()
+        object_storage.init(tmp_path, "fluxomni-artifacts", 2048, 20)
+        second = (tmp_path / "object-storage/credentials.env").read_text()
+        assert "FLUXOMNI_OBJECT_STORAGE_ACCESS_KEY=" + first.split("FLUXOMNI_OBJECT_STORAGE_ACCESS_KEY=")[1].splitlines()[0] in second
+        assert "FLUXOMNI_OBJECT_STORAGE_QUOTA_SIZE=2048" in second
 
     def test_init_rejects_invalid_bucket(self, tmp_path):
         with pytest.raises(SystemExit):
@@ -143,7 +151,9 @@ class FakeGarage:
                 self.wfile.write(body)
 
             def do_GET(self):
-                if self.path.startswith("/v2/GetBucketInfo"):
+                if self.path.startswith("/v2/ListKeysInfo"):
+                    self._json(200, [{"accessKeyId": "GK" + "c" * 32, "name": "fluxomni"}, {"accessKeyId": creds_key, "name": "fluxomni"}])
+                elif self.path.startswith("/v2/GetBucketInfo"):
                     self._json(200, {"id": "bucket-id-1", "globalAliases": ["fluxomni-artifacts"]})
                 elif self.path.startswith("/s3/"):
                     key = self.path[len("/s3/") :]
@@ -163,7 +173,7 @@ class FakeGarage:
                 length = int(self.headers.get("Content-Length", 0))
                 body = json.loads(self.rfile.read(length) or b"{}")
                 operation = self.path.rsplit("/", 1)[-1].split("?")[0]
-                outer.admin_calls.append((operation, body))
+                outer.admin_calls.append((operation, body, self.path))
                 self._json(200, {"ok": True, "id": "bucket-id-1"})
 
             def do_PUT(self):
@@ -201,9 +211,14 @@ class FakeGarage:
 @pytest.fixture
 def garage(tmp_path):
     object_storage.init(tmp_path, "fluxomni-artifacts", 4096, 50)
+    global creds_key
+    creds_key = (tmp_path / "object-storage/credentials.env").read_text().split("FLUXOMNI_OBJECT_STORAGE_ACCESS_KEY=")[1].splitlines()[0]
     fake = FakeGarage()
     yield fake, tmp_path / "object-storage/config.toml"
     fake.stop()
+
+
+creds_key = ""
 
 
 class TestProvision:
@@ -221,11 +236,14 @@ class TestProvision:
             quota_size=4096,
             quota_objects=50,
         )
-        operations = [op for op, _ in fake.admin_calls]
+        operations = [op for op, *_ in fake.admin_calls]
         assert "ImportKey" in operations and "CreateBucket" in operations
-        allow = next(body for op, body in fake.admin_calls if op == "AllowBucketKey")
+        # The stale rotated key is revoked, the current key is kept.
+        deletes = [path for op, _, path in fake.admin_calls if op == "DeleteKey"]
+        assert deletes == [f"/v2/DeleteKey?id=GK{'c' * 32}"]
+        allow = next(body for op, body, _ in fake.admin_calls if op == "AllowBucketKey")
         assert allow["permissions"] == {"read": True, "write": True, "owner": False}
-        quota = next(body for op, body in fake.admin_calls if op == "UpdateBucket")
+        quota = next(body for op, body, _ in fake.admin_calls if op == "UpdateBucket")
         assert quota["quotas"] == {"maxSize": 4096, "maxObjects": 50}
         # The probe object was written, read back, and deleted.
         assert not fake.objects
