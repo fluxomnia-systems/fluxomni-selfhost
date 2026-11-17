@@ -66,6 +66,12 @@ class TestInit:
         object_storage.init(tmp_path, "other-bucket", 2048, 20)
         assert (tmp_path / "object-storage/credentials.env").read_text() == first
 
+    def test_init_force_rotates_credentials(self, tmp_path):
+        object_storage.init(tmp_path, "fluxomni-artifacts", 1024, 10)
+        first = (tmp_path / "object-storage/credentials.env").read_text()
+        object_storage.init(tmp_path, "fluxomni-artifacts", 1024, 10, force=True)
+        assert (tmp_path / "object-storage/credentials.env").read_text() != first
+
     def test_init_rejects_invalid_bucket(self, tmp_path):
         with pytest.raises(SystemExit):
             object_storage.init(tmp_path, "Bad_Bucket", 1024, 10)

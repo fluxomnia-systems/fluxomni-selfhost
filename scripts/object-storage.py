@@ -81,16 +81,18 @@ def load_config(config_path: Path) -> dict:
     return tomllib.loads(config_path.read_text())
 
 
-def init(directory: Path, bucket: str, quota_size: int, quota_objects: int) -> Path:
+def init(directory: Path, bucket: str, quota_size: int, quota_objects: int, force: bool = False) -> Path:
     if not re.fullmatch(r"[a-z0-9][a-z0-9-]{1,61}[a-z0-9]", bucket):
         raise SystemExit(f"Error: invalid bucket name {bucket!r}.")
     storage = directory / "object-storage"
     secure_dir(storage)
     config_path = storage / "config.toml"
     credentials_path = storage / "credentials.env"
-    if config_path.exists() and credentials_path.exists():
+    if not force and config_path.exists() and credentials_path.exists():
         # Idempotent: keep existing credentials so reruns never rotate them.
         return storage
+    if force and (config_path.exists() or credentials_path.exists()):
+        print("Warning: --force rotates the object-storage credentials; reprovision with `provision` after the next start.", file=sys.stderr)
     rpc_secret = secrets.token_hex(32)
     admin_token = secrets.token_urlsafe(32)
     write_private(config_path, CONFIG_TEMPLATE.format(rpc_secret=rpc_secret, admin_token=admin_token))
@@ -255,6 +257,7 @@ def main() -> int:
     init_parser.add_argument("--bucket", default=DEFAULT_BUCKET)
     init_parser.add_argument("--quota-size", type=int, default=DEFAULT_QUOTA_SIZE)
     init_parser.add_argument("--quota-objects", type=int, default=DEFAULT_QUOTA_OBJECTS)
+    init_parser.add_argument("--force", action="store_true", help="regenerate credentials even if they exist")
     env_parser = sub.add_parser("env", help="print .env assignments for generated credentials")
     env_parser.add_argument("--dir", type=Path, required=True, help="installation directory")
     provision_parser = sub.add_parser("provision", help="create scoped key/bucket and verify checksums")
@@ -269,7 +272,7 @@ def main() -> int:
     sub.add_parser("verify-compose", help="validate rendered Compose JSON from stdin")
     args = parser.parse_args()
     if args.command == "init":
-        init(args.dir, args.bucket, args.quota_size, args.quota_objects)
+        init(args.dir, args.bucket, args.quota_size, args.quota_objects, force=args.force)
     elif args.command == "env":
         print("\n".join(env_lines(args.dir / "object-storage")))
     elif args.command == "provision":

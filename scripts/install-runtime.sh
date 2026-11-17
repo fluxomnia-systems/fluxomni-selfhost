@@ -168,6 +168,8 @@ REQUESTED_MEDIA_NODE_ID="${FLUXOMNI_MEDIA_NODE_ID:-}"
 REQUESTED_MEDIA_NODE_NAME="${FLUXOMNI_MEDIA_NODE_NAME:-}"
 REQUESTED_MEDIA_NODE_LABELS="${FLUXOMNI_MEDIA_NODE_LABELS:-}"
 REQUESTED_MEDIA_NODE_ZONE="${FLUXOMNI_MEDIA_NODE_ZONE:-}"
+REQUESTED_MEDIA_NODE_CAPABILITIES="${FLUXOMNI_MEDIA_NODE_CAPABILITIES:-}"
+REQUESTED_MEDIA_NODE_PRIVATE_NETWORK_ONLY="${FLUXOMNI_MEDIA_NODE_PRIVATE_NETWORK_ONLY:-}"
 REQUESTED_CONTROL_PLANE_DATA_DIR="${FLUXOMNI_CONTROL_PLANE_DATA_DIR:-}"
 REQUESTED_MEDIA_NODE_DATA_DIR="${FLUXOMNI_MEDIA_NODE_DATA_DIR:-}"
 REQUESTED_SHARED_VIDEO_DIR="${FLUXOMNI_SHARED_VIDEO_DIR:-}"
@@ -1053,7 +1055,19 @@ configure_object_storage() {
       download_asset scripts/object-storage.py "${FLUXOMNI_DIR}/scripts/object-storage.py"
       # Downloaded code is syntax checked before it runs.
       python3 -c 'import ast,sys; ast.parse(open(sys.argv[1]).read())' "${FLUXOMNI_DIR}/scripts/object-storage.py"
-      python3 "${FLUXOMNI_DIR}/scripts/object-storage.py" init --dir "$FLUXOMNI_DIR"
+      # Honor operator-preconfigured bucket and quota values instead of defaults.
+      local init_args=(--dir "$FLUXOMNI_DIR")
+      local requested_bucket requested_quota_size requested_quota_objects
+      requested_bucket="$(read_env_file_value FLUXOMNI_OBJECT_STORAGE_BUCKET "$ENV_FILE")"
+      [ -n "${FLUXOMNI_OBJECT_STORAGE_BUCKET:-}" ] && requested_bucket="$FLUXOMNI_OBJECT_STORAGE_BUCKET"
+      requested_quota_size="$(read_env_file_value FLUXOMNI_OBJECT_STORAGE_QUOTA_SIZE "$ENV_FILE")"
+      [ -n "${FLUXOMNI_OBJECT_STORAGE_QUOTA_SIZE:-}" ] && requested_quota_size="$FLUXOMNI_OBJECT_STORAGE_QUOTA_SIZE"
+      requested_quota_objects="$(read_env_file_value FLUXOMNI_OBJECT_STORAGE_QUOTA_OBJECTS "$ENV_FILE")"
+      [ -n "${FLUXOMNI_OBJECT_STORAGE_QUOTA_OBJECTS:-}" ] && requested_quota_objects="$FLUXOMNI_OBJECT_STORAGE_QUOTA_OBJECTS"
+      [ -n "$requested_bucket" ] && init_args+=(--bucket "$requested_bucket")
+      [ -n "$requested_quota_size" ] && init_args+=(--quota-size "$requested_quota_size")
+      [ -n "$requested_quota_objects" ] && init_args+=(--quota-objects "$requested_quota_objects")
+      python3 "${FLUXOMNI_DIR}/scripts/object-storage.py" init "${init_args[@]}"
       local line
       while IFS= read -r line; do
         upsert_env_value "$ENV_FILE" "${line%%=*}" "${line#*=}"
@@ -1630,6 +1644,12 @@ ENVVARS
   upsert_env_value "$ENV_FILE" "FLUXOMNI_MEDIA_NODE_SRT_PORT" "$MEDIA_NODE_SRT_PORT_DEFAULT"
   upsert_env_value "$ENV_FILE" "FLUXOMNI_MEDIA_NODE_SRS_CALLBACK_PORT" "$MEDIA_NODE_SRS_CALLBACK_PORT_DEFAULT"
   upsert_env_value "$ENV_FILE" "FLUXOMNI_MEDIA_NODE_DATA_DIR" "$MEDIA_NODE_DATA_DIR_DEFAULT"
+  if [ -n "$REQUESTED_MEDIA_NODE_CAPABILITIES" ]; then
+    upsert_env_value "$ENV_FILE" "FLUXOMNI_MEDIA_NODE_CAPABILITIES" "$REQUESTED_MEDIA_NODE_CAPABILITIES"
+  fi
+  if [ -n "$REQUESTED_MEDIA_NODE_PRIVATE_NETWORK_ONLY" ]; then
+    upsert_env_value "$ENV_FILE" "FLUXOMNI_MEDIA_NODE_PRIVATE_NETWORK_ONLY" "$REQUESTED_MEDIA_NODE_PRIVATE_NETWORK_ONLY"
+  fi
 
   if [ -n "$REQUESTED_MEDIA_NODE_CONTAINER_NAME" ]; then
     upsert_env_value "$ENV_FILE" "FLUXOMNI_MEDIA_NODE_CONTAINER_NAME" "$REQUESTED_MEDIA_NODE_CONTAINER_NAME"
@@ -1712,6 +1732,14 @@ ENVVARS
   upsert_env_value "$ENV_FILE" "FLUXOMNI_CONTROL_PLANE_DATA_DIR" "$CONTROL_PLANE_DATA_DIR_DEFAULT"
   upsert_env_value "$ENV_FILE" "FLUXOMNI_MEDIA_NODE_DATA_DIR" "$MEDIA_NODE_DATA_DIR_DEFAULT"
   upsert_env_value "$ENV_FILE" "FLUXOMNI_SHARED_VIDEO_DIR" "$SHARED_VIDEO_DIR_DEFAULT"
+  # Persist join-command reachability settings so later runs and manual
+  # compose invocations keep the node's advertised capabilities and privacy.
+  if [ -n "$REQUESTED_MEDIA_NODE_CAPABILITIES" ]; then
+    upsert_env_value "$ENV_FILE" "FLUXOMNI_MEDIA_NODE_CAPABILITIES" "$REQUESTED_MEDIA_NODE_CAPABILITIES"
+  fi
+  if [ -n "$REQUESTED_MEDIA_NODE_PRIVATE_NETWORK_ONLY" ]; then
+    upsert_env_value "$ENV_FILE" "FLUXOMNI_MEDIA_NODE_PRIVATE_NETWORK_ONLY" "$REQUESTED_MEDIA_NODE_PRIVATE_NETWORK_ONLY"
+  fi
 
   if [ "$WITH_AUTO_HTTPS" = "1" ]; then
     if [ "$FLUXOMNI_INSTALL_TARGET" != "full" ]; then
