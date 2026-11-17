@@ -230,6 +230,16 @@ def provision(config_path: Path, admin_url: str, s3_url: str, bucket: str, acces
         "AllowBucketKey",
         {"bucketId": bucket_id, "accessKeyId": access_key, "permissions": {"read": True, "write": True, "owner": False}},
     )
+    # Garage permissions are additive: deny the key on every other bucket so it
+    # stays scoped to exactly one bucket even across bucket renames.
+    for other in admin_request(admin_url, token, "ListBucketsInfo") or []:
+        if other.get("id") != bucket_id:
+            admin_request(
+                admin_url,
+                token,
+                "DenyBucketKey",
+                {"bucketId": other["id"], "accessKeyId": access_key, "permissions": {"read": True, "write": True, "owner": True}},
+            )
     admin_request(admin_url, token, "UpdateBucket", {"quotas": {"maxSize": quota_size, "maxObjects": quota_objects}}, query=f"?id={bucket_id}")
     # Verified checksums: write a probe object, read it back, compare SHA-256.
     payload = b"fluxomni-garage-probe"
@@ -254,6 +264,9 @@ def verify_compose(config: dict) -> None:
         raise ValueError("rendered Compose config is missing the garage service")
     if garage.get("image") != GARAGE_IMAGE:
         raise ValueError("garage image must be the pinned Garage digest reference")
+    if garage.get("network_mode") not in (None, "", "default", "bridge"):
+        # Host networking would expose the container ports on every host interface.
+        raise ValueError("garage must not use host networking")
     for port in garage.get("ports", []):
         if str(port.get("host_ip", "")) not in ("127.0.0.1", "::1"):
             raise ValueError("garage ports must publish on loopback only")

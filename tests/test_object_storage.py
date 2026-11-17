@@ -120,6 +120,13 @@ class TestVerifyCompose:
         with pytest.raises(ValueError, match="presigned"):
             object_storage.verify_compose(config)
 
+    def test_rejects_host_networking(self, monkeypatch):
+        monkeypatch.setenv("FLUXOMNI_OBJECT_STORAGE_ACCESS_KEY", "GK" + "a" * 32)
+        config = good_compose_config()
+        config["services"]["garage"]["network_mode"] = "host"
+        with pytest.raises(ValueError, match="host networking"):
+            object_storage.verify_compose(config)
+
     def test_rejects_default_bucket_bootstrap(self, monkeypatch):
         monkeypatch.setenv("FLUXOMNI_OBJECT_STORAGE_ACCESS_KEY", "GK" + "a" * 32)
         config = good_compose_config()
@@ -153,6 +160,8 @@ class FakeGarage:
             def do_GET(self):
                 if self.path.startswith("/v2/ListKeysInfo"):
                     self._json(200, [{"accessKeyId": "GK" + "c" * 32, "name": "fluxomni"}, {"accessKeyId": creds_key, "name": "fluxomni"}])
+                elif self.path.startswith("/v2/ListBucketsInfo"):
+                    self._json(200, [{"id": "bucket-id-1"}, {"id": "bucket-id-old"}])
                 elif self.path.startswith("/v2/GetBucketInfo"):
                     self._json(200, {"id": "bucket-id-1", "globalAliases": ["fluxomni-artifacts"]})
                 elif self.path.startswith("/s3/"):
@@ -241,6 +250,9 @@ class TestProvision:
         # The stale rotated key is revoked, the current key is kept.
         deletes = [path for op, _, path in fake.admin_calls if op == "DeleteKey"]
         assert deletes == [f"/v2/DeleteKey?id=GK{'c' * 32}"]
+        # The key is denied on every bucket except the current one.
+        denies = [body for op, body, _ in fake.admin_calls if op == "DenyBucketKey"]
+        assert denies == [{"bucketId": "bucket-id-old", "accessKeyId": creds_key, "permissions": {"read": True, "write": True, "owner": True}}]
         allow = next(body for op, body, _ in fake.admin_calls if op == "AllowBucketKey")
         assert allow["permissions"] == {"read": True, "write": True, "owner": False}
         quota = next(body for op, body, _ in fake.admin_calls if op == "UpdateBucket")
