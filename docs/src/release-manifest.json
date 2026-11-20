@@ -4,7 +4,7 @@
     "docsPath": "/edge/",
     "imageTag": "edge"
   },
-  "latestStable": "v26.4.0",
+  "latestStable": "v26.5.1",
   "releases": {
     "v26.1.0": {
       "coreVersion": "v0.10.0",
@@ -351,6 +351,54 @@
         "generatedFrom": "acc117ff"
       },
       "summary": "Recordings and rundowns, playlist programming, a per-node capacity ledger, private outbound media nodes, and the 26.4.0 GraphQL contract. The pinned API client is @fluxomni/api-client@26.4.0."
+    },
+    "v26.5.1": {
+      "api": {
+        "automationDocsPath": "/api/",
+        "contract": "stable",
+        "schemaPath": "api/schema.graphql",
+        "schemaSha256": "9bcf0577d1754ed412cd168b9a8c9c67f0559266517dc661b4efc4aa6a7bcff1",
+        "typescriptClient": "@fluxomni/api-client@26.5.1"
+      },
+      "coreCommit": "8061ae8391cb257751a2c0c23b1c2d8dfdaa3ef2",
+      "coreVersion": "v26.5.1",
+      "docsStablePath": "/",
+      "docsVersionPath": "/v26.5.1/",
+      "highlights": [
+        {
+          "area": "Artifacts",
+          "description": "Register a Google Drive folder as a source and scan it for new videos. Drive imports accept video, image and audio files, with a Browse view and folder import when a service account is configured.",
+          "title": "Google Drive folder sync and richer imports"
+        },
+        {
+          "area": "Fleet",
+          "description": "Media nodes declare capabilities and private-network-only reachability with environment variables. Labels no longer grant capabilities, and the fleet page groups node actions and admission limits.",
+          "title": "Media-node capabilities and fleet page"
+        },
+        {
+          "area": "Operator UI",
+          "description": "Operator pages share type sizes, theme assets and overlay layering. A hidden tab reconnects without a blocking page, and go-live readiness selects the only enabled live source automatically.",
+          "title": "Shared styling, overlays and recovery"
+        },
+        {
+          "area": "Security",
+          "description": "Mutations no longer run over HTTP GET, the operator UI ships a strict content security policy, and passwords hash with Argon2id. Route preview relays and catalog downloads are scoped to readable routes.",
+          "title": "Hardening and platform updates"
+        }
+      ],
+      "images": {
+        "controlPlane": "ghcr.io/fluxomnia-systems/fluxomni-control-plane:v26.5.1",
+        "frontend": "ghcr.io/fluxomnia-systems/fluxomni-frontend:v26.5.1",
+        "mediaNode": "ghcr.io/fluxomnia-systems/fluxomni-media-node:v26.5.1"
+      },
+      "installerPath": "scripts/install-runtime.sh",
+      "releasedAt": "2026-11-20",
+      "selfhostRef": "v26.5.1",
+      "source": {
+        "coreTag": "v26.5.1",
+        "generatedFrom": "8061ae83"
+      },
+      "summary": "Google Drive folder sync and richer Drive imports in Artifacts, administrator change history, media-node capability declarations and fleet page updates, library and playlist usability improvements, shared operator UI polish, go-live readiness and connection recovery, and security hardening. The pinned API client is @fluxomni/api-client@26.5.1."
     }
   },
   "schemaVersion": 1

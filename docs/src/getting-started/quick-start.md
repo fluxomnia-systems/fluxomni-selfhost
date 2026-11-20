@@ -32,7 +32,7 @@ FLUXOMNI_VERSION=edge \
   bash
 ```
 
-To pin a stable release, set `FLUXOMNI_VERSION=v26.4.0` or another public `vYY.Q.N` tag. The versioned URL `https://install.fluxomni.io/v26.4.0` also pins that release. Older public aliases pass the mapped core image tag to historical installers. The `v26.3.2` pin still selects that release's corrected installer bundle.
+To pin a stable release, set `FLUXOMNI_VERSION=v26.5.1` or another public `vYY.Q.N` tag. The versioned URL `https://install.fluxomni.io/v26.5.1` also pins that release. Older public aliases pass the mapped core image tag to historical installers. The `v26.3.2` pin still selects that release's corrected installer bundle.
 
 Use `FLUXOMNI_SELFHOST_REF` only when the config files must come from a different ref.
 
@@ -40,11 +40,11 @@ Use `FLUXOMNI_SELFHOST_REF` only when the config files must come from a differen
 
 Use the procedure for the same release as your control plane. The `media-node` install target remains supported by the public command.
 
-### Stable v26.4.0
+### Stable v26.5.1
 
-Fleet enrollment is the current way to add a media node. Use `v26.4.0` for the control plane and every node, and select `v26.4.0` in the Fleet join command. Existing v26.3.2 shared-token credentials are not imported. Use the [replacement procedure](capacity-upgrades.md) when moving an existing node.
+Fleet enrollment is the current way to add a media node. Use `v26.5.1` for the control plane and every node, and select `v26.5.1` in the Fleet join command. Existing v26.3.2 shared-token credentials are not imported. Use the [replacement procedure](capacity-upgrades.md) when moving an existing node.
 
-The launcher selects the stable installer and assets together. For a pin, set `FLUXOMNI_VERSION=v26.4.0` on the `bash` side of the pipe, matching the control plane. Repeating that command uses the saved release and the same release's update behavior. `v26.3.2` remains a historical pin with HTTP control, a shared token, and its corrected installer bundle.
+The launcher selects the stable installer and assets together. For a pin, set `FLUXOMNI_VERSION=v26.5.1` on the `bash` side of the pipe, matching the control plane. Repeating that command uses the saved release and the same release's update behavior. `v26.3.2` remains a historical pin with HTTP control, a shared token, and its corrected installer bundle.
 
 ### Fleet enrollment
 
@@ -84,13 +84,13 @@ Current releases use these main pages:
 ## Manual Install
 
 ```bash
-ASSET_REF=v26.4.0 # v26.4.0 self-host assets.
+ASSET_REF=v26.5.1 # v26.5.1 self-host assets.
 mkdir -p ~/fluxomni
 cd ~/fluxomni
 curl -fsSL "https://raw.githubusercontent.com/fluxomnia-systems/fluxomni-selfhost/${ASSET_REF}/docker-compose.yml" -o docker-compose.yml
 curl -fsSL "https://raw.githubusercontent.com/fluxomnia-systems/fluxomni-selfhost/${ASSET_REF}/.env.example" -o .env.example
 AUTH_TOKEN="$(openssl rand -hex 24)"
-IMAGE_TAG=v26.4.0
+IMAGE_TAG=v26.5.1
 if [ "${IMAGE_TAG}" = "main" ]; then
   IMAGE_TAG="edge"
 elif [[ "${IMAGE_TAG#v}" =~ ^[0-9]{2}\.[1-4]\.[0-9]+$ ]]; then
@@ -159,7 +159,7 @@ The installer saves a replacement candidate before contacting the control plane.
 
 **Revoke credential** immediately rejects authentication and closes the connection. It does not prove FFmpeg stopped or release reserved capacity. A live boot or unreleased old execution blocks recovery; restore the old identity and finish verified withdrawal where possible. There is no force-release option in this workflow.
 
-Credential rotation, recovery, and revocation are included in `v26.4.0`. Use that release's runtime and installer assets.
+Credential rotation, recovery, and revocation are included in `v26.5.1`. Use that release's runtime and installer assets.
 
 ## Next Steps
 

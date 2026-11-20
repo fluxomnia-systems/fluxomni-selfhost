@@ -4,6 +4,32 @@ Operator-facing highlights from recent Fluxomni releases.
 
 The changelog is editorial release copy. Use `release-manifest.json` as the factual inventory for dates, module versions, images, and API client refs, but write the latest changelog entry by hand so it reads as operator-facing release notes instead of generated metadata.
 
+## v26.5.1 - 20 November 2026
+
+26.5.1 adds Google Drive folder sync in Artifacts, administrator change history, media-node capability declarations, and security hardening from a full-project audit. Upgrade the frontend, control plane, and every media node together.
+
+### Google Drive in Artifacts
+
+The Artifacts page has a Sources view where administrators and operators register a Google Drive folder with the Public access or Service account connection. "Check now" runs one bounded scan of the folder's direct children, keeps videos only, and queues downloads only for files the library does not have yet. Repeated scans and restarts never duplicate artifacts, and removing a source keeps already imported artifacts. Changed-version review, missing-file handling and automatic scan cadence remain open follow-ups.
+
+Drive imports now accept video, image and audio files; playlist folder imports still accept playable media only. With a service account, the artifact picker's Drive panel has a Browse view over the credential-visible Drive root, and the library picker can import a folder or select all loaded files.
+
+### Change history and operator UI
+
+Administrators can review recorded changes and events from the last 24 hours in Settings, with actor, domain and outcome filters. Recording and retention are not guaranteed to cover every action.
+
+Operator pages share type sizes, theme assets, status badges and dialog presentation. Popovers, menus and route alerts use one overlay layer. A hidden browser tab keeps its last page when the live connection closes and reconnects when visible again, showing an "Updating" banner instead of a blocking page. Go-live readiness automatically selects the only enabled live source.
+
+### Media-node capabilities
+
+Media nodes declare capabilities with `FLUXOMNI_MEDIA_NODE_CAPABILITIES` (`gpu_transcode`, `public_ingest`, `public_egress`) and private-network-only reachability with `FLUXOMNI_MEDIA_NODE_PRIVATE_NETWORK_ONLY`. Labels no longer grant capabilities, and the Fleet API value `TAILNET_ONLY` is now `PRIVATE_NETWORK_ONLY`. Node labels are validated, and invalid non-empty labels stop startup. Upgrade the control plane and media nodes together.
+
+### Security hardening
+
+Mutations no longer run over HTTP GET, error toasts escape markup, and the operator UI ships a strict content security policy. Passwords require 6 or more characters and hash with Argon2id. Route preview relays and catalog downloads are scoped to readable routes, the Viewer role no longer sees pull-source URLs, and settings export hides the Google API key from operators. Distributed compose requires an explicit internal auth token, the SRS callback binds loopback by default, and publish tokens come from the OS CSPRNG.
+
+The manual control-plane site can be served over HTTPS for a domain or public IP with no certificate prompt. Private and other non-routable addresses stay on HTTP.
+
 ## v26.4.0 - 6 November 2026
 
 <video controls muted playsinline width="100%">
