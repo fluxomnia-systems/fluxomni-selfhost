@@ -16,7 +16,7 @@ There is no new schema migration in this release. An installation on 26.3.x upgr
 26.4.1 replaces label-based capability grants with explicit settings:
 
 - `FLUXOMNI_MEDIA_NODE_CAPABILITIES` declares `gpu_transcode`, `public_ingest`, and `public_egress`. A label no longer grants any of these.
-- `FLUXOMNI_MEDIA_NODE_PRIVATE_NETWORK_ONLY` declares private-network-only reachability. The Fleet API value `TAILNET_ONLY` is now `PRIVATE_NETWORK_ONLY`.
+- `FLUXOMNI_MEDIA_NODE_PRIVATE_NETWORK_ONLY=true` declares private-network-only reachability. An empty value is treated as false. The Fleet API value `TAILNET_ONLY` is now `PRIVATE_NETWORK_ONLY`.
 - Node labels are validated: 1 to 70 characters, with no commas or control characters. An invalid non-empty label stops the node at startup and is rejected at registration.
 - The FFmpeg toolchain fingerprint moved to its own registration field. A label prefixed with the fingerprint is no longer read.
 
@@ -53,11 +53,17 @@ FLUXOMNI_DIR="$HOME/fluxomni-media-node" FLUXOMNI_VERSION=v26.4.1 \
   bash /tmp/fluxomni-install.sh media-node --capacity-upgrade node --confirm-control-plane-ready
 ```
 
-Set `FLUXOMNI_MEDIA_NODE_CAPABILITIES` to the capabilities that node should advertise, and add `FLUXOMNI_MEDIA_NODE_PRIVATE_NETWORK_ONLY` for a node that is reachable only on a private network.
+Set `FLUXOMNI_MEDIA_NODE_CAPABILITIES` to the capabilities that node should advertise. For a private-only node, set `FLUXOMNI_MEDIA_NODE_PRIVATE_NETWORK_ONLY=true`. An empty value is treated as false, and the control plane may then derive public ingest or egress from the node's ports.
 
 ## Upgrade a manual deployment
 
-Manual deployments should pull `v26.4.1` for the frontend, control plane, and every media node, then recreate them together. Set the capability and reachability variables in each media node's environment before starting it.
+Do not recreate every service together. Finish the control-plane capacity step before any media node starts. Set the capability and reachability variables before starting each node. A private-only node needs `FLUXOMNI_MEDIA_NODE_PRIVATE_NETWORK_ONLY=true`.
+
+From 26.3.x, stop every media node, standalone execution container, and updater. Start only the upgraded control plane with `FLUXOMNI_CAPACITY_UPGRADE_STOPPED=true`. After it starts and the ledger is initialized, remove that variable. Do not leave it in `.env`. Then start the upgraded media nodes.
+
+From 26.4.0, keep the old control plane and media nodes running. Disable every affected route and wait until Fleet shows zero committed, starting, and retiring reservations. An offline node is not a completed drain. Recreate the control plane on `v26.4.1`, then start each media node only after that control plane is ready. An initialized ledger ignores `FLUXOMNI_CAPACITY_UPGRADE_STOPPED`.
+
+Use the same boundaries as [Capacity Ledger Upgrades](capacity-upgrades.md).
 
 Images:
 
