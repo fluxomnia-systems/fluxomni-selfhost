@@ -18,7 +18,7 @@ curl -fsSL https://install.fluxomni.io | bash
 
 By default, the installer uses the newest stable release and installs Fluxomni on one server.
 
-Use `FLUXOMNI_VERSION=edge` only when you want the newest main-branch build. Use a canonical public tag like `v26.4.0` when you need a pinned stable release. Retained image tags require a separately reviewed recovery procedure when state has migrated.
+Use `FLUXOMNI_VERSION=edge` only when you want the newest main-branch build. Use a canonical public tag like `v26.4.1` when you need a pinned stable release. Retained image tags require a separately reviewed recovery procedure when state has migrated.
 
 To add a remote media server, open Fleet → Add Node on the control plane, generate a join command, and run that command on the remote host. See [Attach Another Media Node](getting-started/quick-start.md#attach-another-media-node).
 
@@ -32,9 +32,9 @@ Choose a guide for your task:
 - **Operate routes and media nodes** — [User Guide](user-guide/overview.md)
 - **Automate an installation** — [API Automation](api/overview.md)
 
-## New in 26.4.0
+## New in 26.4.1
 
-Read the [release notes](changelog.md), [upgrade guide](getting-started/upgrade-26.4.0.md), and [capacity ledger procedure](getting-started/capacity-upgrades.md) before updating an existing installation or custom API clients. Pin `@fluxomni/api-client@26.4.0` when you automate this release. The [sizing guide](getting-started/sizing.md) uses measurements to explain the different costs of empty routes, live inputs, and multiple outputs.
+Read the [release notes](changelog.md) and [upgrade guide](getting-started/upgrade-26.4.1.md) before updating an existing installation or custom API clients. 26.4.1 changes how a media node declares its capabilities and reachability, so upgrade the control plane and every node together. Pin `@fluxomni/api-client@26.4.1` when you automate this release. The [sizing guide](getting-started/sizing.md) uses measurements to explain the different costs of empty routes, live inputs, and multiple outputs.
 
 ## Documentation Sections
 

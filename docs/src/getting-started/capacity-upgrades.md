@@ -4,7 +4,7 @@ Use a maintenance window when moving to builds with durable route/output admissi
 
 These builds preserve capacity until the previous execution has proved it stopped. A container restart or a new heartbeat does not clear old ownership. Fleet **Drain node** prevents new placement but keeps existing execution; it does not release reservations.
 
-`v26.4.0` is the tested stable release with the capacity ledger and Fleet enrollment. Upgrade the control plane, frontend, and every media node together, and use matching installer assets. The installer rejects older candidates, including `v26.3.2`, that cannot provide the admission API and initialization proof. Keep backups and record the enabled route IDs before maintenance.
+`v26.4.1` is the tested stable release with the capacity ledger and Fleet enrollment. Upgrade the control plane, frontend, and every media node together, and use matching installer assets. The installer rejects older candidates, including `v26.3.2`, that cannot provide the admission API and initialization proof. Keep backups and record the enabled route IDs before maintenance.
 
 ## Choose the command
 
@@ -16,7 +16,7 @@ Use one mode. Do not run a plain `bash install.sh` on an existing install.
 
 `initial` creates the ledger. It refuses a ledger that already exists. `drained` refuses a ledger that is missing, and it refuses enabled routes or remaining reservations. `--confirm-execution-stopped` means you stopped the old execution containers and updaters on other hosts. The installer cannot see those hosts.
 
-Set `FLUXOMNI_DIR` when the install is not `~/fluxomni` or `~/fluxomni-media-node`. Set `FLUXOMNI_VERSION=v26.4.0` so the installer and images come from the same release.
+Set `FLUXOMNI_DIR` when the install is not `~/fluxomni` or `~/fluxomni-media-node`. Set `FLUXOMNI_VERSION=v26.4.1` so the installer and images come from the same release.
 
 ## The existing control-plane container
 
@@ -62,7 +62,7 @@ Stop every external execution container before initializing the control-plane le
 
    ```bash
    curl -fsSL https://install.fluxomni.io -o install.sh
-   FLUXOMNI_VERSION=v26.4.0 \
+   FLUXOMNI_VERSION=v26.4.1 \
      bash install.sh full --capacity-upgrade initial --confirm-execution-stopped
    ```
 
@@ -73,7 +73,7 @@ Stop every external execution container before initializing the control-plane le
 4. Update each already stopped standalone node only after the full-stack step succeeds:
 
    ```bash
-   FLUXOMNI_VERSION=v26.4.0 \
+   FLUXOMNI_VERSION=v26.4.1 \
      bash install.sh media-node --capacity-upgrade node --confirm-control-plane-ready
    ```
 
@@ -90,7 +90,7 @@ Release existing reservations while the old reporters are still alive.
 3. Upgrade the full-stack installation:
 
    ```bash
-   FLUXOMNI_VERSION=v26.4.0 \
+   FLUXOMNI_VERSION=v26.4.1 \
      bash install.sh full --capacity-upgrade drained
    ```
 

@@ -1,10 +1,10 @@
 {
-  "coreVersion": "v26.3.2",
+  "coreVersion": "v26.4.1",
   "files": {
     "api/clients/typescript/README.md": {
-      "bytes": 7057,
+      "bytes": 7427,
       "present": true,
-      "sha256": "9fe2b83429f944de16c43bb65db7551dcf0604616452b3ca64c507243e502b88"
+      "sha256": "7c20e94dfbf3b6cfdf109426029b27b68bc1635b6bd0ec6adcdf17e407f6c5bd"
     },
     "api/examples/typescript/ensure-route-desired-state.ts": {
       "bytes": 7033,
@@ -12,9 +12,9 @@
       "sha256": "4d9a1e15f2a4078ec8ac7c9e1ed72931bbf622647cf6866bb9709c0cd96ed282"
     },
     "api/examples/typescript/manage-playlist-artifacts-settings-fleet.ts": {
-      "bytes": 6641,
+      "bytes": 7102,
       "present": true,
-      "sha256": "a3adee05febede8e5013b7c9992efe9a550cc2871d28f77487c70a093da3afa6"
+      "sha256": "9ec6b1097f3589ea372593d1e03a4704df562a14440532bca1dfed12ffca46aa"
     },
     "api/examples/typescript/manage-route-controls.ts": {
       "bytes": 7363,
@@ -27,9 +27,9 @@
       "sha256": "bf277ec1cefc99b06928e87786543828f2bc00aa4a243e5f7aeb2a00b4dec4fe"
     },
     "api/schema.graphql": {
-      "bytes": 105762,
+      "bytes": 152742,
       "present": true,
-      "sha256": "0223ced103ecff840d87327eff086ae80aa0566163dce74da2eda27bcf671632"
+      "sha256": "9bcf0577d1754ed412cd168b9a8c9c67f0559266517dc661b4efc4aa6a7bcff1"
     },
     "docs/public-api/compatibility-policy.md": {
       "bytes": 2548,
@@ -37,14 +37,14 @@
       "sha256": "791905b788b072f94ee6cf03d5707a51f9043bc2cf87400bce0c0b721156bdf8"
     },
     "docs/public-api/contract-inventory.md": {
-      "bytes": 11428,
+      "bytes": 11740,
       "present": true,
-      "sha256": "eed1a09214d9758449e77f4b5f8e732b852212a1944eb991ec183e02f3578b32"
+      "sha256": "31ad0094abb5129ac2aaf39304994b6a51941fbc8478fa9dbe00d7c0b398daa6"
     },
     "docs/public-api/error-taxonomy.md": {
-      "bytes": 2874,
+      "bytes": 3512,
       "present": true,
-      "sha256": "d31385852f87b6cea75369dec6299d843c8c3ab1b4c3cceda5ffa3d7d3081ccb"
+      "sha256": "f4578d4ce5620d0d5fd61f264c94eb24a97573bdcff1b00046561616d6f9c337"
     },
     "docs/public-api/fleet-command-safety.md": {
       "bytes": 3963,
@@ -52,8 +52,8 @@
       "sha256": "42c65a41a56c4e7bbcda998d183e4242167a4d4a03932c1c68bad20b816c99f4"
     }
   },
-  "release": "v26.3.2",
-  "resolvedSha": "21ac644e7f59f98894acfbfda257c1b0c2e3f3c3",
+  "release": "v26.4.1",
+  "resolvedSha": "cb8621a762fe1dc8fd9257e5424a509abacab847",
   "schemaVersion": 2,
-  "updatedAt": "2026-09-27T15:48:21+00:00"
+  "updatedAt": "2026-11-21T01:31:20+00:00"
 }
