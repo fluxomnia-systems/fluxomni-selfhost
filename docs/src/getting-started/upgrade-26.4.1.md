@@ -2,7 +2,7 @@
 
 Upgrade the frontend, control plane, and every media node to the same release. 26.4.1 changes how a media node declares its capabilities and reachability, so a node left on 26.4.0 will not match the control plane. Plan a short maintenance window so every node is recreated with the new release before traffic returns.
 
-There is no schema migration in this release, and it does not create a new capacity ledger. The [26.4.0 upgrade](upgrade-26.4.0.md) already initialized the ledger. An installation still on 26.3.x must complete that upgrade first. An existing install still needs a capacity maintenance mode: a plain `bash install.sh` exits before it upgrades.
+There is no new schema migration in this release. An installation on 26.3.x upgrades directly to 26.4.1. Use the [first capacity upgrade](capacity-upgrades.md#first-capacity-upgrade); do not stop at 26.4.0. An installation already on 26.4.0 already has the ledger, so it uses the drained mode below. A plain `bash install.sh` exits before it upgrades an existing install.
 
 ## Before upgrading
 
@@ -26,7 +26,15 @@ Set these before recreating each media node. A node that starts with an invalid 
 
 Pin `v26.4.1` from install.fluxomni.io. `https://install.fluxomni.io/v26.4.1` and `FLUXOMNI_VERSION=v26.4.1` select the same release.
 
-On the control-plane host, disable every route and confirm Fleet shows zero reservations. Then upgrade with the drained mode. The ordered checks are in [Later Planned Upgrades](capacity-upgrades.md#later-planned-upgrades).
+From 26.3.x, stop every old execution container, then initialize the ledger. The ordered checks are in [First Capacity Upgrade](capacity-upgrades.md#first-capacity-upgrade).
+
+```bash
+curl -fsSL https://install.fluxomni.io -o /tmp/fluxomni-install.sh
+FLUXOMNI_DIR="$HOME/fluxomni" FLUXOMNI_VERSION=v26.4.1 \
+  bash /tmp/fluxomni-install.sh full --capacity-upgrade initial --confirm-execution-stopped
+```
+
+From 26.4.0, disable every route and confirm Fleet shows zero reservations. Then upgrade with the drained mode. The ordered checks are in [Later Planned Upgrades](capacity-upgrades.md#later-planned-upgrades).
 
 ```bash
 curl -fsSL https://install.fluxomni.io -o /tmp/fluxomni-install.sh
