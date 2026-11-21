@@ -64,17 +64,17 @@ PY
 # @lat: [[installation#Public release selection tests]]
 def test_default_and_saved_latest_use_the_stable_installer_and_preserve_channel(launch):
     routes, destination, _, run = launch
-    routes[f"{RAW}/v26.4.0/scripts/install-runtime.sh"] = child_script()
+    routes[f"{RAW}/v26.4.1/scripts/install-runtime.sh"] = child_script()
     first = run()
     assert first.returncode == 0, first.stderr
-    assert json.loads(first.stdout) == {"version": "latest", "ref": "v26.4.0", "args": []}
+    assert json.loads(first.stdout) == {"version": "latest", "ref": "v26.4.1", "args": []}
     destination.mkdir()
     (destination / ".env").write_text("FLUXOMNI_VERSION=latest\n")
-    routes[f"{RAW}/main/scripts/generated-version-map.sh"] = routes[f"{RAW}/main/scripts/generated-version-map.sh"].replace("'v26.4.0'", "'v26.5.0'", 1)
-    routes[f"{RAW}/v26.5.0/scripts/install-runtime.sh"] = child_script()
+    routes[f"{RAW}/main/scripts/generated-version-map.sh"] = routes[f"{RAW}/main/scripts/generated-version-map.sh"].replace("'v26.4.1'", "'v26.4.2'", 1)
+    routes[f"{RAW}/v26.4.2/scripts/install-runtime.sh"] = child_script()
     rerun = run()
     assert rerun.returncode == 0, rerun.stderr
-    assert json.loads(rerun.stdout)["ref"] == "v26.5.0"
+    assert json.loads(rerun.stdout)["ref"] == "v26.4.2"
 
 
 @pytest.mark.parametrize("target", ["full", "media-node"])

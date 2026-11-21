@@ -1,6 +1,6 @@
 # Upgrade to 26.4.0
 
-Upgrade the frontend, control plane, and every media node to the same release. v26.4.0 initializes the per-node capacity ledger and migrates operational state into the released relational schema. Plan a maintenance window for active media workloads.
+This page is the historical procedure for 26.4.0. Current installations, including those still on 26.3.x, should follow [Upgrade to 26.4.1](upgrade-26.4.1.md) instead. v26.4.0 initializes the per-node capacity ledger and migrates operational state into the released relational schema.
 
 ## Before upgrading
 
