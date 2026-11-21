@@ -25,6 +25,129 @@ type ActiveSourcePresentation {
 }
 
 """
+Input for creating a Drive folder sync source.
+"""
+input AddDriveSyncSourceInput {
+	"""
+	Operator-chosen display name. When missing or blank, the source uses
+	the Drive folder name.
+	"""
+	name: String
+	"""
+	Ordinary Drive folder ID, chosen through the remote folder picker.
+	"""
+	folderId: FileId!
+	"""
+	Authorization method; required when both Drive methods are configured.
+	"""
+	access: GoogleDriveAccess!
+}
+
+"""
+Recorded actor category; unavailable event attribution is not inferred.
+"""
+enum AdminHistoryActor {
+	"""
+	All actors and unavailable attribution.
+	"""
+	ALL
+	"""
+	A selected historical user.
+	"""
+	USER
+	"""
+	Internal or open-administrator actor.
+	"""
+	SYSTEM
+	"""
+	Events without actor attribution.
+	"""
+	UNAVAILABLE
+}
+
+"""
+Filters and independent section continuations for an administrator window.
+"""
+input AdminHistoryInput {
+	"""
+	Defaults to successful committed changes.
+	"""
+	outcome: AdminHistoryOutcome! = SUCCESSFUL
+	"""
+	Actor category; defaults to all actors.
+	"""
+	actor: AdminHistoryActor! = ALL
+	"""
+	Required for USER and forbidden for other actor selections; deleted users remain valid.
+	"""
+	userId: UUID
+	"""
+	Recorded affected domain. Unattributed events do not match.
+	"""
+	domain: String
+	"""
+	Per-section page limit, 1 to 100; default 20.
+	"""
+	first: Int
+	"""
+	Return this unchanged to preserve the window and both watermarks.
+	"""
+	snapshot: String
+	"""
+	Changes continuation. When provided alone, the events section is not read.
+	"""
+	changesAfter: String
+	"""
+	Events continuation. When provided alone, the changes section is not read.
+	"""
+	eventsAfter: String
+}
+
+"""
+Recorded outcomes do not imply complete attempt collection.
+"""
+enum AdminHistoryOutcome {
+	"""
+	Successful committed state changes only.
+	"""
+	SUCCESSFUL
+	"""
+	Only persisted failed-attempt facts.
+	"""
+	RECORDED_FAILURES
+	"""
+	Changes and all recorded events, including unclassified facts.
+	"""
+	ALL_RECORDED
+}
+
+"""
+Separate sequence-ordered sections. Available records are not a complete audit.
+"""
+type AdminHistoryPage {
+	"""
+	Frozen window and both sequence watermarks, bound to filters and authority.
+	"""
+	snapshot: String!
+	"""
+	Inclusive Unix milliseconds as decimal text.
+	"""
+	start: String!
+	"""
+	Exclusive Unix milliseconds as decimal text.
+	"""
+	end: String!
+	"""
+	Successful committed changes, not proof of physical delivery.
+	"""
+	changes: ChangeHistoryPage!
+	"""
+	Explicit events. Actor, target, domain and origin attribution are unavailable.
+	"""
+	events: ChangeHistoryEventPage!
+}
+
+"""
 Admin settings view that omits raw secrets but retains editable values.
 """
 type AdminSettingsInfo {
@@ -67,6 +190,40 @@ type AdminSettingsInfo {
 }
 
 """
+Origin of an independently applied route queue.
+"""
+type AppliedRundownSnapshot {
+	rundownId: RundownId!
+	revision: String!
+}
+
+"""
+Explicit snapshot application to an unchanged destination queue.
+"""
+input ApplyRundownInput {
+	"""
+	Stable identity reused only for an identical command retry.
+	"""
+	requestId: UUID!
+	"""
+	Saved definition to copy.
+	"""
+	rundownId: RundownId!
+	"""
+	Saved definition revision to copy.
+	"""
+	expectedRundownRevision: String!
+	"""
+	Destination route identifier.
+	"""
+	routeId: RouteId!
+	"""
+	Current destination queue revision.
+	"""
+	expectedQueueRevision: String!
+}
+
+"""
 Whether the published location is durable artifact authority.
 """
 enum ArtifactAuthority {
@@ -84,6 +241,10 @@ enum ArtifactAuthority {
 Catalog entry for a tracked asset or derived artifact with explicit policy metadata.
 """
 type ArtifactCatalogEntry {
+	"""
+	Whether this is a canonical node-owned recording without pending deletion.
+	"""
+	nodeRecording: Boolean!
 	"""
 	Semantic role of this asset or artifact.
 	"""
@@ -306,15 +467,53 @@ type ArtifactPublishMetadata {
 }
 
 type ArtifactsMutation {
+	retrySlideshow(operationId: String!, requestId: UUID!): SlideshowMutationResult!
+	saveSlideshow(input: SaveSlideshowInput!): SlideshowMutationResult!
+	cancelSlideshow(operationId: String!, requestId: UUID!): SlideshowMutationResult!
+	retryThumbnail(fileId: FileId!): Boolean!
 	"""
-	Force download file from Google Drive by its ID.
+	Creates or resumes preservation by canonical recording ID; repeated requests reuse stored intent.
+	"""
+	preserveRecording(recordingId: FileId!): RecordingPreservation!
+	cancelRecordingPreservation(operationId: String!): RecordingPreservation!
+	"""
+	Downloads a Google Drive file, or the direct-child video, image and audio files of a folder.
 	"""
 	downloadFile(
 		"""
-		ID of the file from Google Drive to be downloaded.
+		ID of the Google Drive file or folder to import.
 		"""
-		fileId: FileId!
+		fileId: FileId!,
+		"""
+		Authorization method. Required when both Drive methods are configured.
+		"""
+		access: GoogleDriveAccess
 	): FileMutationResult!
+	"""
+	Creates a Drive folder sync source after verifying the folder is
+	accessible through the chosen access method.
+	"""
+	addDriveSyncSource(input: AddDriveSyncSourceInput!): DriveSyncSource!
+	"""
+	Removes a Drive folder sync source; already imported artifacts stay in
+	the library.
+	"""
+	removeDriveSyncSource(
+		"""
+		Sync source identity.
+		"""
+		sourceId: String!
+	): FileMutationResult!
+	"""
+	Runs one bounded scan of a Drive folder sync source: lists direct-child
+	videos and queues downloads for the ones without a catalog row yet.
+	"""
+	scanDriveSyncSource(
+		"""
+		Sync source identity.
+		"""
+		sourceId: String!
+	): DriveSyncScanResult!
 	"""
 	Renames a reusable library file.
 	"""
@@ -348,13 +547,19 @@ type ArtifactsMutation {
 		"""
 		fileId: FileId!
 	): FileMutationResult!
-	"""
-	Remove a DVR recorded file.
-	"""
-	removeDvrFile(input: RemoveDvrFileInput!): DvrFileMutationResult!
 }
 
 type ArtifactsQuery {
+	"""
+	Available import methods. This response contains no credential material.
+	"""
+	googleDriveAccess: GoogleDriveAccessInfo!
+	slideshows: [Slideshow!]!
+	libraryThumbnails(fileIds: [FileId!]!): [LibraryThumbnailUpdate!]!
+	"""
+	Durable progress and result for a canonical recording preservation.
+	"""
+	recordingPreservation(recordingId: FileId!): RecordingPreservation
 	"""
 	Returns a bounded page of library files; filters apply to the whole catalog.
 	"""
@@ -381,14 +586,27 @@ type ArtifactsQuery {
 	"""
 	libraryTags: [LibraryTag!]!
 	"""
-	Returns list of recorded files of the specified Output.
+	Lists configured remote Drive folder sync sources with their scan status.
 	"""
-	dvrFiles(
+	driveSyncSources: [DriveSyncSource!]!
+	"""
+	Lists one page of a remote source folder for browsing; `root` opens the
+	credential-visible Drive root.
+	"""
+	remoteFolder(		provider: RemoteSourceProvider!,
 		"""
-		ID of the Output to return recorded files of.
+		Folder ID, or `root` for the provider root. `shared` opens Shared with me.
 		"""
-		id: OutputId!
-	): [String!]!
+		folderId: FileId!,
+		"""
+		Opaque continuation token from nextPageToken.
+		"""
+		pageToken: String,
+		"""
+		Authorization method. Required when both Drive methods are configured.
+		"""
+		access: GoogleDriveAccess
+	): RemoteFolderPage!
 }
 
 """
@@ -531,6 +749,9 @@ type BulkOutputMutationResult {
 
 """
 Explicit result payload for playlist broadcast mutations.
+
+Broadcast is a bulk command, not one cross-route transaction: `failures`
+lists each route that rejected the command with a stable code.
 """
 type BulkPlaylistMutationResult {
 	"""
@@ -538,13 +759,17 @@ type BulkPlaylistMutationResult {
 	"""
 	status: MutationResultStatus!
 	"""
-	Route identities associated with the playlist mutation.
+	Writable route identities targeted by the broadcast, including failed routes.
 	"""
 	routeIds: [RouteId!]!
 	"""
 	File identity associated with the playlist mutation, when one file is targeted.
 	"""
 	fileId: FileId
+	"""
+	Per-route failures rejected while applying the broadcast command.
+	"""
+	failures: [PlaylistBroadcastFailure!]!
 }
 
 """
@@ -559,6 +784,561 @@ type BulkRouteMutationResult {
 	Route identities associated with the mutation.
 	"""
 	routeIds: [RouteId!]!
+}
+
+"""
+Historical attribution, which grants no current object permission.
+"""
+type ChangeHistoryActor {
+	"""
+	Typed state or attribution category.
+	"""
+	kind: ChangeHistoryActorKind!
+	"""
+	Stable retained identity.
+	"""
+	id: String!
+	"""
+	Curated historical actor label.
+	"""
+	label: String!
+}
+
+"""
+Stable actor category, independent of whether a user still exists.
+"""
+enum ChangeHistoryActorKind {
+	"""
+	Named user attribution, retained after account deletion.
+	"""
+	USER
+	"""
+	Internal or open-administrator attribution.
+	"""
+	SYSTEM
+}
+
+"""
+Authorized root metadata for one complete retained change group.
+"""
+type ChangeHistoryChange {
+	"""
+	Stable retained identity.
+	"""
+	id: String!
+	"""
+	Full-precision stable sequence, represented as decimal text.
+	"""
+	sequence: String!
+	"""
+	Root command kind.
+	"""
+	operation: String!
+	"""
+	Historical attribution, independent of current authority.
+	"""
+	actor: ChangeHistoryActor!
+	"""
+	Accepted command entry point.
+	"""
+	origin: ChangeHistoryOrigin!
+	"""
+	Optional non-secret correlation identity.
+	"""
+	correlationId: String
+	"""
+	Optional public delegated client identity.
+	"""
+	clientId: String
+	"""
+	Unix milliseconds, represented as decimal text.
+	"""
+	committedAt: String!
+	"""
+	Whether original transaction atomicity is known.
+	"""
+	grouping: ChangeHistoryGrouping!
+	"""
+	Root result domain; complete group permissions are checked separately.
+	"""
+	primaryDomain: String!
+	"""
+	Root result entity; other effects can affect other entities.
+	"""
+	primaryEntityId: String!
+	"""
+	Physical counts and logical accounting use decimal strings without narrowing.
+	"""
+	entryCount: String!
+	"""
+	Physical effect count as a decimal string.
+	"""
+	effectCount: String!
+	"""
+	Physical field count as a decimal string.
+	"""
+	fieldCount: String!
+	"""
+	Stored logical accounting as a decimal string, excluding `SQLite` overhead.
+	"""
+	logicalBytes: String!
+}
+
+"""
+Partial writer coverage; no pre-cutover edits are invented.
+"""
+type ChangeHistoryCoverage {
+	"""
+	Existing recorded domain.
+	"""
+	domain: String!
+	"""
+	Actual Unix-millisecond cutover marker, as decimal text.
+	"""
+	recordedSince: String!
+	"""
+	Actual persisted source of the marker.
+	"""
+	marker: ChangeHistoryCoverageMarker!
+	"""
+	Concrete covered command writers and exclusions.
+	"""
+	writerScope: String!
+	"""
+	Always false: this API does not promise every historical writer was journaled.
+	"""
+	coversAllWriters: Boolean!
+}
+
+"""
+Actual persisted source of a declared writer cutover.
+"""
+enum ChangeHistoryCoverageMarker {
+	"""
+	An explicit domain marker created by the cutover.
+	"""
+	DOMAIN_CUTOVER
+	"""
+	The actual schema-ledger time for declared partial writers.
+	"""
+	MIGRATION_CUTOVER
+}
+
+"""
+Complete bounded details; oversized or malformed details fail instead of truncating.
+"""
+type ChangeHistoryDetail {
+	"""
+	Authorized root metadata.
+	"""
+	change: ChangeHistoryChange!
+	"""
+	Complete bounded validated effects.
+	"""
+	effects: [ChangeHistoryEffect!]!
+}
+
+"""
+Complete safe effect, with full-range revision strings.
+"""
+type ChangeHistoryEffect {
+	"""
+	First physical change identity for this logical effect.
+	"""
+	changeId: String!
+	"""
+	Exact affected domain.
+	"""
+	domain: String!
+	"""
+	Exact affected entity; input requires a domain.
+	"""
+	entityId: String!
+	"""
+	Prior full-range revision string, absent for new entities.
+	"""
+	beforeRevision: String
+	"""
+	Resulting full-range revision string.
+	"""
+	afterRevision: String!
+	"""
+	Complete reconstructed field transitions with protected markers redacted.
+	"""
+	fields: [ChangeHistoryField!]!
+}
+
+"""
+Category is explicit for new facts and conservative for retained events.
+"""
+enum ChangeHistoryEventCategory {
+	"""
+	Explicitly recorded operational fact, not a committed configuration edit.
+	"""
+	OPERATIONAL
+	"""
+	Explicitly recorded failed attempt; collection is not globally complete.
+	"""
+	FAILED_ATTEMPT
+	"""
+	Retained event without a trustworthy old category.
+	"""
+	UNCLASSIFIED
+}
+
+"""
+A typed event fact, without an invented before/after transition.
+"""
+type ChangeHistoryEventField {
+	"""
+	Curated event field name.
+	"""
+	name: String!
+	"""
+	Validated safe value with protected markers redacted.
+	"""
+	value: ChangeHistoryValue!
+}
+
+"""
+Independent bounded event cursor; change cursors cannot be reused here.
+"""
+input ChangeHistoryEventInput {
+	"""
+	Exact category, or all explicitly recorded categories.
+	"""
+	category: ChangeHistoryEventCategory
+	"""
+	Visible result limit, default 20 and maximum 100.
+	"""
+	first: Int
+	"""
+	Prior event continuation for this administrator and category.
+	"""
+	after: String
+}
+
+"""
+Event pages use a separate sequence stream from committed changes.
+"""
+type ChangeHistoryEventPage {
+	"""
+	Validated administrator-authorized event facts.
+	"""
+	nodes: [ChangeHistorySystemEvent!]!
+	"""
+	Continuation after the last returned event.
+	"""
+	nextCursor: String
+	"""
+	Fixed inclusive event watermark as decimal text.
+	"""
+	watermark: String!
+}
+
+"""
+One complete, validated logical field transition.
+"""
+type ChangeHistoryField {
+	"""
+	Curated logical field name.
+	"""
+	name: String!
+	"""
+	Distinct state before the change.
+	"""
+	before: ChangeHistoryValue!
+	"""
+	Distinct state after the change, or the prior page continuation for input.
+	"""
+	after: ChangeHistoryValue!
+}
+
+"""
+Whether historical transaction grouping is known.
+"""
+enum ChangeHistoryGrouping {
+	"""
+	All parts were appended in one known native transaction.
+	"""
+	EXPLICIT
+	"""
+	Retained actor/correlation provenance; original atomicity is unknown.
+	"""
+	RETAINED_CORRELATION
+}
+
+"""
+Exact filters and one bounded cursor page.
+"""
+input ChangeHistoryInput {
+	"""
+	Current user by default; wider scopes require administrator authority.
+	"""
+	scope: ChangeHistoryScope! = CURRENT_USER
+	"""
+	Stable selected user ID, required only for `SELECTED_USER`.
+	"""
+	userId: UUID
+	"""
+	Exact affected domain.
+	"""
+	domain: String
+	"""
+	Exact affected entity; input requires a domain.
+	"""
+	entityId: String
+	"""
+	Optional non-secret correlation identity.
+	"""
+	correlationId: UUID
+	"""
+	Visible result limit, default 20 and maximum 100.
+	"""
+	first: Int
+	"""
+	Prior opaque page continuation.
+	"""
+	after: String
+}
+
+"""
+Accepted command entry point.
+"""
+enum ChangeHistoryOrigin {
+	"""
+	Browser command.
+	"""
+	BROWSER
+	"""
+	Delegated MCP command.
+	"""
+	MCP
+	"""
+	Accepted API command.
+	"""
+	API
+	"""
+	Internal lifecycle command.
+	"""
+	SYSTEM
+}
+
+"""
+A page may be empty while unavailable candidates are skipped.
+"""
+type ChangeHistoryPage {
+	"""
+	Authorized complete-change metadata.
+	"""
+	nodes: [ChangeHistoryChange!]!
+	"""
+	Continuation after the last considered candidate. More candidates can still be unavailable.
+	"""
+	nextCursor: String
+	"""
+	Fixed inclusive sequence watermark as a decimal string.
+	"""
+	watermark: String!
+}
+
+type ChangeHistoryQuery {
+	"""
+	Administrator-only available records in a frozen rolling 24-hour window.
+	"""
+	adminHistory(input: AdminHistoryInput): AdminHistoryPage!
+	"""
+	Actual declared-writer cutovers; all historical writers are not claimed as covered.
+	"""
+	coverage: [ChangeHistoryCoverage!]!
+	"""
+	Current administrator observations; this is not a hard database quota.
+	"""
+	retention: ChangeHistoryRetention!
+	"""
+	Only explicitly recorded events; no global failed-attempt collection is implied.
+	"""
+	systemEvents(input: ChangeHistoryEventInput): ChangeHistoryEventPage!
+	"""
+	Stable sequence page. Complete current object authority precedes scoped metadata.
+	"""
+	changes(input: ChangeHistoryInput): ChangeHistoryPage!
+	"""
+	Rechecks active root, current account and complete object authority on every request.
+	"""
+	change(id: UUID!): ChangeHistoryDetail
+}
+
+"""
+Logical counters are separate from database pages, WAL, receipts and core data.
+"""
+type ChangeHistoryRetention {
+	"""
+	Ordinary maximum-age target in seconds; byte pressure can shorten history.
+	"""
+	ordinaryAgeSeconds: String!
+	"""
+	Ordinary logical-byte soft target, as decimal text.
+	"""
+	ordinaryByteTarget: String!
+	"""
+	Actual retained logical entry bytes, including protected and retired data.
+	"""
+	retainedLogicalBytes: String!
+	"""
+	Remaining logical bytes in the bounded cleanup backlog.
+	"""
+	retiredLogicalBytes: String!
+	"""
+	Groups waiting for physical cleanup, at most 16.
+	"""
+	retiredGroups: String!
+	"""
+	First active root sequence, if any.
+	"""
+	oldestSequence: String
+	"""
+	Protected data and pending cleanup can leave this true after maintenance.
+	"""
+	bytePressure: Boolean!
+	"""
+	True: the byte target is not a hard database or WAL quota.
+	"""
+	softByteTarget: Boolean!
+	"""
+	Retry receipts keep at least this many seconds independently.
+	"""
+	receiptMinimumAgeSeconds: String!
+	"""
+	Independent newest-five original-action protection size; no undo API is exposed.
+	"""
+	originalActionWindowSize: Int!
+	"""
+	Maximum original-action window age in seconds, independent of ordinary pruning.
+	"""
+	originalActionMaximumAgeSeconds: String!
+	"""
+	Separate event sequence-position soft target.
+	"""
+	eventSequenceSpan: String!
+}
+
+"""
+Current operator, administrator-selected user or administrator-wide scope.
+"""
+enum ChangeHistoryScope {
+	"""
+	Current named operator; open administrators use all actors.
+	"""
+	CURRENT_USER
+	"""
+	Administrator-selected stable user ID, including deleted accounts.
+	"""
+	SELECTED_USER
+	"""
+	All user and system changes, for administrators only.
+	"""
+	ALL
+}
+
+"""
+A recorded event fact, separate from committed change effects.
+"""
+type ChangeHistorySystemEvent {
+	"""
+	Stable event identity.
+	"""
+	id: String!
+	"""
+	Stable event sequence as decimal text.
+	"""
+	sequence: String!
+	"""
+	Curated event kind.
+	"""
+	kind: String!
+	"""
+	Unix-millisecond recording time as decimal text.
+	"""
+	recordedAt: String!
+	"""
+	Explicit category, without a global collection-completeness claim.
+	"""
+	category: ChangeHistoryEventCategory!
+	"""
+	Complete typed event facts, independent of committed edit effects.
+	"""
+	fields: [ChangeHistoryEventField!]!
+}
+
+"""
+A typed scalar state with at most one value payload.
+"""
+type ChangeHistoryValue {
+	"""
+	Typed state or attribution category.
+	"""
+	kind: ChangeHistoryValueKind!
+	"""
+	Boolean payload, present only for BOOLEAN.
+	"""
+	boolean: Boolean
+	"""
+	Full-precision decimal payload, present only for INTEGER.
+	"""
+	integer: String
+	"""
+	Complete safe text, present only for TEXT.
+	"""
+	text: String
+}
+
+"""
+A stored field's distinct public states.
+"""
+enum ChangeHistoryValueKind {
+	"""
+	The field did not exist.
+	"""
+	ABSENT
+	"""
+	The field existed with an explicit null.
+	"""
+	NULL
+	"""
+	A boolean scalar.
+	"""
+	BOOLEAN
+	"""
+	A full-precision decimal integer string.
+	"""
+	INTEGER
+	"""
+	Complete curated safe text.
+	"""
+	TEXT
+	"""
+	A protected value changed; no value, token or fingerprint is exposed.
+	"""
+	REDACTED
+}
+
+"""
+New named saved program order.
+"""
+input CreateRundownInput {
+	"""
+	Stable identity reused only for an identical command retry.
+	"""
+	requestId: UUID!
+	"""
+	Operator-facing rundown or media name.
+	"""
+	name: String!
+	"""
+	Ordered media uses, including repeated assets.
+	"""
+	placements: [RundownPlacementInput!]!
 }
 
 input CreateUserInput {
@@ -593,6 +1373,24 @@ Delay in milliseconds for audio/video synchronization.
 scalar Delay
 
 """
+Deletion of an exact saved revision.
+"""
+input DeleteRundownInput {
+	"""
+	Stable identity reused only for an identical command retry.
+	"""
+	requestId: UUID!
+	"""
+	Saved rundown identifier.
+	"""
+	id: RundownId!
+	"""
+	Current saved revision required for this command.
+	"""
+	expectedRevision: String!
+}
+
+"""
 Download progress indication.
 """
 type DownloadState {
@@ -607,21 +1405,85 @@ type DownloadState {
 }
 
 """
-Explicit result payload for DVR file mutations.
+Outcome of one manual source scan, with the refreshed source row.
 """
-type DvrFileMutationResult {
+type DriveSyncScanResult {
 	"""
-	Mutation outcome status.
+	The scanned source after recording the outcome.
 	"""
-	status: MutationResultStatus!
+	source: DriveSyncSource!
 	"""
-	Output identity associated with the recording.
+	Video files found directly inside the source folder.
 	"""
-	outputId: OutputId!
+	seen: Int!
 	"""
-	Recording filename associated with the mutation.
+	Video files newly queued for import.
 	"""
-	fileName: String!
+	new: Int!
+}
+
+"""
+One configured remote Drive folder whose new videos sync into the library.
+"""
+type DriveSyncSource {
+	"""
+	Stable local identity of this source.
+	"""
+	sourceId: String!
+	"""
+	Operator-chosen display name.
+	"""
+	name: String!
+	"""
+	Ordinary Drive folder ID; only direct children are scanned.
+	"""
+	folderId: FileId!
+	"""
+	Authorization method used for scans and downloads.
+	"""
+	access: GoogleDriveAccess!
+	"""
+	When the source was created.
+	"""
+	createdAt: DateTime!
+	"""
+	When the last scan ran, successful or not.
+	"""
+	lastScanAt: DateTime
+	"""
+	Error of the last failed scan; cleared by the next successful scan.
+	"""
+	lastScanError: String
+	"""
+	Video files seen by the last successful scan.
+	"""
+	lastScanSeen: Int
+	"""
+	Video files newly queued for import by the last successful scan.
+	"""
+	lastScanNew: Int
+}
+
+"""
+Independent copy of an exact saved revision.
+"""
+input DuplicateRundownInput {
+	"""
+	Stable identity reused only for an identical command retry.
+	"""
+	requestId: UUID!
+	"""
+	Saved rundown identifier.
+	"""
+	id: RundownId!
+	"""
+	Current saved revision required for this command.
+	"""
+	expectedRevision: String!
+	"""
+	Operator-facing rundown or media name.
+	"""
+	name: String!
 }
 
 """
@@ -660,7 +1522,7 @@ input FileConfigInput {
 }
 
 """
-File identifier for managed files (e.g., Google Drive file IDs).
+File identifier for managed files and Google Drive file or folder IDs. Must be 1-128 characters and contain only letters, digits, hyphens and underscores.
 """
 scalar FileId
 
@@ -712,6 +1574,56 @@ enum FileState {
 	Error was encountered during the download.
 	"""
 	DOWNLOAD_ERROR
+}
+
+"""
+Logical admission accounting, independent of measured host resource utilization.
+"""
+type FleetAdmissionCapacity {
+	"""
+	Route limit.
+	"""
+	routeLimit: Int
+	"""
+	Output limit.
+	"""
+	outputLimit: Int
+	"""
+	Committed routes.
+	"""
+	committedRoutes: Int!
+	"""
+	Starting routes.
+	"""
+	startingRoutes: Int!
+	"""
+	Retiring routes.
+	"""
+	retiringRoutes: Int!
+	"""
+	Committed outputs.
+	"""
+	committedOutputs: Int!
+	"""
+	Starting outputs.
+	"""
+	startingOutputs: Int!
+	"""
+	Retiring outputs.
+	"""
+	retiringOutputs: Int!
+	"""
+	Remaining routes.
+	"""
+	remainingRoutes: Int
+	"""
+	Remaining outputs.
+	"""
+	remainingOutputs: Int
+	"""
+	Admission and unproven shutdown reasons shown to operators.
+	"""
+	reasons: [String!]!
 }
 
 """
@@ -773,6 +1685,22 @@ Bounded artifact-job kinds visible to operators.
 """
 enum FleetArtifactJobKind {
 	"""
+	Source-bound video still preparation.
+	"""
+	THUMBNAIL
+	"""
+	Render an ordered saved image composition.
+	"""
+	SLIDESHOW
+	"""
+	Offline playlist preparation.
+	"""
+	NORMALIZE
+	"""
+	Deferred node-cache eviction.
+	"""
+	EVICT_NORMALIZED
+	"""
 	Best-effort warming of likely-next route or playlist artifacts.
 	"""
 	QUEUE_WARM
@@ -827,13 +1755,31 @@ enum FleetArtifactJobState {
 }
 
 """
+One disposable cached relay source offered for repair.
+"""
+type FleetCacheRepairArtifact {
+	"""
+	Source catalog identity.
+	"""
+	fileId: FileId!
+	"""
+	Operator-facing source name.
+	"""
+	name: String!
+}
+
+"""
 Rich operator-facing media-node inventory for Fleet surfaces.
 """
 type FleetMediaNode {
 	"""
+	Administrator limits and durable reserved execution demand.
+	"""
+	admissionCapacity: FleetAdmissionCapacity!
+	"""
 	Stable media-node identifier.
 	"""
-	id: String!
+	id: MediaNodeId!
 	"""
 	Human-readable node name.
 	"""
@@ -873,7 +1819,7 @@ type FleetMediaNode {
 	"""
 	Arbitrary node labels for future scheduling and filtering.
 	"""
-	labels: [String!]!
+	labels: [Label!]!
 	"""
 	Optional node software version string.
 	"""
@@ -890,6 +1836,14 @@ type FleetMediaNode {
 	File artifacts currently present in the node-local cache.
 	"""
 	cachedFileIds: [FileId!]!
+	"""
+	Named cached durable relay sources eligible for an operator repair request.
+	"""
+	repairableCachedArtifacts: [FleetCacheRepairArtifact!]!
+	"""
+	Node prerequisite preventing repair requests, when applicable.
+	"""
+	cacheRepairUnavailableReason: String
 	"""
 	Latest artifact-job truth associated with this node.
 	"""
@@ -943,7 +1897,7 @@ type FleetMediaNode {
 	"""
 	advertisedProtocols: [MediaNodeProtocol!]!
 	"""
-	Explicit scheduling capabilities currently implied by node metadata.
+	Advertised and metadata-derived node capabilities.
 	"""
 	capabilities: [MediaNodeCapability!]!
 	"""
@@ -953,7 +1907,11 @@ type FleetMediaNode {
 	"""
 	Visibility of the control-plane endpoint.
 	"""
-	controlEndpointVisibility: MediaNodeEndpointVisibility!
+	controlEndpointVisibility: MediaNodeEndpointVisibility
+	"""
+	Whether the authenticated outbound control stream is active.
+	"""
+	controlConnected: Boolean!
 	"""
 	Visibility of source ingest endpoints, when the node advertises them.
 	"""
@@ -1079,6 +2037,30 @@ Fleet mutation root.
 """
 type FleetMutation {
 	"""
+	Authorize one credential replacement for an existing durable node.
+	"""
+	issueNodeCredentialGrant(nodeId: MediaNodeId!, mode: NodeCredentialMode!): IssuedNodeCredentialGrant!
+	"""
+	Cancel pending replacement without changing current authority.
+	"""
+	cancelNodeCredentialGrant(id: ID!): Boolean!
+	"""
+	Revoke machine authentication and fence its current connection.
+	"""
+	revokeNodeCredential(nodeId: MediaNodeId!): Boolean!
+	"""
+	Issue a fifteen-minute, one-time code for a fresh node identity.
+	"""
+	issueNodeEnrollment(input: IssueNodeEnrollmentInput!): IssuedNodeEnrollment!
+	"""
+	Cancel an unused code without revoking an enrolled node.
+	"""
+	cancelNodeEnrollment(id: ID!): NodeEnrollment!
+	"""
+	Queue a verified repair; completion is reported by the node through Fleet jobs.
+	"""
+	repairMediaNodeCachedArtifact(nodeId: MediaNodeId!, fileId: FileId!): FleetArtifactJob!
+	"""
 	Mark a registered media node as draining. Preconditions: the node must
 	exist. Drain is a temporary scheduling command: the node stops accepting
 	new placements, keeps assigned work while it still owns routes, and can
@@ -1116,6 +2098,10 @@ type FleetMutation {
 		"""
 		nodeId: MediaNodeId!
 	): FleetNodeMutationResult!
+	"""
+	Replace this node's optional route and output admission ceilings.
+	"""
+	setMediaNodeAdmissionLimits(nodeId: MediaNodeId!, limits: MediaNodeAdmissionLimitsInput!): FleetNodeMutationResult!
 	"""
 	Permanently remove a media node record from the registry. Preconditions:
 	use this only for a node that will never reconnect under the same id.
@@ -1156,6 +2142,18 @@ Fleet query root.
 """
 type FleetQuery {
 	"""
+	Current machine credential authority and replacement status.
+	"""
+	nodeCredential(nodeId: MediaNodeId!): NodeCredentialStatus!
+	"""
+	Recent enrollment statuses. Codes and machine secrets are never included.
+	"""
+	nodeEnrollments: [NodeEnrollment!]!
+	"""
+	Public trust material for new outbound node connections.
+	"""
+	nodeEnrollmentSettings: NodeEnrollmentSettings!
+	"""
 	Get persisted media-node registration and liveness snapshots.
 	"""
 	mediaNodes: [FleetMediaNode!]!
@@ -1183,7 +2181,34 @@ enum FleetRouteDeliveryState {
 	BLOCKED
 }
 
+"""
+Drive authorization chosen by an operator for an import.
+"""
+enum GoogleDriveAccess {
+	"""
+	Public file access with the installation API key.
+	"""
+	PUBLIC_ACCESS
+	"""
+	Access with the installation service account.
+	"""
+	SERVICE_ACCOUNT
+}
+
+type GoogleDriveAccessInfo {
+	publicAccess: Boolean!
+	serviceAccount: Boolean!
+}
+
 input GoogleDrivePlaylistInput {
+	"""
+	Required when both Drive authorization methods are configured.
+	"""
+	access: GoogleDriveAccess
+	"""
+	Destination queue revision captured before import.
+	"""
+	expectedQueueRevision: String!
 	"""
 	ID of the Route.
 	"""
@@ -1191,7 +2216,13 @@ input GoogleDrivePlaylistInput {
 	"""
 	Google Drive file or folder ID.
 	"""
-	fileOrFolderId: String!
+	fileOrFolderId: FileId!
+	"""
+	Extra file or folder IDs imported in the same queue revision.
+	When set, these IDs are imported with `fileOrFolderId` as one batch.
+	At most 32 distinct IDs are accepted; duplicates are ignored.
+	"""
+	fileOrFolderIds: [FileId!]
 }
 
 """
@@ -1497,7 +2528,52 @@ type InputHealthSummary {
 }
 
 """
-Unified label for routes, sources, and outputs. Must be 1-70 characters, excluding commas and whitespace control characters.
+URL for input source (RTMP, HLS, etc.).
+
+This is a simple string wrapper without validation, used primarily for GraphQL input.
+"""
+scalar InputSrcUrl
+
+"""
+Fresh node identity to provision. Existing machine credentials are never replaced.
+"""
+input IssueNodeEnrollmentInput {
+	"""
+	Stable node identifier, chosen before installing the node.
+	"""
+	nodeId: MediaNodeId!
+}
+
+"""
+A short-lived code is returned only at issuance.
+"""
+type IssuedNodeCredentialGrant {
+	"""
+	Public grant identity.
+	"""
+	id: ID!
+	"""
+	Short-lived installer bearer; never cache or log it.
+	"""
+	code: String!
+}
+
+"""
+One-time issuance response. The code is never returned by status queries.
+"""
+type IssuedNodeEnrollment {
+	"""
+	Durable grant status.
+	"""
+	enrollment: NodeEnrollment!
+	"""
+	Short-lived bearer code to pass only to the installer.
+	"""
+	code: String!
+}
+
+"""
+Unified label for routes, sources, and outputs. Must be 1-70 characters, excluding commas and control characters.
 """
 scalar Label
 
@@ -1563,6 +2639,11 @@ type LibraryDeleteResult {
 }
 
 type LibraryFile {
+	thumbnail: LibraryThumbnail
+	"""
+	Same-origin authenticated preview URL for node-owned recordings.
+	"""
+	previewUrl: String
 	id: FileId!
 	name: String!
 	"""
@@ -1578,6 +2659,10 @@ type LibraryFile {
 }
 
 input LibraryFileFilter {
+	"""
+	Match the media type prefix before counting and pagination.
+	"""
+	contentTypePrefix: String
 	search: String
 	hasReferences: Boolean
 	tagFilter: [String!]
@@ -1629,13 +2714,16 @@ type LibraryFilePage {
 }
 
 type LibraryFileReference {
-	routeId: RouteId!
+	routeId: RouteId
+	rundownId: RundownId
+	rundownName: String
 	routeName: String!
 	kind: LibraryFileReferenceKind!
 	label: String!
 }
 
 enum LibraryFileReferenceKind {
+	RUNDOWN_PLACEMENT
 	PLAYLIST_ITEM
 	FILE_BACKUP_SOURCE
 }
@@ -1666,6 +2754,16 @@ input LibraryFileTagsInput {
 type LibraryTag {
 	tag: String!
 	fileCount: Int!
+}
+
+type LibraryThumbnail {
+	status: ThumbnailStatus!
+	url: String
+}
+
+type LibraryThumbnailUpdate {
+	fileId: FileId!
+	thumbnail: LibraryThumbnail
 }
 
 """
@@ -1703,13 +2801,18 @@ type LocalFileInfo {
 }
 
 """
+Nonnegative integer media milliseconds, limited to the JavaScript safe integer range.
+"""
+scalar MediaMilliseconds
+
+"""
 Registered media-node metadata and latest persisted liveness snapshot.
 """
 type MediaNode {
 	"""
 	Stable media-node identifier.
 	"""
-	id: String!
+	id: MediaNodeId!
 	"""
 	Human-readable node name.
 	"""
@@ -1743,13 +2846,17 @@ type MediaNode {
 	"""
 	rtcApiPort: Int
 	"""
+	Advertised and metadata-derived node capabilities.
+	"""
+	capabilities: [MediaNodeCapability!]!
+	"""
 	Optional placement zone or locality hint.
 	"""
 	zone: String
 	"""
 	Arbitrary node labels for scheduling and filtering.
 	"""
-	labels: [String!]!
+	labels: [Label!]!
 	"""
 	Optional node software version string.
 	"""
@@ -1789,6 +2896,20 @@ type MediaNode {
 }
 
 """
+Full replacement of optional ceilings; null clears a ceiling and zero denies growth.
+"""
+input MediaNodeAdmissionLimitsInput {
+	"""
+	Maximum reserved enabled routes, or unlimited when null.
+	"""
+	routes: Int
+	"""
+	Maximum reserved enabled outputs, or unlimited when null.
+	"""
+	outputs: Int
+}
+
+"""
 Explicit capability class for a media node.
 """
 enum MediaNodeCapability {
@@ -1808,6 +2929,18 @@ enum MediaNodeCapability {
 	Operator-usable public egress surfaces.
 	"""
 	PUBLIC_EGRESS
+	"""
+	Public WHIP publishing gateway support.
+	"""
+	WHIP_PUBLISH
+	"""
+	Verified repair of a configured isolated disposable artifact cache.
+	"""
+	VERIFIED_CACHE_REPAIR
+	"""
+	Generation-fenced playlist timestamp cueing.
+	"""
+	PLAYLIST_CUE
 }
 
 """
@@ -1849,9 +2982,9 @@ enum MediaNodeEndpointVisibility {
 	"""
 	OPERATOR_ONLY
 	"""
-	Tailnet or equivalent overlay only.
+	Private network only.
 	"""
-	TAILNET_ONLY
+	PRIVATE_NETWORK_ONLY
 }
 
 """
@@ -1894,9 +3027,9 @@ enum MediaNodeReachability {
 	"""
 	PRIVATE
 	"""
-	Tailnet or equivalent overlay only.
+	Private network only.
 	"""
-	TAILNET_ONLY
+	PRIVATE_NETWORK_ONLY
 }
 
 """
@@ -1984,6 +3117,164 @@ enum MutationResultStatus {
 64-bit byte count used for network and file transfer progress.
 """
 scalar NetworkByteSize
+
+"""
+Safe durable lifecycle status. No hashes or bearer codes are included.
+"""
+type NodeCredentialGrant {
+	"""
+	Public grant identity.
+	"""
+	id: ID!
+	"""
+	ROTATE or RECOVER.
+	"""
+	mode: NodeCredentialMode!
+	"""
+	Pending, completed, revoked by a later generation, or retry state.
+	"""
+	state: NodeCredentialGrantState!
+	"""
+	Safe blocking condition for retry.
+	"""
+	failure: String
+	"""
+	Unix deadline for first redemption.
+	"""
+	expiresAt: Int!
+}
+
+"""
+Durable state of one replacement authorization.
+"""
+enum NodeCredentialGrantState {
+	"""
+	First redemption may commit.
+	"""
+	PENDING
+	"""
+	The replacement committed and is still the current generation.
+	"""
+	COMPLETED
+	"""
+	An administrator cancelled this unconsumed grant.
+	"""
+	CANCELLED
+	"""
+	The first redemption deadline passed.
+	"""
+	EXPIRED
+	"""
+	A later credential generation invalidated this grant.
+	"""
+	SUPERSEDED
+	"""
+	A valid grant is blocked by maintenance, live boot or execution ownership.
+	"""
+	FAILED_RETRY
+}
+
+"""
+Supported installer authorization paths.
+"""
+enum NodeCredentialMode {
+	"""
+	Prove possession of the current machine credential.
+	"""
+	ROTATE
+	"""
+	Recover a stopped identity after verified execution withdrawal.
+	"""
+	RECOVER
+}
+
+"""
+Current durable machine authority and recent grants.
+"""
+type NodeCredentialStatus {
+	"""
+	Current authority generation.
+	"""
+	generation: Int!
+	"""
+	Whether all authentication is revoked.
+	"""
+	revoked: Boolean!
+	"""
+	Recent lifecycle status without secrets.
+	"""
+	grants: [NodeCredentialGrant!]!
+}
+
+"""
+Status without any enrollment bearer or machine credential.
+"""
+type NodeEnrollment {
+	"""
+	Identifier for status and cancellation.
+	"""
+	id: ID!
+	"""
+	The node identity bound to this grant.
+	"""
+	nodeId: MediaNodeId!
+	"""
+	Current enrollment state.
+	"""
+	state: NodeEnrollmentState!
+	"""
+	Time this code was issued.
+	"""
+	issuedAt: DateTime!
+	"""
+	Deadline for first redemption.
+	"""
+	expiresAt: DateTime!
+}
+
+"""
+Public TLS certificates used by the control listener.
+"""
+type NodeEnrollmentSettings {
+	"""
+	PEM trust material for the control connection, copied through the authenticated UI.
+	"""
+	controlTlsCaPem: String!
+}
+
+"""
+Current state of one durable enrollment grant.
+"""
+enum NodeEnrollmentState {
+	"""
+	A code may still provision its intended node.
+	"""
+	PENDING
+	"""
+	The code reached its deadline without being redeemed.
+	"""
+	EXPIRED
+	"""
+	An administrator cancelled the code.
+	"""
+	CANCELLED
+	"""
+	The credential hash committed; connection status is reported separately.
+	"""
+	CONSUMED
+}
+
+input NormalizePlaylistInput {
+	expectedQueueRevision: String!
+	"""
+	Playlist-owning route.
+	"""
+	routeId: RouteId!
+	"""
+	Complete ordered source snapshot to prepare, including existing queue entries.
+	"""
+	fileIds: [FileId!]!
+}
 
 """
 Operator-facing active source details observed by a media node.
@@ -2370,11 +3661,56 @@ type PasswordMutationResult {
 	status: MutationResultStatus!
 }
 
+"""
+ID of a media placement.
+"""
+scalar PlacementId
+
 type Playlist {
+	"""
+	Configured clip, separate from content history.
+	"""
+	stinger: PlaylistFileInfo
+	"""
+	Whether natural completion inserts the selected clip.
+	"""
+	stingerEnabled: Boolean!
+	"""
+	Whether current runtime playback is the boundary clip.
+	"""
+	isPlayingStinger: Boolean!
+	"""
+	Content selected after the current boundary clip finishes.
+	"""
+	pendingPlacementId: PlacementId
+	"""
+	Nonfatal stinger failure reported by this runtime session.
+	"""
+	stingerWarning: String
+	"""
+	Planned queue durations and schedule offsets, separate from playback progress.
+	"""
+	timing: PlaylistTiming
+	"""
+	Explicit preparation snapshot and progress, including verified node readiness.
+	"""
+	normalization: PlaylistNormalizationStatus
 	"""
 	Unique ID of this playlist.
 	"""
 	id: PlaylistId!
+	"""
+	Saved revision copied into this independent queue, if it has not been structurally edited.
+	"""
+	appliedRundown: AppliedRundownSnapshot
+	"""
+	Revision required when replacing or applying a queue.
+	"""
+	queueRevision: String!
+	"""
+	Selected use, separate from its source file.
+	"""
+	selectedPlacementId: PlacementId
 	"""
 	List of video files in this playlist.
 	"""
@@ -2383,6 +3719,10 @@ type Playlist {
 	UTC timestamp when sequential playback should auto-start.
 	"""
 	scheduledStartAt: DateTime
+	"""
+	Recurring rule, next actual start and last occurrence decision.
+	"""
+	recurringSchedule: PlaylistRecurringSchedule
 	"""
 	Currently selected file for runtime playback.
 	"""
@@ -2400,9 +3740,21 @@ type Playlist {
 	"""
 	singleFileLooping: Boolean!
 	"""
-	Last known runtime playback offset in seconds.
+	Confirmed source position at the progress clock anchor, absent while starting.
 	"""
-	offsetSeconds: Unumber
+	confirmedOffsetMs: MediaMilliseconds
+	"""
+	Logical selection retained during startup or failure, separate from observed playback.
+	"""
+	selectedFileId: FileId
+	"""
+	Opaque execution generation used to match command and subscription feedback.
+	"""
+	generation: String!
+	"""
+	Authoritative startup, ready, idle or failure state for this generation.
+	"""
+	playbackPhase: PlaylistPlaybackPhase!
 	"""
 	Public UTC timestamp when the current playback position started.
 	"""
@@ -2431,7 +3783,41 @@ type PlaylistBaselineMismatch {
 	differences: [String!]!
 }
 
+"""
+Per-route failure recorded by a playlist broadcast mutation.
+"""
+type PlaylistBroadcastFailure {
+	"""
+	Route identity that rejected the broadcast command.
+	"""
+	routeId: RouteId!
+	"""
+	Stable machine-readable failure code.
+	"""
+	code: String!
+	"""
+	Human-readable failure detail.
+	"""
+	message: String!
+}
+
+"""
+Exact timestamp for one new playback generation.
+"""
+input PlaylistCueInput {
+	routeId: RouteId!
+	placementId: PlacementId!
+	"""
+	Nonnegative whole milliseconds strictly before the physical media end.
+	"""
+	offsetMs: MediaMilliseconds!
+}
+
 type PlaylistFileInfo {
+	"""
+	Stable identity of this use of the asset.
+	"""
+	placementId: PlacementId!
 	"""
 	Google ID of this file.
 	"""
@@ -2468,9 +3854,9 @@ input PlaylistFileInput {
 	"""
 	routeId: RouteId!
 	"""
-	ID of the file.
+	ID of the exact queued placement.
 	"""
-	fileId: FileId!
+	placementId: PlacementId!
 }
 
 """
@@ -2500,6 +3886,44 @@ ID of a `Playlist`.
 """
 scalar PlaylistId
 
+"""
+One ordered placement in the planned program.
+"""
+type PlaylistItemTiming {
+	"""
+	Stable queue use to distinguish repeated media.
+	"""
+	placementId: PlacementId!
+	"""
+	Source file for this ordered placement.
+	"""
+	fileId: FileId!
+	"""
+	Whether this entry is a boundary clip rather than program content.
+	"""
+	isStinger: Boolean!
+	"""
+	Finite planned duration of this placement.
+	"""
+	durationMs: MediaMilliseconds
+	"""
+	Offset from the beginning of the full queue.
+	"""
+	offsetMs: MediaMilliseconds
+	"""
+	Scheduled start when the preceding offsets are known.
+	"""
+	startAt: DateTime
+	"""
+	Scheduled end when duration and offset are known.
+	"""
+	endAt: DateTime
+	"""
+	Whether timing is known, or the reason it is uncertain.
+	"""
+	state: PlaylistTimingState!
+}
+
 input PlaylistLoopInput {
 	"""
 	ID of the Route.
@@ -2522,6 +3946,10 @@ type PlaylistMutation {
 	"""
 	playFileFromPlaylist(input: PlaylistFileInput!): PlaylistMutationResult!
 	"""
+	Start a queued file at an exact timestamp in a fresh playback generation.
+	"""
+	cuePlaylistFile(input: PlaylistCueInput!): PlaylistMutationResult!
+	"""
 	Stops playing the currently playing file in the playlist.
 	"""
 	stopPlayingFileFromPlaylist(input: PlaylistRouteInput!): PlaylistMutationResult!
@@ -2533,6 +3961,10 @@ type PlaylistMutation {
 	Sets or clears the scheduled UTC timestamp for sequential playback.
 	"""
 	setPlaylistSchedule(input: PlaylistScheduleInput!): PlaylistMutationResult!
+	"""
+	Creates, edits, pauses, resumes or removes the route's recurring schedule.
+	"""
+	setPlaylistRecurringSchedule(input: PlaylistRecurringScheduleInput!): PlaylistMutationResult!
 	"""
 	Sets the looping state for single-file playback.
 	"""
@@ -2550,6 +3982,18 @@ type PlaylistMutation {
 	"""
 	stopSequentialPlayback(input: PlaylistRouteInput!): PlaylistMutationResult!
 	"""
+	Configure one library clip for natural content boundaries.
+	"""
+	setPlaylistStinger(input: PlaylistStingerInput!): PlaylistMutationResult!
+	"""
+	Prepare the complete playlist file snapshot; incoming live sources are unaffected.
+	"""
+	normalizePlaylist(input: NormalizePlaylistInput!): PlaylistMutationResult!
+	"""
+	Cancel pending playlist preparation while preserving original files.
+	"""
+	cancelPlaylistNormalization(input: PlaylistRouteInput!): PlaylistMutationResult!
+	"""
 	Set playlist to Route by ordering the file IDs.
 	
 	Returns a `PlaylistMutationResult` with `status` set to `UPDATED` or `NOT_FOUND`.
@@ -2560,7 +4004,7 @@ type PlaylistMutation {
 	"""
 	getPlaylistFromGdrive(input: GoogleDrivePlaylistInput!): PlaylistMutationResult!
 	"""
-	Play a file across all routes (broadcast).
+	Play a file across writable routes (broadcast).
 	"""
 	broadcastPlayFile(
 		"""
@@ -2569,7 +4013,7 @@ type PlaylistMutation {
 		fileId: FileId!
 	): BulkPlaylistMutationResult!
 	"""
-	Stop playing file across all routes (broadcast).
+	Stop playing file across writable routes (broadcast).
 	"""
 	broadcastStopPlayingFile: BulkPlaylistMutationResult!
 }
@@ -2592,6 +4036,77 @@ type PlaylistMutationResult {
 	fileId: FileId
 }
 
+"""
+One source's preparation progress and reusable physical variant.
+"""
+type PlaylistNormalizationFileStatus {
+	fileId: FileId!
+	variantId: FileId
+	ready: Boolean!
+	state: String!
+	error: String
+}
+
+"""
+Preparation readiness for the explicit playlist snapshot.
+"""
+type PlaylistNormalizationStatus {
+	recipeId: String!
+	mediaNodeId: MediaNodeId!
+	ready: Boolean!
+	error: String
+	files: [PlaylistNormalizationFileStatus!]!
+}
+
+enum PlaylistOccurrenceStatus {
+	ADMITTED
+	STARTED
+	SKIPPED
+	BLOCKED
+	FAILED
+}
+
+"""
+A preserved or newly added queue placement.
+"""
+input PlaylistPlacementInput {
+	placementId: PlacementId
+	fileId: FileId!
+}
+
+"""
+Current control-plane phase, not mutation acceptance.
+"""
+enum PlaylistPlaybackPhase {
+	IDLE
+	STARTING
+	PLAYING
+	FAILED
+}
+
+type PlaylistRecurringSchedule {
+	revision: String!
+	weekdays: [Int!]!
+	localTime: String!
+	timeZone: String!
+	enabled: Boolean!
+	"""
+	Backend-owned instant; browsers do not calculate recurring occurrences.
+	"""
+	nextStartAt: DateTime
+	lastOccurrence: PlaylistScheduleOccurrence
+}
+
+input PlaylistRecurringScheduleInput {
+	routeId: RouteId!
+	"""
+	Omit to remove the recurring schedule.
+	"""
+	rule: RecurringPlaylistRuleInput
+	enabled: Boolean!
+	replaceExisting: Boolean! = false
+}
+
 input PlaylistRouteInput {
 	"""
 	ID of the Route.
@@ -2608,6 +4123,19 @@ input PlaylistScheduleInput {
 	UTC timestamp for scheduled playback start.
 	"""
 	scheduledAt: DateTime
+	"""
+	Explicitly replace an existing recurring rule.
+	"""
+	replaceExisting: Boolean! = false
+}
+
+type PlaylistScheduleOccurrence {
+	revision: String!
+	localDate: String!
+	scheduledAt: DateTime
+	status: PlaylistOccurrenceStatus!
+	reason: String!
+	updatedAt: DateTime!
 }
 
 input PlaylistSequentialInput {
@@ -2630,6 +4158,154 @@ input PlaylistSingleLoopInput {
 	Enable single file looping.
 	"""
 	isSingleLooping: Boolean!
+}
+
+"""
+Select, disable or enable the playlist-wide boundary clip.
+"""
+input PlaylistStingerInput {
+	"""
+	Route whose playlist owns this setting.
+	"""
+	routeId: RouteId!
+	"""
+	Omit to remove the configured clip.
+	"""
+	fileId: FileId
+	"""
+	Require media readiness and insert the clip on natural completion.
+	"""
+	enabled: Boolean!
+	"""
+	Playlist revision captured before this edit.
+	"""
+	expectedQueueRevision: String!
+}
+
+"""
+Timing for a full queue, never a report of actual playback.
+"""
+type PlaylistTiming {
+	"""
+	Items in configured queue order.
+	"""
+	items: [PlaylistItemTiming!]!
+	"""
+	Full finite program duration, absent when uncertain or looping.
+	"""
+	totalDurationMs: MediaMilliseconds
+	"""
+	Whether timing is known, or the reason it is uncertain.
+	"""
+	state: PlaylistTimingState!
+	"""
+	Explicit display zone for scheduled instants.
+	"""
+	timeZone: String
+	"""
+	Time when this projection was calculated.
+	"""
+	calculatedAt: DateTime!
+}
+
+"""
+Reason a planned item has no finite duration.
+"""
+enum PlaylistTimingState {
+	"""
+	Every duration in this part of the plan is finite.
+	"""
+	KNOWN
+	"""
+	Verified duration metadata is missing.
+	"""
+	UNKNOWN
+	"""
+	Media is absent or failed verification.
+	"""
+	UNAVAILABLE
+	"""
+	Playback repeats without a finite end.
+	"""
+	LOOPING
+	"""
+	The sum exceeds the supported transport range.
+	"""
+	OVERFLOW
+}
+
+"""
+Resource limits and current utilization for offline preparation subprocesses.
+"""
+type PreparationResourceInfo {
+	"""
+	Isolation availability: disabled, enforced, or unavailable.
+	"""
+	state: String!
+	"""
+	Reason enforcement or sampling is unavailable.
+	"""
+	error: String
+	"""
+	Actual successful sample timestamp in Unix seconds.
+	"""
+	sampledAtEpochSecs: Int
+	"""
+	Configured aggregate CPU allowance in cores.
+	"""
+	cpuLimitCores: Float
+	"""
+	CPU seconds consumed per elapsed wall second.
+	"""
+	cpuUsageCores: Float
+	"""
+	Cumulative preparation CPU seconds.
+	"""
+	cpuUsageSeconds: Float
+	"""
+	Cumulative throttled time in seconds.
+	"""
+	throttledSeconds: Float
+	"""
+	Current charged memory including page cache, bytes.
+	"""
+	memoryBytes: Float
+	"""
+	Peak charged memory since root creation, bytes.
+	"""
+	memoryPeakBytes: Float
+	"""
+	Configured aggregate memory limit, bytes.
+	"""
+	memoryLimitBytes: Float
+	"""
+	Current kernel tasks, including threads.
+	"""
+	taskCount: Float
+	"""
+	Aggregate kernel task limit.
+	"""
+	taskLimit: Float
+	"""
+	Cumulative OOM kills.
+	"""
+	oomKills: Float
+	"""
+	Cumulative memory maximum events.
+	"""
+	memoryLimitHits: Float
+	"""
+	Cumulative denied task creations.
+	"""
+	taskLimitHits: Float
+	"""
+	Number of attempts holding the node compute permit.
+	"""
+	activeAttempts: Int!
+	"""
+	Number of attempts waiting for the node compute permit.
+	"""
+	waitingAttempts: Int!
 }
 
 """
@@ -2674,6 +4350,36 @@ type PreviewState {
 	Current playback source for route-level previews.
 	"""
 	source: PreviewSource
+}
+
+"""
+Latest saved definition; it has no live link to an applied route.
+"""
+type ProgramRundown {
+	"""
+	Saved rundown identifier.
+	"""
+	id: RundownId!
+	"""
+	Operator-facing rundown or media name.
+	"""
+	name: String!
+	"""
+	Current saved revision as a decimal string.
+	"""
+	revision: String!
+	"""
+	Time this definition was created.
+	"""
+	createdAt: DateTime!
+	"""
+	Time the current definition was saved.
+	"""
+	updatedAt: DateTime!
+	"""
+	Ordered media uses, including repeated assets.
+	"""
+	placements: [RundownPlacement!]!
 }
 
 """
@@ -2741,15 +4447,96 @@ input RecordDerivedArtifactInput {
 	expiresAt: String
 }
 
-input RemoveDvrFileInput {
+type RecordingPreservation {
+	id: String!
+	sourceFileId: FileId!
+	resultFileId: FileId
+	status: RecordingPreservationStatus!
+	bytes: String!
+	size: String!
+	sha256: String
+	error: String
+	canCancel: Boolean!
+	canRetry: Boolean!
+}
+
+enum RecordingPreservationStatus {
+	QUEUED
+	TRANSFERRING
+	VERIFYING
+	PUBLISHING
+	SUCCEEDED
+	FAILED
+	CANCELED
+}
+
+input RecurringPlaylistRuleInput {
 	"""
-	ID of the Output.
+	ISO weekdays, Monday 1 through Sunday 7. All seven means daily.
 	"""
-	id: OutputId!
+	weekdays: [Int!]!
 	"""
-	Filename to remove.
+	Local minute in HH:MM format.
 	"""
-	fileName: String!
+	localTime: String!
+	"""
+	IANA time-zone name, for example Europe/Bratislava.
+	"""
+	timeZone: String!
+}
+
+"""
+One browsable entry of a remote folder page.
+"""
+type RemoteFolderEntry {
+	"""
+	Opaque provider file or folder ID.
+	"""
+	id: String!
+	"""
+	Display name from the provider.
+	"""
+	name: String!
+	"""
+	Provider MIME type.
+	"""
+	mimeType: String!
+	"""
+	Whether this entry is a folder that can be descended into.
+	"""
+	isFolder: Boolean!
+	"""
+	Whether this entry is an importable media file (video, image, audio).
+	"""
+	importable: Boolean!
+	"""
+	Whether this entry is playable media (video, audio) for playlist queues.
+	"""
+	playable: Boolean!
+}
+
+"""
+One page of a remote folder listing.
+"""
+type RemoteFolderPage {
+	"""
+	Entries on this page, in provider order.
+	"""
+	entries: [RemoteFolderEntry!]!
+	"""
+	Opaque continuation token; null on the last page.
+	"""
+	nextPageToken: String
+}
+
+"""
+Remote source providers that can be browsed for imports.
+"""
+enum RemoteSourceProvider {
+	"""
+	Google Drive, via public API key or service account.
+	"""
+	GOOGLE_DRIVE
 }
 
 input RenameLibraryFileInput {
@@ -3527,7 +5314,10 @@ type RouteMutation {
 	"""
 	Move output from one route to another at a specified position.
 	
-	Returns an `OutputMutationResult` with `status` set to `UPDATED`.
+	Returns an `OutputMutationResult` with `status` set to `UPDATED` when the
+	move changed output placement, `UNCHANGED` when the output already sits
+	at the destination route and position, and `NOT_FOUND` when the output
+	or the destination route does not exist.
 	"""
 	moveOutput(
 		"""
@@ -3721,6 +5511,14 @@ type RouteProgramSurface {
 
 type RouteQuery {
 	"""
+	Read-only preflight for one visible route and an explicitly selected workflow.
+	"""
+	readiness(id: RouteId!, input: RouteReadinessInput!): RouteReadinessReport
+	"""
+	Gets one route visible to the current principal.
+	"""
+	route(id: RouteId!): Route
+	"""
 	Get all routes.
 	"""
 	allRoutes: [Route!]!
@@ -3740,6 +5538,212 @@ type RouteQuery {
 	Server route baseline profiles available for route media compatibility gating.
 	"""
 	baselineProfilePresets: [BaselineProfilePreset!]!
+}
+
+"""
+Stable category for one readiness finding.
+"""
+enum RouteReadinessCode {
+	"""
+	Consistent read snapshot.
+	"""
+	SNAPSHOT
+	"""
+	Route enabled state.
+	"""
+	ROUTE
+	"""
+	Eligible assignment and placement constraints.
+	"""
+	PLACEMENT
+	"""
+	Required route and output admission capacity.
+	"""
+	CAPACITY
+	"""
+	Current placement heartbeat evidence.
+	"""
+	HEARTBEAT
+	"""
+	Explicit source selection and configuration.
+	"""
+	SOURCE
+	"""
+	Current media evidence for the selected source.
+	"""
+	SOURCE_MEDIA
+	"""
+	Whole-queue media availability and preparation.
+	"""
+	MEDIA
+	"""
+	Applicable media baseline validation.
+	"""
+	BASELINE
+	"""
+	Enabled or explicitly required push destinations.
+	"""
+	DESTINATIONS
+	"""
+	Disabled destinations excluded from an attempt.
+	"""
+	DISABLED_DESTINATIONS
+	"""
+	Program playback endpoint availability.
+	"""
+	RELAY_ENDPOINTS
+}
+
+"""
+One safe, actionable finding in the selected flow's readiness report.
+"""
+type RouteReadinessFinding {
+	"""
+	Stable finding category.
+	"""
+	code: RouteReadinessCode!
+	"""
+	Backend-owned classification.
+	"""
+	status: RouteReadinessStatus!
+	"""
+	Safe explanation without destination secrets or node capabilities.
+	"""
+	message: String!
+	"""
+	Existing route workspace surface that owns the remedy.
+	"""
+	fix: RouteReadinessFix!
+	"""
+	Media observation timestamp when the finding uses such evidence.
+	"""
+	observedAt: DateTime
+	"""
+	Whether this finding prevents the selected attempt.
+	"""
+	preventsAttempt: Boolean!
+}
+
+"""
+Bounded route workspace destination for fixing a finding.
+"""
+enum RouteReadinessFix {
+	"""
+	Source setup and publisher state.
+	"""
+	INPUTS
+	"""
+	Playlist queue and preparation.
+	"""
+	PLAYLIST
+	"""
+	Route media baseline.
+	"""
+	BASELINE
+	"""
+	Push destination controls.
+	"""
+	OUTPUTS
+	"""
+	Assignment and execution diagnostics.
+	"""
+	EXECUTION
+	"""
+	Program playback endpoint controls.
+	"""
+	RELAY
+}
+
+"""
+Read-only intent and prerequisites. This does not change route configuration.
+"""
+input RouteReadinessInput {
+	"""
+	Explicit workflow to assess.
+	"""
+	intent: RouteReadinessIntent!
+	"""
+	Required live source for Live or Relay; unused for Playlist.
+	"""
+	sourceId: RouteSourceId
+	"""
+	Require at least one enabled push destination for Live or Playlist.
+	"""
+	requirePushDestination: Boolean! = false
+}
+
+"""
+Workflow selected by the operator, never inferred from missing configuration.
+"""
+enum RouteReadinessIntent {
+	"""
+	Attempt one explicitly selected live source.
+	"""
+	LIVE
+	"""
+	Attempt whole-queue playlist playback.
+	"""
+	PLAYLIST
+	"""
+	Distribute one explicitly selected live source through program playback endpoints.
+	"""
+	RELAY
+}
+
+"""
+Dated preflight for one selected workflow. It never claims external acceptance or LIVE.
+"""
+type RouteReadinessReport {
+	"""
+	Workflow explicitly requested by the operator.
+	"""
+	intent: RouteReadinessIntent!
+	"""
+	Time when the backend evaluated these facts.
+	"""
+	evaluatedAt: DateTime!
+	"""
+	Earliest expiry of the supporting liveness evidence.
+	"""
+	validUntil: DateTime!
+	"""
+	Configuration can attempt the flow; runtime waiting can still remain.
+	"""
+	readyToAttempt: Boolean!
+	"""
+	Applicable prerequisites and context, classified by the backend.
+	"""
+	findings: [RouteReadinessFinding!]!
+}
+
+"""
+Meaning of one preflight finding.
+"""
+enum RouteReadinessStatus {
+	"""
+	The checked prerequisite has current supporting facts.
+	"""
+	READY
+	"""
+	Configuration prevents the requested attempt.
+	"""
+	BLOCKING
+	"""
+	A required preparation or runtime confirmation is pending.
+	"""
+	WAITING
+	"""
+	Context that deserves operator attention.
+	"""
+	WARNING
+	"""
+	Applicable context without a claimed live confirmation.
+	"""
+	INFORMATIONAL
+	"""
+	Required facts are missing, stale or unavailable.
+	"""
+	UNKNOWN
 }
 
 type RouteSource {
@@ -4212,17 +6216,15 @@ input RtmpPullConfigInput {
 	"""
 	Source RTMP/HLS URL to pull from.
 	"""
-	url: String!
+	url: InputSrcUrl!
 }
 
-"""
-GraphQL RTMP-pull source.
-"""
 type RtmpPullSource {
 	"""
-	Source RTMP/HLS URL to pull from.
+	Source RTMP/HLS URL. Pull URLs may embed upstream credentials, so
+	they are gated exactly like publish endpoints and SRT passphrases.
 	"""
-	url: String!
+	url: String
 }
 
 """
@@ -4243,6 +6245,169 @@ type RtmpPushSource {
 	Whether this push source has a publish credential.
 	"""
 	hasPublishCredential: Boolean!
+}
+
+"""
+Safe committed result retained for identical retries.
+"""
+type RundownCommandResult {
+	"""
+	Committed change identity; absent for an unchanged command receipt.
+	"""
+	changeId: UUID
+	"""
+	Original target identity, even if the live target was later removed.
+	"""
+	entityId: String!
+	"""
+	Original committed target revision.
+	"""
+	revision: String!
+}
+
+"""
+ID of a saved program rundown.
+"""
+scalar RundownId
+
+type RundownMutation {
+	"""
+	Saves a new independent rundown.
+	"""
+	createRundown(input: CreateRundownInput!): RundownMutationResult!
+	"""
+	Replaces the current saved revision without changing applied queues.
+	"""
+	saveRundown(input: SaveRundownInput!): RundownMutationResult!
+	"""
+	Creates a copy with fresh rundown and placement IDs.
+	"""
+	duplicateRundown(input: DuplicateRundownInput!): RundownMutationResult!
+	"""
+	Removes a saved definition without modifying route snapshots.
+	"""
+	deleteRundown(input: DeleteRundownInput!): RundownMutationResult!
+	"""
+	Copies an exact saved revision into an idle, unscheduled route.
+	"""
+	applyRundown(input: ApplyRundownInput!): RundownMutationResult!
+}
+
+"""
+Result of a saved definition or route application command.
+"""
+type RundownMutationResult {
+	"""
+	Outcome of the requested command.
+	"""
+	status: MutationResultStatus!
+	"""
+	Original durable result identity, independent of the current projection.
+	"""
+	command: RundownCommandResult!
+	"""
+	Saved definition returned by create, edit or duplicate.
+	"""
+	rundown: ProgramRundown
+}
+
+"""
+Authorized saved placement and current media availability.
+"""
+type RundownPlacement {
+	"""
+	Identity of this use of an asset; omit for a new placement.
+	"""
+	placementId: PlacementId!
+	"""
+	Library source asset identifier.
+	"""
+	fileId: FileId!
+	"""
+	Operator-facing rundown or media name.
+	"""
+	name: String!
+	"""
+	Whether the media is currently available for playback.
+	"""
+	available: Boolean!
+}
+
+"""
+One distinct use of a playable Library asset.
+"""
+input RundownPlacementInput {
+	"""
+	Identity of this use of an asset; omit for a new placement.
+	"""
+	placementId: PlacementId
+	"""
+	Library source asset identifier.
+	"""
+	fileId: FileId!
+}
+
+type RundownQuery {
+	"""
+	Planned timing for a draft order, using only readable original Library media.
+	"""
+	timing(placements: [RundownPlacementInput!]!): PlaylistTiming!
+	"""
+	All saved definitions whose media this principal may read.
+	"""
+	allRundowns: [ProgramRundown!]!
+	"""
+	One saved definition, absent when missing or inaccessible.
+	"""
+	rundown(id: RundownId!): ProgramRundown
+}
+
+"""
+Complete edit with optimistic revision checking.
+"""
+input SaveRundownInput {
+	"""
+	Stable identity reused only for an identical command retry.
+	"""
+	requestId: UUID!
+	"""
+	Saved rundown identifier.
+	"""
+	id: RundownId!
+	"""
+	Current saved revision required for this command.
+	"""
+	expectedRevision: String!
+	"""
+	Operator-facing rundown or media name.
+	"""
+	name: String!
+	"""
+	Ordered media uses, including repeated assets.
+	"""
+	placements: [RundownPlacementInput!]!
+}
+
+input SaveSlideshowInput {
+	requestId: UUID!
+	id: String!
+	expectedRevision: Int!
+	name: String!
+	profileId: String!
+	slides: [SlideshowSlideInput!]!
+}
+
+type ServiceAccountCheck {
+	authenticated: Boolean!
+	authenticationError: String
+	resourceAccessible: Boolean
+	resourceError: String
+}
+
+type ServiceAccountInfo {
+	configured: Boolean!
+	email: String
+	error: String
 }
 
 input SetBaselineProfilePresetsInput {
@@ -4294,7 +6459,8 @@ input SetPlaylistInput {
 	"""
 	Ordered list of file IDs.
 	"""
-	playlist: [FileId!]!
+	placements: [PlaylistPlacementInput!]!
+	expectedQueueRevision: String!
 }
 
 """
@@ -4321,23 +6487,23 @@ input SetRouteInput {
 
 input SetSettingsInput {
 	"""
-	Display title for the application.
+	Display title. Omit to keep it; null clears the override.
 	"""
 	title: String
 	"""
-	Whether to confirm deletions.
+	Whether to confirm deletions. Omit to keep it; null restores the default.
 	"""
 	deleteConfirmation: Boolean
 	"""
-	Whether to confirm enabling/disabling.
+	Whether to confirm enabling/disabling. Omit to keep it; null restores the default.
 	"""
 	enableConfirmation: Boolean
 	"""
-	Google API key for Google Drive access.
+	API key for Public access. Omit to keep it; null removes this method.
 	"""
 	googleApiKey: String
 	"""
-	Maximum number of files in playlist.
+	Maximum concurrent file operations. Omit to keep it; null restores the default.
 	"""
 	maxDownloadingFiles: Unumber
 	"""
@@ -4351,7 +6517,7 @@ input SetSettingsInput {
 	"""
 	Browser session TTL in seconds (0 or null disables expiry).
 	"""
-	sessionTtlSeconds: Unumber
+	sessionTtlSeconds: Int
 }
 
 """
@@ -4448,6 +6614,79 @@ type SettingsMutationResult {
 	Mutation outcome status.
 	"""
 	status: MutationResultStatus!
+}
+
+type Slideshow {
+	id: String!
+	operationId: String!
+	revision: Int!
+	name: String!
+	profileId: String!
+	status: SlideshowStatus!
+	error: String
+	resultFileId: FileId
+	slides: [SlideshowSlide!]!
+	durationSeconds: Float!
+}
+
+"""
+Safe committed operation identity retained for identical command retries.
+"""
+type SlideshowCommandResult {
+	changeId: UUID
+	entityId: String!
+	revision: String!
+}
+
+"""
+Receipt identity plus the separately authorized Slideshow projection.
+"""
+type SlideshowMutationResult {
+	status: MutationResultStatus!
+	command: SlideshowCommandResult!
+	slideshow: Slideshow
+}
+
+type SlideshowSlide {
+	fileId: FileId!
+	durationSeconds: Float!
+	width: Int!
+	height: Int!
+}
+
+input SlideshowSlideInput {
+	fileId: FileId!
+	durationSeconds: Float!
+}
+
+"""
+Current durable or projected render state.
+"""
+enum SlideshowStatus {
+	"""
+	Waiting for bounded compute.
+	"""
+	QUEUED
+	"""
+	The worker is encoding the video.
+	"""
+	RENDERING
+	"""
+	Verified publication is committing.
+	"""
+	PUBLISHING
+	"""
+	Durable video is visible in Library.
+	"""
+	READY
+	"""
+	The current attempt failed.
+	"""
+	FAILED
+	"""
+	The operator withdrew the request.
+	"""
+	CANCELED
 }
 
 """
@@ -4604,6 +6843,10 @@ type StatisticsServerInfo {
 	Telemetry feedback queue depth at the media node.
 	"""
 	telemetryQueueDepth: Int
+	"""
+	Separate aggregate preparation budget. CPU is measured in cores, not host percent.
+	"""
+	preparationResources: PreparationResourceInfo
 	"""
 	Error message.
 	"""
@@ -4877,23 +7120,17 @@ type StreamStatistics {
 
 type SystemSettingsMutation {
 	"""
-	Compatibility password mutation for admin clients.
-	
-	Named users should prefer `changeMyPassword`. This legacy alias continues
-	to target the current named user when one exists, and otherwise falls back
-	to the bootstrap `admin` account for non-user admin principals.
-	
-	# Arguments
-	
-	* `new` - New password to set (empty string removes auth only while the bootstrap admin is the sole user)
-	* `old` - Current password (required if password is already set)
+	Validates and replaces the installation service account.
 	"""
-	setPassword(
-		"""
-		Password update payload.
-		"""
-		input: PasswordMutationInput!
-	): PasswordMutationResult!
+	setGoogleDriveServiceAccount(credentialJson: String!): ServiceAccountInfo!
+	"""
+	Removes credentials without deleting imported artifacts.
+	"""
+	removeGoogleDriveServiceAccount: Boolean!
+	"""
+	Checks fresh authentication, then optional file or folder access separately.
+	"""
+	checkGoogleDriveServiceAccount(fileOrFolderId: FileId): ServiceAccountCheck!
 	"""
 	Change the current named user's password.
 	"""
@@ -5016,6 +7253,10 @@ type SystemSettingsMutation {
 
 type SystemSettingsQuery {
 	"""
+	Returns credential presence and account email, never the credential or token.
+	"""
+	googleDriveServiceAccount: ServiceAccountInfo!
+	"""
 	Get server configuration and settings.
 	
 	Returns current application settings including title, password status,
@@ -5043,6 +7284,15 @@ type SystemSettingsQuery {
 	Lists persisted local users for admin management.
 	"""
 	listUsers: [UserAccount!]!
+}
+
+enum ThumbnailStatus {
+	PENDING
+	QUEUED
+	RUNNING
+	READY
+	UNSUPPORTED
+	FAILED
 }
 
 """
@@ -5111,7 +7361,23 @@ input TuneVolumeInput {
 	volume: VolumeInput!
 }
 
+"""
+A UUID is a unique 128-bit number, stored as 16 octets. UUIDs are parsed as
+Strings within GraphQL. UUIDs are used to assign unique identifiers to
+entities without requiring a central allocating authority.
+
+# References
+
+* [Wikipedia: Universally Unique Identifier](http://en.wikipedia.org/wiki/Universally_unique_identifier)
+* [RFC4122: A Universally Unique Identifier (UUID) URN Namespace](http://tools.ietf.org/html/rfc4122)
+"""
+scalar UUID
+
 type UnifiedMutation {
+	"""
+	Saved program preparation commands.
+	"""
+	rundowns: RundownMutation!
 	routes: RouteMutation!
 	artifacts: ArtifactsMutation!
 	playlist: PlaylistMutation!
@@ -5123,6 +7389,14 @@ type UnifiedMutation {
 }
 
 type UnifiedQuery {
+	"""
+	Current operator history and explicit administrator views.
+	"""
+	changeHistory: ChangeHistoryQuery!
+	"""
+	Saved program preparation queries.
+	"""
+	rundowns: RundownQuery!
 	routes: RouteQuery!
 	artifacts: ArtifactsQuery!
 	settings: SystemSettingsQuery!
@@ -5161,6 +7435,10 @@ type UnifiedSubscription {
 	Subscribe to a specific route used for nested outputs.
 	"""
 	routeWithParent(id: RouteId!): RouteWithParent
+	"""
+	Refresh a visible route's selected-flow preflight when its owning facts change.
+	"""
+	routeReadiness(id: RouteId!, input: RouteReadinessInput!): RouteReadinessReport
 	"""
 	Subscribe to one output within a specified route.
 	"""

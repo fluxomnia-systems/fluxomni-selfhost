@@ -4,6 +4,48 @@ Operator-facing highlights from recent Fluxomni releases.
 
 The changelog is editorial release copy. Use `release-manifest.json` as the factual inventory for dates, module versions, images, and API client refs, but write the latest changelog entry by hand so it reads as operator-facing release notes instead of generated metadata.
 
+## v26.4.1 - 21 November 2026
+
+This release adds Google Drive folder sync, an administrator change history, and media-node capability declarations. It also fixes Connect enrollment on HTTPS Installations and tightens operator pages. Upgrade the frontend, control plane, and every media node together, because the node capability and reachability contract changed. See the [upgrade guide](getting-started/upgrade-26.4.1.md).
+
+### Google Drive sources and imports
+
+The Artifacts page has a Sources view. Admins and Operators register a Google Drive folder with the Public access or Service account connection, then run **Check now** for one bounded scan. The scan lists the folder's direct children, keeps videos only, and queues downloads only for files the library does not have yet. Repeated scans and restarts do not duplicate artifacts. Removing a source keeps the artifacts already imported. Reviewing a changed version of an imported file, handling a file that disappears from Drive, and an automatic scan cadence are not in this release.
+
+Drive imports now accept video, image, and audio files. Playlist folder imports still accept playable media only. With a service account, the artifact picker's Drive panel has a Browse view over the credential-visible Drive root, with breadcrumbs and pagination. The library picker can import a folder or select all loaded files, and a multi-select playlist picker imports up to 32 playable files in one step.
+
+### Administrator change history
+
+Administrators can review recorded changes and events from the last 24 hours in Settings, with actor, domain, and outcome filters. Recording and retention are not guaranteed to cover every action.
+
+### Media-node capabilities and reachability
+
+Media nodes declare capabilities with `FLUXOMNI_MEDIA_NODE_CAPABILITIES` (`gpu_transcode`, `public_ingest`, `public_egress`) and private-network-only reachability with `FLUXOMNI_MEDIA_NODE_PRIVATE_NETWORK_ONLY`. Labels no longer grant capabilities, and the Fleet API value `TAILNET_ONLY` is now `PRIVATE_NETWORK_ONLY`. Node labels are validated: 1 to 70 characters, with no commas or control characters. An invalid non-empty label stops startup and is rejected at registration. The FFmpeg toolchain fingerprint moved to its own registration field instead of a prefixed label.
+
+The media node page keeps admission limits in Edit node. Drain and maintenance are in a labeled Actions menu, and machine credentials open from the header menu. The Fleet node page uses a single tab list, a more compact card grid, and one-line clipped labels on phones. `moveOutput` reports `UNCHANGED` and `NOT_FOUND` correctly, broadcast play and stop return per-route failures, and output drag-and-drop uses a dedicated handle that restores state on a rejected move.
+
+### Connect enrollment on HTTPS Installations
+
+Guided Connect registration and personal access handoffs now work on HTTPS Installations, including IPv6 origins. The browser sends the handoff to the configured Connect portal and continues with a short-lived, single-use reference. The control plane can also create protected Installation signing keys when Docker runs it under a different UID from the installer that created the data directory.
+
+### Library, playlists, and operator pages
+
+Downloads in the transfer drawer can be cancelled without deleting library entries, and a failed or cancelled import keeps an explicit retry. The artifact picker shows one loading indicator across videos, photos, and filter changes, and the From photos tab no longer flashes the previous video list. Playlist rows keep playback, details, and actions separate, with Play and Stop as the primary control. Drive imports during preparation go to the Library first.
+
+Go-live readiness automatically selects the only enabled live source, and the readiness Flow and the route workspace view selector share one choice for Live Ingest, Playlist Playout, and Relay. A hidden browser tab keeps its last page when the live connection closes and reconnects as soon as it is visible again, showing an Updating banner instead of a blocking Connection lost page. If recovery takes more than 5 visible seconds, the banner notes that the page is not current.
+
+Operator pages share type sizes, theme assets, status badges, and dialog presentation. Popovers, open menus, route alerts, and stream info panels use one overlay layer above cards and sticky bars and below dialogs, and help tips and Details panels close on outside click and Escape. The sidebar Attention item shows its badge only while a warning or critical alert needs action. The webapp wordmark is Fluxomni everywhere, with no Studio suffix. Keyboard navigation gains a compact focus-isolating drawer, a skip link, exact sidebar destinations for assistive technology, and proper headings on settings cards.
+
+Saved rundowns clear an initial loading error after a successful background refresh without hiding a mutation failure. Change history keeps automatic refresh active when the first request for an older page fails.
+
+### HTTPS for the manual control-plane site
+
+The manual control-plane site can be served over HTTPS for a domain or a public IP with no certificate prompt. Private, documentation, and other non-routable addresses stay on HTTP.
+
+### Security
+
+Mutations no longer run over HTTP GET, error toasts escape markup, and the operator UI ships a strict content security policy. Passwords require 6 or more characters and hash with Argon2id. Login failures are timing-equal and same-origin checked. Route preview relays and catalog downloads are scoped to readable routes, a Viewer no longer sees pull-source URLs, and the settings export hides the Google API key from Operators. A distributed Compose deployment requires an explicit internal auth token, the SRS callback binds loopback by default, and publish tokens come from the operating system's CSPRNG. Bundled SQLite, the MCP SDK, rustix, and actix-http are updated to versions that fix known security and memory-safety issues.
+
 ## v26.4.0 - 6 November 2026
 
 <video controls muted playsinline width="100%">

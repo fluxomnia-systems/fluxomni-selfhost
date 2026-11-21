@@ -4,7 +4,7 @@
     "docsPath": "/edge/",
     "imageTag": "edge"
   },
-  "latestStable": "v26.4.0",
+  "latestStable": "v26.4.1",
   "releases": {
     "v26.1.0": {
       "coreVersion": "v0.10.0",
@@ -351,6 +351,64 @@
         "generatedFrom": "acc117ff"
       },
       "summary": "Recordings and rundowns, playlist programming, a per-node capacity ledger, private outbound media nodes, and the 26.4.0 GraphQL contract. The pinned API client is @fluxomni/api-client@26.4.0."
+    },
+    "v26.4.1": {
+      "api": {
+        "automationDocsPath": "/api/",
+        "contract": "stable",
+        "schemaPath": "api/schema.graphql",
+        "schemaSha256": "9bcf0577d1754ed412cd168b9a8c9c67f0559266517dc661b4efc4aa6a7bcff1",
+        "typescriptClient": "@fluxomni/api-client@26.4.1"
+      },
+      "coreCommit": "ba712c498524c6c4f4eb971eb8dcf3ca9d96308d",
+      "coreVersion": "v26.4.1",
+      "docsStablePath": "/",
+      "docsVersionPath": "/v26.4.1/",
+      "highlights": [
+        {
+          "area": "Google Drive folder sync and richer Drive imports in Artifacts",
+          "description": "The Artifacts page gains a Sources view where Admins and Operators register a Google Drive folder with the Public access or Service account connection. \"Check now\" runs one bounded scan that lists the folder's direct children, keeps videos only, and queues downloads only for files the library does not have yet \u2014...",
+          "title": "Google Drive folder sync and richer Drive imports in Artifacts"
+        },
+        {
+          "area": "Administrator change history in Settings",
+          "description": "Administrators can review available recorded changes and events from the last 24 hours in Settings, with actor, domain and outcome filters. Recording and retention are not guaranteed to cover every action.",
+          "title": "Administrator change history in Settings"
+        },
+        {
+          "area": "Automatic list refresh recovers after query failures",
+          "description": "Saved rundowns clear initial loading errors after a successful background refresh without hiding mutation failures. Change history keeps automatic refresh active when the first request for an older page fails.",
+          "title": "Automatic list refresh recovers after query failures"
+        },
+        {
+          "area": "Connect enrollment fixes on HTTPS Installations",
+          "description": "Guided Connect registration and personal access handoffs now work on HTTPS Installations, including IPv6 origins: the browser sends the handoff to the configured Connect portal and continues with a short-lived, single-use reference. The Control Plane can also create protected Installation signing keys when Docker...",
+          "title": "Connect enrollment fixes on HTTPS Installations"
+        },
+        {
+          "area": "Media-node registration, capabilities and fleet page",
+          "description": "The media node page keeps admission limits in Edit node, with drain and maintenance in a labeled Actions menu; machine credentials open from the header menu. The Fleet node page uses a single tab list, a more compact card grid, and one-line clipped labels on phones. moveOutput now reports UNCHANGED/NOT_FOUND...",
+          "title": "Media-node registration, capabilities and fleet page"
+        },
+        {
+          "area": "Library, artifact picker and playlist usability",
+          "description": "Downloads in the transfer drawer can now be cancelled without deleting library entries, and failed or cancelled imports keep an explicit retry. The From photos tab no longer flashes the previous video list, and the artifact picker shows one loading indicator across videos, photos and filter changes. The Add files...",
+          "title": "Library, artifact picker and playlist usability"
+        }
+      ],
+      "images": {
+        "controlPlane": "ghcr.io/fluxomnia-systems/fluxomni-control-plane:v26.4.1",
+        "frontend": "ghcr.io/fluxomnia-systems/fluxomni-frontend:v26.4.1",
+        "mediaNode": "ghcr.io/fluxomnia-systems/fluxomni-media-node:v26.4.1"
+      },
+      "installerPath": "scripts/install-runtime.sh",
+      "releasedAt": "2026-11-21",
+      "selfhostRef": "v26.4.1",
+      "source": {
+        "coreTag": "v26.4.1",
+        "generatedFrom": "ba712c49"
+      },
+      "summary": "The Artifacts page gains a Sources view where Admins and Operators register a Google Drive folder with the Public access or Service account connection. \"Check now\" runs one bounded scan that lists the folder's direct children, keeps videos only, and queues downloads only for files the library does not have yet \u2014..."
     }
   },
   "schemaVersion": 1
