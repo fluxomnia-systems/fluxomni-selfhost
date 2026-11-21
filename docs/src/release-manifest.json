@@ -360,7 +360,7 @@
         "schemaSha256": "9bcf0577d1754ed412cd168b9a8c9c67f0559266517dc661b4efc4aa6a7bcff1",
         "typescriptClient": "@fluxomni/api-client@26.4.1"
       },
-      "coreCommit": "a97135e3de67d8b4cb844a7b2675c844def06900",
+      "coreCommit": "ba712c498524c6c4f4eb971eb8dcf3ca9d96308d",
       "coreVersion": "v26.4.1",
       "docsStablePath": "/",
       "docsVersionPath": "/v26.4.1/",
@@ -387,7 +387,7 @@
         },
         {
           "area": "Media-node registration, capabilities and fleet page",
-          "description": "The media node page keeps admission limits in Edit node, with drain and maintenance in a labeled Actions menu; machine credentials open from the header menu. The Fleet node page uses a single tab list, a more compact card grid, and one-line clipped labels on phones. moveOutput now reports UNCHANGED/NOTFOUND...",
+          "description": "The media node page keeps admission limits in Edit node, with drain and maintenance in a labeled Actions menu; machine credentials open from the header menu. The Fleet node page uses a single tab list, a more compact card grid, and one-line clipped labels on phones. moveOutput now reports UNCHANGED/NOT_FOUND...",
           "title": "Media-node registration, capabilities and fleet page"
         },
         {
@@ -406,7 +406,7 @@
       "selfhostRef": "v26.4.1",
       "source": {
         "coreTag": "v26.4.1",
-        "generatedFrom": "a97135e3"
+        "generatedFrom": "ba712c49"
       },
       "summary": "The Artifacts page gains a Sources view where Admins and Operators register a Google Drive folder with the Public access or Service account connection. \"Check now\" runs one bounded scan that lists the folder's direct children, keeps videos only, and queues downloads only for files the library does not have yet \u2014..."
     }
