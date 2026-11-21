@@ -2,7 +2,7 @@
 
 Upgrade the frontend, control plane, and every media node to the same release. 26.4.1 changes how a media node declares its capabilities and reachability, so a node left on 26.4.0 will not match the control plane. Plan a short maintenance window so every node is recreated with the new release before traffic returns.
 
-There is no schema migration and no capacity-ledger step in this release. The [26.4.0 upgrade](upgrade-26.4.0.md) already initialized the ledger. An installation still on 26.3.x must complete that upgrade first.
+There is no schema migration in this release, and it does not create a new capacity ledger. The [26.4.0 upgrade](upgrade-26.4.0.md) already initialized the ledger. An installation still on 26.3.x must complete that upgrade first. An existing install still needs a capacity maintenance mode: a plain `bash install.sh` exits before it upgrades.
 
 ## Before upgrading
 
@@ -26,23 +26,23 @@ Set these before recreating each media node. A node that starts with an invalid 
 
 Pin `v26.4.1` from install.fluxomni.io. `https://install.fluxomni.io/v26.4.1` and `FLUXOMNI_VERSION=v26.4.1` select the same release.
 
-On the control-plane host:
+On the control-plane host, disable every route and confirm Fleet shows zero reservations. Then upgrade with the drained mode. The ordered checks are in [Later Planned Upgrades](capacity-upgrades.md#later-planned-upgrades).
 
 ```bash
 curl -fsSL https://install.fluxomni.io -o /tmp/fluxomni-install.sh
 FLUXOMNI_DIR="$HOME/fluxomni" FLUXOMNI_VERSION=v26.4.1 \
-  bash /tmp/fluxomni-install.sh
+  bash /tmp/fluxomni-install.sh full --capacity-upgrade drained
 ```
 
 The installer keeps data and updates its managed files. It does not guarantee a rolling upgrade without downtime. Keep the existing control-plane endpoint, node identity, and public host settings, and review custom Compose overrides before restarting.
 
-After the control-plane step succeeds, update each media node with the same release and its capability settings:
+After the control-plane step succeeds, update each standalone media node with the same release, the node maintenance mode, and its capability settings:
 
 ```bash
 curl -fsSL https://install.fluxomni.io -o /tmp/fluxomni-install.sh
 FLUXOMNI_DIR="$HOME/fluxomni-media-node" FLUXOMNI_VERSION=v26.4.1 \
   FLUXOMNI_MEDIA_NODE_CAPABILITIES=public_ingest,public_egress \
-  bash /tmp/fluxomni-install.sh media-node
+  bash /tmp/fluxomni-install.sh media-node --capacity-upgrade node --confirm-control-plane-ready
 ```
 
 Set `FLUXOMNI_MEDIA_NODE_CAPABILITIES` to the capabilities that node should advertise, and add `FLUXOMNI_MEDIA_NODE_PRIVATE_NETWORK_ONLY` for a node that is reachable only on a private network.
