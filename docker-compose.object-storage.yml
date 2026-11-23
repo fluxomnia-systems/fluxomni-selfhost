@@ -49,7 +49,7 @@ services:
     depends_on:
       garage:
         condition: service_healthy
-    entrypoint: ["python3", "/opt/object-storage/object-storage.py", "provision"]
+    entrypoint: ["python3", "/opt/object-storage/object-storage.py", "provision", "--config", "/opt/object-storage/config.toml"]
     environment:
       FLUXOMNI_OBJECT_STORAGE_DIR: /opt/object-storage
       FLUXOMNI_OBJECT_STORAGE_ADMIN_URL: http://garage:3903

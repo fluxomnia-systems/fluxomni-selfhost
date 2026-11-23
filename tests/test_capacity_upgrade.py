@@ -173,6 +173,25 @@ def test_initial_upgrade_proves_persistence_and_removes_ack_before_execution(dat
     assert upgrade.read_ledger(database)[0] is True
 
 
+def test_optional_services_start_at_their_maintenance_boundaries(database):
+    class WithOverlays(Lifecycle):
+        def config(self):
+            config = super().config()
+            config["services"].update(garage={}, **{"garage-init": {}, "caddy": {}})
+            return config
+
+    docker = WithOverlays(database)
+    upgrade.maintenance(docker, "initial", str(database))
+    events = docker.events
+    assert events.index(("up", "-d", "--wait", "garage")) < events.index(
+        ("run", "--rm", "--no-deps", "garage-init")
+    ) < events.index(("candidate", True))
+    assert events[-2:] == [
+        ("up", "-d", "--no-deps", "media-node", "frontend"),
+        ("up", "-d", "--no-deps", "caddy"),
+    ]
+
+
 # @lat: [[installation#Capacity initialization failure tests]]
 @pytest.mark.parametrize("failure", ["fail_api", "fail_persist"])
 def test_failed_initialization_never_starts_execution_or_rolls_back_data(database, failure):
