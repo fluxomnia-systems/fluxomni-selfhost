@@ -147,8 +147,9 @@ elif name == "docker":
         print("default")
     elif args[:2] == ["context", "inspect"]:
         print(os.environ.get("TEST_DOCKER_ENDPOINT", "unix:///var/run/docker.sock"))
-    elif args[:6] == ["compose", "run", "--rm", "--no-deps", "control-init"]:
-        pass
+    elif args[:4] == ["compose", "run", "--rm", "--no-deps"] and args[4:] in (["control-init"], ["garage-init"]):
+        if args[-1] == "garage-init" and not json.loads(Path("states.json").read_text()).get("garage"):
+            sys.exit(1)
     elif args[:2] == ["compose", "up"] or args[:2] == ["compose", "-f"]:
         if os.environ.get("TEST_START_FAIL"):
             sys.exit(1)
@@ -157,6 +158,8 @@ elif name == "docker":
         config = json.loads(rendered)
         states = json.loads(Path("states.json").read_text()) if Path("states.json").exists() else {}
         selected = args[args.index("--force-recreate") + 1:] if "--force-recreate" in args else (args[4:] if "--no-deps" in args else list(config["services"]))
+        if args[:4] == ["compose", "up", "-d", "--wait"]:
+            selected = args[4:]
         if not selected:
             selected = list(config["services"])
         for service in selected:
