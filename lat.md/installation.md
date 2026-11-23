@@ -74,9 +74,21 @@ Docker Desktop, remote contexts, rootless daemons and user namespace remapping f
 
 ## Local admin tool
 
-[[scripts/fluxomnictl.py#main|fluxomnictl]] finds a full or standalone install and checks it without pulling images or restarting services.
+[[scripts/fluxomnictl.py#main|fluxomnictl]] finds a full or standalone install and checks it without pulling images or restarting services. Its upgrade command runs a downloaded installer through bash and does not choose a version.
 
 `bash install.sh tools` installs the current tool for a supported install (`v26.4.0` or newer, including `latest` and `edge`). Root gets `/usr/local/bin`. Other users get `~/.local/bin`. [[doctor.sh]] only forwards to `fluxomnictl doctor` for that install folder. [[scripts/fluxomnictl.py#preparation_checks]] lists every preparation host failure. `--enable-controllers` writes a systemd drop-in only after confirmation and never removes it.
+
+## Pinned upgrade command
+
+[[scripts/fluxomnictl.py#upgrade]] runs a downloaded install.sh through bash with the capacity-guide arguments and one explicit version pin. It does not download, choose a version, or replace backup, drain, or external stop.
+
+The operator names `initial`, `drained`, or `node`. `initial` is full-stack only and requires `--confirm-execution-stopped`. `drained` is full-stack only. `node` is media-node only and requires `--confirm-control-plane-ready`. A mode that does not match the selected install is refused. The tool does not read the ledger to pick a mode.
+
+`--version` must be `vMAJOR.MINOR.PATCH`. `latest`, `edge`, and an omitted version are refused. An already set `FLUXOMNI_DIR` or `FLUXOMNI_VERSION` that differs from the selected install or pin is refused. The child inherits the caller environment, including capability variables the operator exported. [[scripts/fluxomnictl.py#select_install]] chooses the install. The installer path is resolved before the runner, so a bare name cannot select a different file from PATH. [[scripts/fluxomnictl.py#run_installer]] uses bash and returns a signal as the shell status. Tests stub that runner and never exec install.sh. `install.sh tools` installs the tool only for v26.4.0 or newer, so a first move from an older install stays the bash command.
+
+## Pinned upgrade command tests
+
+Upgrade refusals happen before the runner starts, and a valid call passes only the documented installer arguments and selected environment.
 
 ## Preparation group lifecycle
 
@@ -126,7 +138,7 @@ Provisioning tests verify ownership, root separation, live-owner reruns, reboot 
 
 Existing installations require an explicit initial, drained or standalone-node maintenance mode; fresh installation entry points remain unchanged.
 
-The initial mode is full-stack only and requires an external-execution-stopped assertion. Standalone updates assert that the upgraded control plane has verified the initial boundary, or the node drained before stopping. Raw acknowledgement environment/Compose overrides are rejected. See the public capacity upgrade guide for operator ordering.
+The initial mode is full-stack only and requires an external-execution-stopped assertion. Standalone updates assert that the upgraded control plane has verified the initial boundary, or the node drained before stopping. Raw acknowledgement environment/Compose overrides are rejected. See the public capacity upgrade guide for operator ordering. [[scripts/fluxomnictl.py#upgrade]] passes those same flags to the release launcher and does not select the mode.
 
 A rerun that only sets preparation variables, and omits the maintenance mode, stops before any change. It prints the drained or node command and [[scripts/fluxomnictl.py#preparation_checks|fluxomnictl preparation check]]. It does not name unshipped preparation subcommands.
 

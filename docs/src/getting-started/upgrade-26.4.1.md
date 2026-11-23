@@ -26,6 +26,10 @@ Set these before recreating each media node. A node that starts with an invalid 
 
 Pin `v26.4.1` from install.fluxomni.io. `https://install.fluxomni.io/v26.4.1` and `FLUXOMNI_VERSION=v26.4.1` select the same release.
 
+`fluxomnictl upgrade` runs that downloaded file through bash, with the same target, mode, and confirmation flag as the bash command. It does not download the installer. It does not replace backup, route drain, external execution stop, or the [capacity upgrade guide](capacity-upgrades.md). Pass `--installer` and an explicit pin such as `--version v26.4.1`. The command sets `FLUXOMNI_DIR` to the selected install. If `FLUXOMNI_DIR` or `FLUXOMNI_VERSION` is already set to a different value, the command stops before it runs the installer.
+
+`install.sh tools` installs fluxomnictl only for v26.4.0 or newer. The first move from 26.3.x stays the bash command. Use fluxomnictl only after that tool is already installed.
+
 From 26.3.x, stop every old execution container, then initialize the ledger. The ordered checks are in [First Capacity Upgrade](capacity-upgrades.md#first-capacity-upgrade).
 
 ```bash
@@ -42,6 +46,15 @@ FLUXOMNI_DIR="$HOME/fluxomni" FLUXOMNI_VERSION=v26.4.1 \
   bash /tmp/fluxomni-install.sh full --capacity-upgrade drained
 ```
 
+The fluxomnictl form of that command, after that download:
+
+```bash
+fluxomnictl --dir "$HOME/fluxomni" upgrade \
+  --installer /tmp/fluxomni-install.sh \
+  --version v26.4.1 \
+  --capacity-upgrade drained
+```
+
 The installer keeps data and updates its managed files. It does not guarantee a rolling upgrade without downtime. Keep the existing control-plane endpoint, node identity, and public host settings, and review custom Compose overrides before restarting.
 
 After the control-plane step succeeds, update each standalone media node with the same release, the node maintenance mode, and its capability settings:
@@ -51,6 +64,17 @@ curl -fsSL https://install.fluxomni.io -o /tmp/fluxomni-install.sh
 FLUXOMNI_DIR="$HOME/fluxomni-media-node" FLUXOMNI_VERSION=v26.4.1 \
   FLUXOMNI_MEDIA_NODE_CAPABILITIES=public_ingest,public_egress \
   bash /tmp/fluxomni-install.sh media-node --capacity-upgrade node --confirm-control-plane-ready
+```
+
+Export the capability variables before fluxomnictl. The command does not set them. Use this form only when that host already has fluxomnictl. A 26.3.x host cannot install the tool yet, so use the bash command above there.
+
+```bash
+export FLUXOMNI_MEDIA_NODE_CAPABILITIES=public_ingest,public_egress
+fluxomnictl --dir "$HOME/fluxomni-media-node" upgrade \
+  --installer /tmp/fluxomni-install.sh \
+  --version v26.4.1 \
+  --capacity-upgrade node \
+  --confirm-control-plane-ready
 ```
 
 Set `FLUXOMNI_MEDIA_NODE_CAPABILITIES` to the capabilities that node should advertise. For a private-only node, set `FLUXOMNI_MEDIA_NODE_PRIVATE_NETWORK_ONLY=true`. An empty value is treated as false, and the control plane may then derive public ingest or egress from the node's ports.
