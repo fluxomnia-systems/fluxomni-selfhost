@@ -86,7 +86,7 @@ The operator names `initial`, `drained`, or `node`. `initial` is full-stack only
 
 `--version` must be `vMAJOR.MINOR.PATCH`. `latest`, `edge`, and an omitted version are refused. An already set `FLUXOMNI_DIR` or `FLUXOMNI_VERSION` that differs from the selected install or pin is refused. A non-empty `FLUXOMNI_SELFHOST_REF` or `FLUXOMNI_REPO_RAW` is refused, because either one selects installer assets separately from the pin. The child inherits the caller environment, including capability variables the operator exported. [[scripts/fluxomnictl.py#select_install]] chooses the install. The installer path is resolved before the runner, so a bare name cannot select a different file from PATH. [[scripts/fluxomnictl.py#run_installer]] uses bash and returns a signal as the shell status. Tests stub that runner and never exec install.sh. `install.sh tools` installs the tool only for v26.4.0 or newer, so a first move from an older install stays the bash command.
 
-After preflight, the command prints the selected install, target, version, and mode. A terminal requires an explicit yes. Without a terminal, `--yes` answers only the proceed question and does not replace any maintenance assertion.
+After preflight, the command prints the selected install, target, version, mode, and the Garage and HTTPS choice. Omitted choices stay unchanged. `on` or `off` is full-stack only. A terminal requires an explicit yes. Without a terminal, `--yes` answers only the proceed question and does not replace any maintenance assertion.
 
 ## Pinned upgrade command tests
 

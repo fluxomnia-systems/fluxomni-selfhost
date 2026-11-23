@@ -646,8 +646,14 @@ def upgrade(args, install, environ, runner, interactive, ask):
             raise CtlError(f"--capacity-upgrade {mode} requires {confirm}")
         extra = next(flag for flag in passed if flag != confirm)
         raise CtlError(f"--capacity-upgrade {mode} does not take {extra}")
+    for name, value in (("garage", args.garage), ("https", args.https)):
+        if value is not None and value not in ("on", "off"):
+            raise CtlError(f"--{name} must be on or off")
+        if value is not None and install.target != "full":
+            raise CtlError(f"--{name} applies only to a full install")
     installer = require_installer(args.installer)
     print(f"Upgrade plan: {selected!r} ({install.target}), version {pin}, maintenance mode {mode}.")
+    print(f"Garage: {args.garage or 'unchanged'}. HTTPS: {args.https or 'unchanged'}.")
     print("This command does not disable or restore routes, take a backup, or replace the capacity guide.", flush=True)
     if interactive:
         try:
@@ -661,6 +667,10 @@ def upgrade(args, install, environ, runner, interactive, ask):
     child = dict(environ)
     child["FLUXOMNI_DIR"] = selected
     child["FLUXOMNI_VERSION"] = pin
+    if args.garage:
+        child["FLUXOMNI_UPGRADE_GARAGE"] = args.garage
+    if args.https:
+        child["FLUXOMNI_UPGRADE_HTTPS"] = args.https
     argv = [installer, install.target, "--capacity-upgrade", mode, *wanted]
     return runner(argv, child)
 
@@ -697,6 +707,8 @@ def build_parser():
     upgrade_command.add_argument("--confirm-execution-stopped", action="store_true", help="required with initial")
     upgrade_command.add_argument("--confirm-control-plane-ready", action="store_true", help="required with node")
     upgrade_command.add_argument("--yes", action="store_true", help="confirm the plan without a terminal; does not replace maintenance assertions")
+    upgrade_command.add_argument("--garage", choices=("on", "off"), help="turn Garage on or off; omit to keep the saved setting")
+    upgrade_command.add_argument("--https", choices=("on", "off"), help="turn installer-managed HTTPS on or off; omit to keep the saved setting")
     preparation = commands.add_parser("preparation", help="offline preparation limits")
     actions = preparation.add_subparsers(dest="action", metavar="ACTION", required=True)
     check = actions.add_parser("check", help="check every host requirement and list all problems")

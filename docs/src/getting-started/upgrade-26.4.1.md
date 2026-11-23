@@ -30,6 +30,8 @@ Pin `v26.4.1` from install.fluxomni.io. `https://install.fluxomni.io/v26.4.1` an
 
 After checking the inputs, `fluxomnictl upgrade` prints the plan and asks `Proceed with this upgrade?` on a terminal. Answer `y` or `yes` to proceed. Without a terminal, pass `--yes` to approve the plan. This does not supply the version, mode, or any required maintenance confirmation.
 
+`--garage on` or `--garage off` changes object storage. `--https on` or `--https off` changes the installer-managed Caddy overlay. Omitting either flag leaves that setting as it is. Both apply only to a full install. HTTPS is included from `docker-compose.yml`, not through `COMPOSE_FILE`.
+
 `install.sh tools` installs fluxomnictl only for v26.4.0 or newer. The first move from 26.3.x stays the bash command. Use fluxomnictl only after that tool is already installed.
 
 From 26.3.x, stop every old execution container, then initialize the ledger. The ordered checks are in [First Capacity Upgrade](capacity-upgrades.md#first-capacity-upgrade).

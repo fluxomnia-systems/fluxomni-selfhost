@@ -571,6 +571,29 @@ def test_upgrade_passes_the_documented_launcher_call(home, tmp_path, target, mod
     assert "FLUXOMNI_SELFHOST_REF" not in env
     assert "FLUXOMNI_REPO_RAW" not in env
     assert caller["FLUXOMNI_VERSION"] == "v26.4.1"
+    assert "FLUXOMNI_UPGRADE_GARAGE" not in env
+    assert "FLUXOMNI_UPGRADE_HTTPS" not in env
+
+
+def test_upgrade_plan_names_garage_and_https(home, tmp_path, capsys):
+    folder = make_install(home / "fluxomni", "full")
+    installer = installer_file(tmp_path / "install.sh")
+    args = ["--installer", str(installer), "--version", "v26.4.1", "--capacity-upgrade", "drained", "--garage", "on", "--https", "off"]
+    code, stub = upgrade_main(home, folder, args)
+    assert code == 0
+    env = stub.calls[0][1]
+    assert env["FLUXOMNI_UPGRADE_GARAGE"] == "on"
+    assert env["FLUXOMNI_UPGRADE_HTTPS"] == "off"
+    text = capsys.readouterr().out
+    assert "Garage: on. HTTPS: off." in text
+
+
+def test_upgrade_options_are_full_install_only(home, tmp_path, capsys):
+    folder = make_install(home / "fluxomni-media-node", "media-node")
+    installer = installer_file(tmp_path / "install.sh")
+    args = ["--installer", str(installer), "--version", "v26.4.1", "--capacity-upgrade", "node", "--confirm-control-plane-ready", "--garage", "off"]
+    code, stub = upgrade_main(home, folder, args)
+    assert_refused(capsys, code, stub)
 
 
 def test_upgrade_help_keeps_the_manual_steps(capsys):

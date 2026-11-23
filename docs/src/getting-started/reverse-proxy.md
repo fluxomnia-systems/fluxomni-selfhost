@@ -72,11 +72,7 @@ curl -fsSL https://install.fluxomni.io | WITH_AUTO_HTTPS=1 FLUXOMNI_PUBLIC_HOST=
 - A public **IP** (no domain needed) gets the short-lived IP certificate profile; port 80 must be reachable from the internet for the HTTP-01 challenge, and Caddy renews the certificate automatically.
 - A **private or loopback** host stays on plain HTTP and the installer says so.
 
-The installer writes `Caddyfile.auto-https` and `docker-compose.https.yml`, sets
-`FLUXOMNI_PUBLIC_URL=https://<host>` and `FLUXOMNI_TRUSTED_PROXY_IPS=127.0.0.1`,
-and moves the frontend to a loopback-only port. To roll back, remove those two
-files and rerun without the flag. Media ports (RTMP, SRT, HLS, WHIP) are not
-proxied and stay direct.
+The installer writes `Caddyfile.auto-https` and `docker-compose.https.yml`, includes that overlay from `docker-compose.yml`, sets `FLUXOMNI_PUBLIC_URL=https://<host>` and `FLUXOMNI_TRUSTED_PROXY_IPS=127.0.0.1`, and moves the frontend to a loopback-only port. It does not set `COMPOSE_FILE`. To roll back, remove the include and those two files, or rerun `fluxomnictl upgrade --https off`. Media ports (RTMP, SRT, HLS, WHIP) are not proxied and stay direct.
 
 ## nginx
 
