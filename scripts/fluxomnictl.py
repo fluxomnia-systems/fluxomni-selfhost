@@ -550,6 +550,7 @@ def doctor(install, host, out=None, environ=None):
 
 
 VERSION_PIN = re.compile(r"v[0-9]+\.[0-9]+\.[0-9]+\Z")
+RELEASE_SOURCE_VARS = ("FLUXOMNI_SELFHOST_REF", "FLUXOMNI_REPO_RAW")
 UPGRADE_MODES = {
     "initial": ("full", "--confirm-execution-stopped"),
     "drained": ("full", None),
@@ -606,7 +607,7 @@ def require_installer(path):
 
 
 # @lat: [[installation#Pinned upgrade command]]
-def upgrade(args, install, environ, runner):
+def upgrade(args, install, environ, runner, interactive, ask):
     """Run the release launcher for one explicit pin and one named maintenance mode.
 
     The installer remains the authority for whether that pin is acceptable.
@@ -621,6 +622,13 @@ def upgrade(args, install, environ, runner):
     current_version = environ.get("FLUXOMNI_VERSION")
     if current_version is not None and current_version != pin:
         raise CtlError(f"FLUXOMNI_VERSION is set to {current_version or 'empty'}, not {pin}. Refusing to override it")
+    overrides = [name for name in RELEASE_SOURCE_VARS if environ.get(name)]
+    if overrides:
+        raise CtlError(
+            "refusing release source override "
+            + ", ".join(overrides)
+            + ". Unset it so the version pin selects the installer assets"
+        )
     mode = args.capacity_upgrade
     if mode not in UPGRADE_MODES:
         raise CtlError("upgrade needs --capacity-upgrade initial, drained, or node")
@@ -639,6 +647,17 @@ def upgrade(args, install, environ, runner):
         extra = next(flag for flag in passed if flag != confirm)
         raise CtlError(f"--capacity-upgrade {mode} does not take {extra}")
     installer = require_installer(args.installer)
+    print(f"Upgrade plan: {selected!r} ({install.target}), version {pin}, maintenance mode {mode}.")
+    print("This command does not disable or restore routes, take a backup, or replace the capacity guide.", flush=True)
+    if interactive:
+        try:
+            answer = ask("Proceed with this upgrade? [y/N] ")
+        except (EOFError, KeyboardInterrupt):
+            raise CtlError("upgrade not confirmed") from None
+        if answer.strip().lower() not in ("y", "yes"):
+            raise CtlError("upgrade not confirmed")
+    elif not args.yes:
+        raise CtlError("upgrade confirmation requires a terminal or --yes")
     child = dict(environ)
     child["FLUXOMNI_DIR"] = selected
     child["FLUXOMNI_VERSION"] = pin
@@ -670,13 +689,14 @@ def build_parser():
     upgrade_command = commands.add_parser(
         "upgrade",
         help=f"run a downloaded install.sh for one pinned upgrade. {UPGRADE_LIMIT}",
-        description=f"Execute an already downloaded install.sh for one explicit version pin. {UPGRADE_LIMIT}.",
+        description=f"Print the upgrade plan and confirm before running a downloaded install.sh for one explicit version pin. {UPGRADE_LIMIT}.",
     )
     upgrade_command.add_argument("--installer", help="path to an already downloaded install.sh")
     upgrade_command.add_argument("--version", help="explicit pin such as v26.4.1")
     upgrade_command.add_argument("--capacity-upgrade", help="initial, drained, or node")
     upgrade_command.add_argument("--confirm-execution-stopped", action="store_true", help="required with initial")
     upgrade_command.add_argument("--confirm-control-plane-ready", action="store_true", help="required with node")
+    upgrade_command.add_argument("--yes", action="store_true", help="confirm the plan without a terminal; does not replace maintenance assertions")
     preparation = commands.add_parser("preparation", help="offline preparation limits")
     actions = preparation.add_subparsers(dest="action", metavar="ACTION", required=True)
     check = actions.add_parser("check", help="check every host requirement and list all problems")
@@ -707,7 +727,7 @@ def main(argv=None, environ=None, cwd=None, interactive=None, host=None, ask=inp
         elif args.command == "doctor":
             return doctor(install, host, environ=environ)
         elif args.command == "upgrade":
-            return upgrade(args, install, environ, runner)
+            return upgrade(args, install, environ, runner, interactive, ask)
     except CtlError as error:
         print(f"Error: {error}.", file=sys.stderr)
         return 1

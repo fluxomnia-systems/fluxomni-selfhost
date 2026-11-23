@@ -15,7 +15,7 @@ services:
       garage-init:
         condition: service_completed_successfully
     environment:
-      FLUXOMNI_STORAGE_BACKEND: ${FLUXOMNI_STORAGE_BACKEND:-id=object_storage,label=Object storage,location_type=OBJECT_STORAGE,kind=s3,bucket=${FLUXOMNI_OBJECT_STORAGE_BUCKET:?set FLUXOMNI_OBJECT_STORAGE_BUCKET in .env},region=us-east-1,endpoint_url=http://garage:3900,path_style=true,fetch_mode=presigned,presign_ttl_seconds=300}
+      FLUXOMNI_STORAGE_BACKEND: ${FLUXOMNI_STORAGE_BACKEND:-id=control_plane_relay,label=Local,location_type=CONTROL_PLANE_RELAY,kind=filesystem,path=/app/fluxomni-data/videos;id=object_storage,label=Object-storage,location_type=OBJECT_STORAGE,kind=s3,bucket=${FLUXOMNI_OBJECT_STORAGE_BUCKET:?set FLUXOMNI_OBJECT_STORAGE_BUCKET in .env},region=us-east-1,endpoint_url=http://garage:3900,path_style=true,fetch_mode=presigned,presign_ttl_seconds=300}
       AWS_ACCESS_KEY_ID: ${FLUXOMNI_OBJECT_STORAGE_ACCESS_KEY:?run scripts/object-storage.py init}
       AWS_SECRET_ACCESS_KEY: ${FLUXOMNI_OBJECT_STORAGE_SECRET_KEY:?run scripts/object-storage.py init}
       AWS_REGION: us-east-1

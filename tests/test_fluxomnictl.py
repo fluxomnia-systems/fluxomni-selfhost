@@ -518,13 +518,14 @@ def installer_file(path):
     return path
 
 
-def upgrade_main(home, folder, args, environ=None, runner=None):
+def upgrade_main(home, folder, args, environ=None, runner=None, interactive=True, ask=lambda _: "yes"):
     stub = runner or StubRunner()
     code = ctl.main(
         ["--dir", str(folder), "upgrade", *args],
         environ={"HOME": str(home), **(environ or {})},
         cwd=home,
-        interactive=False,
+        interactive=interactive,
+        ask=ask,
         runner=stub,
     )
     return code, stub
@@ -567,6 +568,8 @@ def test_upgrade_passes_the_documented_launcher_call(home, tmp_path, target, mod
     assert env["FLUXOMNI_VERSION"] == "v26.4.1"
     assert env["FLUXOMNI_MEDIA_NODE_CAPABILITIES"] == "public_ingest"
     assert "FLUXOMNI_CAPACITY_UPGRADE_STOPPED" not in env
+    assert "FLUXOMNI_SELFHOST_REF" not in env
+    assert "FLUXOMNI_REPO_RAW" not in env
     assert caller["FLUXOMNI_VERSION"] == "v26.4.1"
 
 
@@ -634,6 +637,33 @@ def test_upgrade_fails_closed_when_env_dir_or_version_differs(home, tmp_path, ca
     assert_refused(capsys, code, stub)
 
 
+def test_upgrade_refuses_release_source_overrides(home, tmp_path, capsys):
+    folder = make_install(home / "fluxomni", "full")
+    installer = installer_file(tmp_path / "install.sh")
+    args = ["--installer", str(installer), "--version", "v26.4.1", "--capacity-upgrade", "drained"]
+    code, stub = upgrade_main(home, folder, args, {"FLUXOMNI_SELFHOST_REF": "main"})
+    assert code == 1 and stub.calls == []
+    assert "FLUXOMNI_SELFHOST_REF" in capsys.readouterr().err
+    code, stub = upgrade_main(home, folder, args, {"FLUXOMNI_REPO_RAW": "https://example.invalid/raw"})
+    assert code == 1 and stub.calls == []
+    assert "FLUXOMNI_REPO_RAW" in capsys.readouterr().err
+    code, stub = upgrade_main(
+        home,
+        folder,
+        args,
+        {"FLUXOMNI_SELFHOST_REF": "main", "FLUXOMNI_REPO_RAW": "https://example.invalid/raw"},
+    )
+    assert code == 1 and stub.calls == []
+    err = capsys.readouterr().err
+    assert err.startswith("Error: ")
+    assert "FLUXOMNI_SELFHOST_REF" in err and "FLUXOMNI_REPO_RAW" in err
+    code, stub = upgrade_main(home, folder, args, {"FLUXOMNI_SELFHOST_REF": " ", "FLUXOMNI_REPO_RAW": ""})
+    assert code == 1 and stub.calls == []
+    assert "FLUXOMNI_SELFHOST_REF" in capsys.readouterr().err
+    code, stub = upgrade_main(home, folder, args, {"FLUXOMNI_SELFHOST_REF": "", "FLUXOMNI_REPO_RAW": ""})
+    assert code == 0 and len(stub.calls) == 1
+
+
 @pytest.mark.parametrize(
     ("target", "mode", "extra"),
     [
@@ -651,8 +681,40 @@ def test_upgrade_refuses_mode_mismatch_and_does_not_invent_confirmation(home, tm
     folder = make_install(home / "install", target)
     installer = installer_file(tmp_path / "install.sh")
     args = ["--installer", str(installer), "--version", "v26.4.1", "--capacity-upgrade", mode, *extra]
-    code, stub = upgrade_main(home, folder, args)
+    code, stub = upgrade_main(home, folder, [*args, "--yes"], ask=must_not_ask)
     assert_refused(capsys, code, stub)
+
+
+@pytest.mark.parametrize(("interactive", "yes", "answer", "status"), [
+    (True, False, "y", 0), (True, False, " YES ", 0), (True, False, "", 1),
+    (True, True, "no", 1), (True, False, EOFError(), 1),
+    (True, False, KeyboardInterrupt(), 1), (False, False, None, 1), (False, True, None, 0),
+])
+def test_upgrade_prints_plan_and_requires_proceed(home, tmp_path, capsys, interactive, yes, answer, status):
+    folder = make_install(home / "fluxomni", "full")
+    installer = installer_file(tmp_path / "install.sh")
+    args = ["--installer", str(installer), "--version", "v26.4.1", "--capacity-upgrade", "drained"]
+    prompts = []
+    output = []
+
+    def ask(question):
+        prompts.append(question)
+        output.append(capsys.readouterr().out)
+        if isinstance(answer, BaseException):
+            raise answer
+        return answer
+
+    code, stub = upgrade_main(home, folder, args + (["--yes"] if yes else []), interactive=interactive, ask=ask)
+    out = capsys.readouterr()
+    plan = "".join(output) + out.out
+    assert all(term in plan for term in (str(folder), "full", "v26.4.1", "drained"))
+    assert "does not disable or restore routes, take a backup, or replace the capacity guide" in plan
+    assert prompts == (["Proceed with this upgrade? [y/N] "] if interactive else [])
+    assert code == status and len(stub.calls) == (1 if status == 0 else 0)
+    if status:
+        assert out.err.startswith("Error: ")
+    else:
+        assert "--yes" not in stub.calls[0][0]
 
 
 def test_upgrade_propagates_a_nonzero_runner_status(home, tmp_path, capsys):
@@ -694,7 +756,7 @@ def test_default_runner_uses_the_checked_file_even_when_it_is_not_executable(hom
     decoy.chmod(0o755)
     monkeypatch.chdir(work)
     code = ctl.main(
-        ["--dir", str(folder), "upgrade", "--installer", "install.sh", "--version", "v26.4.1", "--capacity-upgrade", "drained"],
+        ["--dir", str(folder), "upgrade", "--installer", "install.sh", "--version", "v26.4.1", "--capacity-upgrade", "drained", "--yes"],
         environ={"HOME": str(home), "PATH": f"{decoy_dir}:/usr/bin:/bin"},
         cwd=home,
         interactive=False,
@@ -708,7 +770,7 @@ def test_default_runner_reports_a_killed_installer_as_a_shell_status(home, tmp_p
     script = tmp_path / "sig.sh"
     script.write_text("#!/bin/sh\nkill -TERM $$\n")
     code = ctl.main(
-        ["--dir", str(folder), "upgrade", "--installer", str(script), "--version", "v26.4.1", "--capacity-upgrade", "drained"],
+        ["--dir", str(folder), "upgrade", "--installer", str(script), "--version", "v26.4.1", "--capacity-upgrade", "drained", "--yes"],
         environ={"HOME": str(home), "PATH": "/usr/bin:/bin"},
         cwd=home,
         interactive=False,

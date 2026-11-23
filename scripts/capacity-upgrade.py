@@ -13,6 +13,7 @@ import subprocess
 import sys
 import tempfile
 import time
+import unicodedata
 from contextlib import closing
 from pathlib import Path, PurePosixPath
 
@@ -124,15 +125,47 @@ def require_mode(path, mode):
         raise UpgradeError("Disable all routes and wait for zero reservations before a drained upgrade")
 
 
+def require_compatible_node_labels(path):
+    """Refuse persisted labels the candidate cannot deserialize, without rewriting rows."""
+    invalid = []
+    try:
+        with closing(sqlite3.connect(path.as_uri() + "?mode=ro", uri=True, timeout=5)) as connection:
+            connection.execute("BEGIN")
+            columns = {row[1] for row in connection.execute("PRAGMA table_info(media_nodes)")}
+            if not columns:
+                return  # Older databases do not have the relational projection.
+            id_column = "media_node_id" if "media_node_id" in columns else "NULL"
+            for node_id, raw in connection.execute(f"SELECT {id_column}, payload FROM media_nodes"):
+                node = document(raw)
+                node_id = node_id or node.get("id") or node.get("node_id") or "unknown"
+                labels = node.get("labels", [])
+                if not isinstance(labels, list) or any(not isinstance(label, str) for label in labels):
+                    raise UpgradeError(f"Invalid persisted labels for media node {node_id!r}")
+                lengths = [len(label) for label in labels if not 1 <= len(label) <= 70 or "," in label
+                           or any(unicodedata.category(char) == "Cc" for char in label)]
+                if lengths:
+                    invalid.append(f"media node {node_id!r}: label lengths {', '.join(map(str, lengths))}")
+    except sqlite3.Error as error:
+        raise UpgradeError("Unable to read persisted media-node labels") from error
+    if invalid:
+        raise UpgradeError(
+            "v26.4.1 cannot load these media-node rows (" + "; ".join(invalid) + "). "
+            "Labels must be 1–70 characters without commas or control characters. "
+            "The fingerprint belongs in the toolchain field, not in labels"
+        )
+
+
 class Docker:
     def __init__(self, prefix, timeout):
         self.prefix = prefix
         self.timeout = timeout
 
-    def run(self, *args, timeout=60):
+    def run(self, *args, timeout=60, include_stderr=False):
         try:
             result = subprocess.run(
-                [*self.prefix, *args], capture_output=True, text=True, timeout=timeout, check=False,
+                [*self.prefix, *args], stdout=subprocess.PIPE,
+                stderr=subprocess.STDOUT if include_stderr else subprocess.PIPE,
+                text=True, errors="replace", timeout=timeout, check=False,
             )
         except (OSError, subprocess.TimeoutExpired) as error:
             raise UpgradeError("Docker maintenance operation unavailable or timed out") from error
@@ -141,10 +174,10 @@ class Docker:
             raise UpgradeError("Docker maintenance operation failed: " + " ".join(args[:2]))
         return result.stdout
 
-    def compose(self, *args, timeout=60):
+    def compose(self, *args, timeout=60, include_stderr=False):
         # Make inactive automatic updaters visible for inspection and stopping.
         # Every start below names services explicitly and excludes Watchtower.
-        return self.run("compose", "--profile", "auto-update", *args, timeout=timeout)
+        return self.run("compose", "--profile", "auto-update", *args, timeout=timeout, include_stderr=include_stderr)
 
     def config(self):
         return document(self.compose("config", "--format", "json"))
@@ -188,7 +221,15 @@ class Docker:
                 return
             except (UpgradeError, AttributeError, TypeError):
                 if time.monotonic() >= deadline:
-                    raise UpgradeError("Control-plane admission API did not become ready") from None
+                    try:
+                        logs = self.compose("logs", "--no-color", "--tail=80", "control-plane", timeout=10, include_stderr=True)
+                    except UpgradeError:
+                        logs = ""
+                    detail = logs.strip()[-16000:] or "(no logs available)"
+                    raise UpgradeError(
+                        "Control-plane admission API did not become ready.\n"
+                        f"Recent candidate control-plane logs:\n{detail}"
+                    ) from None
                 time.sleep(min(1, max(0, deadline - time.monotonic())))
 
     def start_control_plane(self, config, acknowledgement=False):
@@ -225,6 +266,7 @@ def maintenance(docker, mode, expected_path):
     if mode != "initial" and "FLUXOMNI_CAPACITY_UPGRADE_STOPPED" in environment:
         raise UpgradeError("Remove the raw runtime acknowledgement before maintenance")
     require_mode(path, mode)
+    require_compatible_node_labels(path)
     controllers = [s for s in ("watchtower", "frontend") if s in services]
     if controllers:
         docker.compose("stop", "--timeout", "30", *controllers)
@@ -245,6 +287,7 @@ def maintenance(docker, mode, expected_path):
             docker.compose("stop", "--timeout", "30", "control-plane")
             control_plane_stopped = True
             require_mode(path, mode)
+        require_compatible_node_labels(path)
         temporary_control_plane = mode == "initial"
         docker.start_control_plane(config, acknowledgement=temporary_control_plane)
         docker.api_ready()
@@ -294,6 +337,7 @@ def preflight(docker, mode):
     if path != actual_path or (mode != "initial" and "FLUXOMNI_CAPACITY_UPGRADE_STOPPED" in environment):
         raise UpgradeError("Rendered storage/acknowledgement differs from the actual control plane")
     require_mode(path, mode)
+    require_compatible_node_labels(path)
     return path
 
 

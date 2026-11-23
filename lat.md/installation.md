@@ -84,7 +84,9 @@ Docker Desktop, remote contexts, rootless daemons and user namespace remapping f
 
 The operator names `initial`, `drained`, or `node`. `initial` is full-stack only and requires `--confirm-execution-stopped`. `drained` is full-stack only. `node` is media-node only and requires `--confirm-control-plane-ready`. A mode that does not match the selected install is refused. The tool does not read the ledger to pick a mode.
 
-`--version` must be `vMAJOR.MINOR.PATCH`. `latest`, `edge`, and an omitted version are refused. An already set `FLUXOMNI_DIR` or `FLUXOMNI_VERSION` that differs from the selected install or pin is refused. The child inherits the caller environment, including capability variables the operator exported. [[scripts/fluxomnictl.py#select_install]] chooses the install. The installer path is resolved before the runner, so a bare name cannot select a different file from PATH. [[scripts/fluxomnictl.py#run_installer]] uses bash and returns a signal as the shell status. Tests stub that runner and never exec install.sh. `install.sh tools` installs the tool only for v26.4.0 or newer, so a first move from an older install stays the bash command.
+`--version` must be `vMAJOR.MINOR.PATCH`. `latest`, `edge`, and an omitted version are refused. An already set `FLUXOMNI_DIR` or `FLUXOMNI_VERSION` that differs from the selected install or pin is refused. A non-empty `FLUXOMNI_SELFHOST_REF` or `FLUXOMNI_REPO_RAW` is refused, because either one selects installer assets separately from the pin. The child inherits the caller environment, including capability variables the operator exported. [[scripts/fluxomnictl.py#select_install]] chooses the install. The installer path is resolved before the runner, so a bare name cannot select a different file from PATH. [[scripts/fluxomnictl.py#run_installer]] uses bash and returns a signal as the shell status. Tests stub that runner and never exec install.sh. `install.sh tools` installs the tool only for v26.4.0 or newer, so a first move from an older install stays the bash command.
+
+After preflight, the command prints the selected install, target, version, and mode. A terminal requires an explicit yes. Without a terminal, `--yes` answers only the proceed question and does not replace any maintenance assertion.
 
 ## Pinned upgrade command tests
 
@@ -108,9 +110,9 @@ Installer overrides that weaken these properties fail before container recreatio
 
 ## Object storage
 
-Full installs enable Garage S3-compatible artifact storage by default (`FLUXOMNI_OBJECT_STORAGE_ENABLED=0` disables it). The installer generates `object-storage/` secrets (0700/0600, idempotent) and writes the scoped key into `.env`.
+Fresh full installs enable Garage by default. Capacity upgrades do not enable it by default. The overlay keeps the local filesystem relay at `/app/fluxomni-data/videos` alongside Garage.
 
-Media-node-only installs refuse an explicit enable. The Garage service runs the pinned `dxflrs/garage:v2.5.0` digest with `--single-node`. The S3 and admin ports publish on loopback only; the control plane uses the private `http://garage:3900` endpoint with presigned fetches. `garage-init` provisions a dedicated access key allowed read/write on exactly one bucket (no owner, no create-bucket), sets the bucket quota, and verifies a SHA-256 checksummed round-trip. No bucket alias or website is created, so buckets are never public.
+Set `FLUXOMNI_OBJECT_STORAGE_ENABLED=0` to disable Garage. The installer generates `object-storage/` secrets (0700/0600, idempotent) and writes the scoped key into `.env`. Media-node-only installs refuse an explicit enable. The Garage service runs the pinned `dxflrs/garage:v2.5.0` digest with `--single-node`. The S3 and admin ports publish on loopback only; the control plane uses the private `http://garage:3900` endpoint with presigned fetches. `garage-init` provisions a dedicated access key allowed read/write on exactly one bucket (no owner, no create-bucket), sets the bucket quota, and verifies a SHA-256 checksummed round-trip. No bucket alias or website is created, so buckets are never public.
 
 ## Object storage Compose enforcement
 
@@ -142,6 +144,12 @@ The initial mode is full-stack only and requires an external-execution-stopped a
 
 A rerun that only sets preparation variables, and omits the maintenance mode, stops before any change. It prints the drained or node command and [[scripts/fluxomnictl.py#preparation_checks|fluxomnictl preparation check]]. It does not name unshipped preparation subcommands.
 
+## Persisted media-node labels
+
+Full-stack maintenance checks saved media-node labels before replacing the control plane. It reads SQLite without editing it and reports the node IDs and invalid label lengths.
+
+[[scripts/capacity-upgrade.py#require_compatible_node_labels]] checks the relational projection when present, including after writers stop. Labels must be 1–70 characters without commas or control characters. A fingerprint belongs in the toolchain field.
+
 ## Capacity ledger evidence
 
 The helper reads the actual control-plane bind-mounted SQLite through a WAL-aware read-only transaction and verifies its current assignment marker and persisted route state.
@@ -160,7 +168,7 @@ The legacy runtime serializer omits `capacity_reservations` when empty, even wit
 
 Maintenance stops local automatic updates before replacing assets or pulling candidates. Full-stack upgrades verify control-plane initialization before restarting execution.
 
-[[scripts/capacity-upgrade.py#maintenance]] freezes writers and rechecks later drains before stopping nodes. Initial mode starts only the control plane with a private temporary Compose acknowledgement, verifies authenticated admission API readiness and persisted initialization, then recreates and verifies without acknowledgement. Watchtower stays stopped, including containers from an inactive profile. Failure stops the temporary acknowledged control plane and retains data and selected assets; no predecessor rollback occurs after state may have changed.
+[[scripts/capacity-upgrade.py#maintenance]] freezes writers and rechecks later drains before stopping nodes. Initial mode starts only the control plane with a private temporary Compose acknowledgement, verifies authenticated admission API readiness and persisted initialization, then recreates and verifies without acknowledgement. Watchtower stays stopped, including containers from an inactive profile. Failure stops the temporary acknowledged control plane and retains data and selected assets; no predecessor rollback occurs after state may have changed. An admission API timeout includes a bounded candidate control-plane log tail.
 
 ## Capacity marker classification tests
 
@@ -234,6 +242,12 @@ Explicit version values override the saved installation version; otherwise the d
 Current stable v26.4.1 uses the release ref for installer code and assets (`scripts/install-runtime.sh`). v26.3.2 remains on bundle f4a0b3b0c72da80dd889ef4a51f637537dd89406. That release's installer and helper downloads share the SHA and keep the file-limit, media-port, and preparation fixes without the capacity API. The image channel stays latest or the requested version. The manual installation example uses the v26.4.1 asset ref and image pin.
 
 Release sync preserves declared historical installer paths and same-release bundle overrides and assigns the current path to new releases. Custom asset roots require the current runtime installer. Caller working directories never supply executable version maps. Enrollment commands cannot be sent to historical installers.
+
+## Stable release publication gate
+
+Release Sync refuses to open the docs and version-map PR until the public stable tags and declared installer assets are available.
+
+[[scripts/check-release-publication.py]] checks published tags separately from raw asset HTTP status. A declared historical installer path or bundle ref determines which asset to check; it does not exempt the stable tag.
 
 ## Public release selection tests
 

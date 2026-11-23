@@ -82,6 +82,9 @@ jobs:
             --fluxomni-root .upstream/fluxomni \
             --manifest .upstream/public-release-manifest.json
 
+      - name: Verify published self-host tags and installer assets
+        run: python3 scripts/check-release-publication.py docs/src/release-manifest.json
+
       - uses: cargo-bins/cargo-binstall@main
 
       - name: Install mdBook

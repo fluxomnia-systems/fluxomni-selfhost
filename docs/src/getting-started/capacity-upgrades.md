@@ -23,7 +23,15 @@ Set `FLUXOMNI_DIR` when the install is not `~/fluxomni` or `~/fluxomni-media-nod
 - `fluxomnictl upgrade --installer ./install.sh --version v26.4.1 --capacity-upgrade drained`
 - `fluxomnictl upgrade --installer ./install.sh --version v26.4.1 --capacity-upgrade node --confirm-control-plane-ready`
 
-Use `--dir` when the install is not `~/fluxomni` or `~/fluxomni-media-node`. Do not export a different `FLUXOMNI_DIR` or `FLUXOMNI_VERSION`. The command refuses that and does not run the installer. Export capability variables yourself when a node needs them. The command does not set those values.
+Use `--dir` when the install is not `~/fluxomni` or `~/fluxomni-media-node`. Do not export a different `FLUXOMNI_DIR` or `FLUXOMNI_VERSION`. Do not give `FLUXOMNI_SELFHOST_REF` or `FLUXOMNI_REPO_RAW` a value. A value in either one selects installer assets separately from the version pin, so the command stops and does not run the installer. Export capability variables yourself when a node needs them. The command does not set those values.
+
+After checking the inputs, `fluxomnictl upgrade` prints the plan and asks `Proceed with this upgrade?` on a terminal. Answer `y` or `yes` to proceed. Without a terminal, pass `--yes` to approve the plan. This does not supply the version, mode, or any required maintenance confirmation.
+
+## Persisted media-node labels
+
+Before replacing the control plane, the installer checks saved media-node labels without editing SQLite. If it reports a node ID and invalid label lengths, stop and correct the labels through a supported operator workflow on the old release. v26.4.1 cannot load those rows. A fingerprint belongs in the toolchain field, not in labels. Do not rewrite the database with the installer.
+
+If the candidate admission API does not become ready, the installer reports the candidate control-plane log tail. Do not restart the old image on state the candidate has already opened. Keep the saved backup and follow the recovery guidance below.
 
 ## The existing control-plane container
 

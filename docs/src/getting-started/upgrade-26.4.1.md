@@ -26,7 +26,9 @@ Set these before recreating each media node. A node that starts with an invalid 
 
 Pin `v26.4.1` from install.fluxomni.io. `https://install.fluxomni.io/v26.4.1` and `FLUXOMNI_VERSION=v26.4.1` select the same release.
 
-`fluxomnictl upgrade` runs that downloaded file through bash, with the same target, mode, and confirmation flag as the bash command. It does not download the installer. It does not replace backup, route drain, external execution stop, or the [capacity upgrade guide](capacity-upgrades.md). Pass `--installer` and an explicit pin such as `--version v26.4.1`. The command sets `FLUXOMNI_DIR` to the selected install. If `FLUXOMNI_DIR` or `FLUXOMNI_VERSION` is already set to a different value, the command stops before it runs the installer.
+`fluxomnictl upgrade` runs that downloaded file through bash, with the same target, mode, and confirmation flag as the bash command. It does not download the installer. It does not replace backup, route drain, external execution stop, or the [capacity upgrade guide](capacity-upgrades.md). Pass `--installer` and an explicit pin such as `--version v26.4.1`. The command sets `FLUXOMNI_DIR` to the selected install. If `FLUXOMNI_DIR` or `FLUXOMNI_VERSION` is already set to a different value, the command stops before it runs the installer. It also stops when `FLUXOMNI_SELFHOST_REF` or `FLUXOMNI_REPO_RAW` has a value, because either one selects installer assets separately from the version pin.
+
+After checking the inputs, `fluxomnictl upgrade` prints the plan and asks `Proceed with this upgrade?` on a terminal. Answer `y` or `yes` to proceed. Without a terminal, pass `--yes` to approve the plan. This does not supply the version, mode, or any required maintenance confirmation.
 
 `install.sh tools` installs fluxomnictl only for v26.4.0 or newer. The first move from 26.3.x stays the bash command. Use fluxomnictl only after that tool is already installed.
 
