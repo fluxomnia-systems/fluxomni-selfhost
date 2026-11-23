@@ -179,6 +179,21 @@ class Docker:
         # Every start below names services explicitly and excludes Watchtower.
         return self.run("compose", "--profile", "auto-update", *args, timeout=timeout, include_stderr=include_stderr)
 
+    def stop_disabled_overlay(self, service):
+        owner = self.compose("ps", "--all", "--quiet", "control-plane").split()
+        if len(owner) != 1:
+            raise UpgradeError("Cannot identify Compose project for overlay shutdown")
+        project = self.run("inspect", "--format", '{{index .Config.Labels "com.docker.compose.project"}}', owner[0]).strip()
+        if not project or project == "<no value>":
+            raise UpgradeError("Missing Compose project label for overlay shutdown")
+        ids = self.run(
+            "ps", "--quiet", "--filter", f"label=com.docker.compose.project={project}",
+            "--filter", f"label=com.docker.compose.project.working_dir={Path.cwd().resolve()}",
+            "--filter", f"label=com.docker.compose.service={service}",
+        ).split()
+        if ids:
+            self.run("stop", "--time", "30", *ids)
+
     def config(self):
         return document(self.compose("config", "--format", "json"))
 
@@ -288,6 +303,14 @@ def maintenance(docker, mode, expected_path):
             control_plane_stopped = True
             require_mode(path, mode)
         require_compatible_node_labels(path)
+        for toggle, service in (("FLUXOMNI_UPGRADE_GARAGE", "garage"), ("FLUXOMNI_UPGRADE_HTTPS", "caddy")):
+            if os.environ.get(toggle) == "off":
+                if service in services:
+                    raise UpgradeError(f"Cannot disable {service}: it remains in rendered Compose")
+                docker.stop_disabled_overlay(service)
+        if "garage" in services and "garage-init" in services:
+            docker.compose("up", "-d", "--wait", "garage", timeout=150)
+            docker.compose("run", "--rm", "--no-deps", "garage-init", timeout=120)
         temporary_control_plane = mode == "initial"
         docker.start_control_plane(config, acknowledgement=temporary_control_plane)
         docker.api_ready()
@@ -304,6 +327,8 @@ def maintenance(docker, mode, expected_path):
         if actual_path != path or "FLUXOMNI_CAPACITY_UPGRADE_STOPPED" in environment:
             raise UpgradeError("Candidate retains the acknowledgement or uses different storage")
         docker.compose("up", "-d", "--no-deps", "media-node", *[s for s in controllers if s != "watchtower"], timeout=120)
+        if "caddy" in services:
+            docker.compose("up", "-d", "--no-deps", "caddy", timeout=120)
     except (UpgradeError, KeyError, TypeError, ValueError, OSError):
         if temporary_control_plane:
             try:

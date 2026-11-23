@@ -1058,6 +1058,12 @@ configure_object_storage() {
   local enabled
   enabled="$(read_env_file_value FLUXOMNI_OBJECT_STORAGE_ENABLED "$ENV_FILE")"
   [ -n "${FLUXOMNI_OBJECT_STORAGE_ENABLED:-}" ] && enabled="$FLUXOMNI_OBJECT_STORAGE_ENABLED"
+  case "${FLUXOMNI_UPGRADE_GARAGE:-}" in
+    on) enabled=1 ;;
+    off) enabled=0 ;;
+    "") ;;
+    *) echo 'Error: FLUXOMNI_UPGRADE_GARAGE must be on or off.' >&2; return 1 ;;
+  esac
   if [ -n "$CAPACITY_UPGRADE_MODE" ]; then
     case "$enabled" in 1|true) ;; *) enabled=0 ;; esac
   fi
@@ -1070,13 +1076,15 @@ configure_object_storage() {
   fi
   case "$enabled" in
     0|false)
-      # Disabled: drop a previously added include line but keep saved values.
+      # Disabled: drop the include and persist that choice so later verification
+      # does not still expect Garage services.
       if [ -f "${FLUXOMNI_DIR}/docker-compose.yml" ]; then
         local tmp
         tmp="$(mktemp)"
         awk '!/docker-compose\.object-storage\.yml/' "${FLUXOMNI_DIR}/docker-compose.yml" > "$tmp"
         mv "$tmp" "${FLUXOMNI_DIR}/docker-compose.yml"
       fi
+      upsert_env_value "$ENV_FILE" FLUXOMNI_OBJECT_STORAGE_ENABLED 0
       return 0
       ;;
     *)
@@ -1798,23 +1806,82 @@ ENVVARS
     upsert_env_value "$ENV_FILE" "FLUXOMNI_MEDIA_NODE_PRIVATE_NETWORK_ONLY" "$REQUESTED_MEDIA_NODE_PRIVATE_NETWORK_ONLY"
   fi
 
-  if [ "$WITH_AUTO_HTTPS" = "1" ]; then
-    if [ "$FLUXOMNI_INSTALL_TARGET" != "full" ]; then
-      echo 'Error: WITH_AUTO_HTTPS=1 only applies to full installs.' >&2
-      exit 1
+  https_action=keep
+  case "${FLUXOMNI_UPGRADE_HTTPS:-}" in
+    on) https_action=on ;;
+    off) https_action=off ;;
+    "") [ "$WITH_AUTO_HTTPS" = 1 ] && https_action=on ;;
+    *) echo 'Error: FLUXOMNI_UPGRADE_HTTPS must be on or off.' >&2; exit 1 ;;
+  esac
+  if [ "$https_action" != keep ] && [ "$FLUXOMNI_INSTALL_TARGET" != full ]; then
+    echo 'Error: HTTPS options apply only to a full install.' >&2
+    exit 1
+  fi
+  if [ "$https_action" = keep ] && [ -f "${FLUXOMNI_DIR}/docker-compose.https.yml" ] && [ -f "${FLUXOMNI_DIR}/Caddyfile.auto-https" ]; then
+    if [ -f "${FLUXOMNI_DIR}/docker-compose.yml" ] && ! grep -q 'docker-compose.https.yml' "${FLUXOMNI_DIR}/docker-compose.yml"; then
+      printf '      - docker-compose.https.yml\n' >> "${FLUXOMNI_DIR}/docker-compose.yml"
     fi
+  elif [ "$https_action" = off ]; then
+    if [ -f "${FLUXOMNI_DIR}/docker-compose.yml" ]; then
+      tmp="$(mktemp)"
+      awk '!/docker-compose\.https\.yml/' "${FLUXOMNI_DIR}/docker-compose.yml" > "$tmp"
+      mv "$tmp" "${FLUXOMNI_DIR}/docker-compose.yml"
+    fi
+    rm -f "${FLUXOMNI_DIR}/Caddyfile.auto-https" "${FLUXOMNI_DIR}/docker-compose.https.yml"
+    restored_port="$(read_env_file_value FLUXOMNI_FRONTEND_HTTP_PORT_BEFORE_HTTPS "$ENV_FILE")"
+    current_port="$(read_env_file_value FLUXOMNI_FRONTEND_HTTP_PORT "$ENV_FILE")"
+    if [ -n "$restored_port" ]; then
+      upsert_env_value "$ENV_FILE" FLUXOMNI_FRONTEND_HTTP_PORT "$restored_port"
+    elif [ "$current_port" = 127.0.0.1:18080 ]; then
+      upsert_env_value "$ENV_FILE" FLUXOMNI_FRONTEND_HTTP_PORT 80
+    fi
+    if grep -q '^FLUXOMNI_PUBLIC_URL_BEFORE_HTTPS=' "$ENV_FILE" 2>/dev/null; then
+      upsert_env_value "$ENV_FILE" FLUXOMNI_PUBLIC_URL "$(read_env_file_value FLUXOMNI_PUBLIC_URL_BEFORE_HTTPS "$ENV_FILE")"
+    fi
+    if grep -q '^FLUXOMNI_TRUSTED_PROXY_IPS_BEFORE_HTTPS=' "$ENV_FILE" 2>/dev/null; then
+      restored_proxy_ips="$(read_env_file_value FLUXOMNI_TRUSTED_PROXY_IPS_BEFORE_HTTPS "$ENV_FILE")"
+      if [ -n "$restored_proxy_ips" ]; then
+        upsert_env_value "$ENV_FILE" FLUXOMNI_TRUSTED_PROXY_IPS "$restored_proxy_ips"
+      else
+        tmp="$(mktemp)"
+        awk '!/^FLUXOMNI_TRUSTED_PROXY_IPS=/' "$ENV_FILE" > "$tmp"
+        mv "$tmp" "$ENV_FILE"
+      fi
+    fi
+    echo 'Auto-HTTPS disabled: Caddy overlay removed.'
+  elif [ "$https_action" = on ]; then
+    download_asset scripts/auto-https.sh "${FLUXOMNI_DIR}/auto-https.sh"
+    sh -n "${FLUXOMNI_DIR}/auto-https.sh"
     AUTO_HTTPS_MODE="$(sh "${FLUXOMNI_DIR}/auto-https.sh" classify "$PUBLIC_HOST_DEFAULT")"
     case "$AUTO_HTTPS_MODE" in
       domain|public-ip)
         sh "${FLUXOMNI_DIR}/auto-https.sh" render-caddyfile "$PUBLIC_HOST_DEFAULT" "${FLUXOMNI_DIR}/Caddyfile.auto-https"
         sh "${FLUXOMNI_DIR}/auto-https.sh" compose-override "${FLUXOMNI_DIR}"
+        previous_port="$(read_env_file_value FLUXOMNI_FRONTEND_HTTP_PORT_BEFORE_HTTPS "$ENV_FILE")"
+        if [ -z "$previous_port" ]; then
+          previous_port="$(read_env_file_value FLUXOMNI_FRONTEND_HTTP_PORT "$ENV_FILE")"
+          previous_port="${previous_port:-$FRONTEND_HTTP_PORT_DEFAULT}"
+          upsert_env_value "$ENV_FILE" FLUXOMNI_FRONTEND_HTTP_PORT_BEFORE_HTTPS "$previous_port"
+        fi
+        if ! grep -q '^FLUXOMNI_PUBLIC_URL_BEFORE_HTTPS=' "$ENV_FILE" 2>/dev/null; then
+          upsert_env_value "$ENV_FILE" FLUXOMNI_PUBLIC_URL_BEFORE_HTTPS "$(read_env_file_value FLUXOMNI_PUBLIC_URL "$ENV_FILE")"
+        fi
+        if ! grep -q '^FLUXOMNI_TRUSTED_PROXY_IPS_BEFORE_HTTPS=' "$ENV_FILE" 2>/dev/null; then
+          upsert_env_value "$ENV_FILE" FLUXOMNI_TRUSTED_PROXY_IPS_BEFORE_HTTPS "$(read_env_file_value FLUXOMNI_TRUSTED_PROXY_IPS "$ENV_FILE")"
+        fi
         upsert_env_value "$ENV_FILE" "FLUXOMNI_PUBLIC_URL" "https://$PUBLIC_HOST_DEFAULT"
         upsert_env_value "$ENV_FILE" "FLUXOMNI_TRUSTED_PROXY_IPS" "127.0.0.1"
         upsert_env_value "$ENV_FILE" "FLUXOMNI_FRONTEND_HTTP_PORT" "127.0.0.1:18080"
-        export COMPOSE_FILE="docker-compose.yml:docker-compose.https.yml"
+        if ! grep -q 'docker-compose.https.yml' "${FLUXOMNI_DIR}/docker-compose.yml"; then
+          printf '      - docker-compose.https.yml\n' >> "${FLUXOMNI_DIR}/docker-compose.yml"
+        fi
         echo "Auto-HTTPS: ${AUTO_HTTPS_MODE} ${PUBLIC_HOST_DEFAULT} -> https://${PUBLIC_HOST_DEFAULT} (Caddy on 80/443)"
         ;;
       local)
+        if [ "${FLUXOMNI_UPGRADE_HTTPS:-}" = on ]; then
+          echo "Error: ${PUBLIC_HOST_DEFAULT} is not a public address; HTTPS stays off." >&2
+          exit 1
+        fi
         rm -f "${FLUXOMNI_DIR}/Caddyfile.auto-https" "${FLUXOMNI_DIR}/docker-compose.https.yml"
         echo "Auto-HTTPS: ${PUBLIC_HOST_DEFAULT} is not a public address; staying on HTTP."
         ;;

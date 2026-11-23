@@ -131,6 +131,28 @@ upsert_env_value() { :; }
     assert ("docker-compose.object-storage.yml" in compose.read_text()) is enabled
 
 
+def test_explicit_garage_on_enables_during_upgrade(tmp_path):
+    runtime = (ROOT / "scripts/install-runtime.sh").read_text()
+    function = "configure_object_storage() {" + runtime.split("configure_object_storage() {", 1)[1].split("\n}\n", 1)[0] + "\n}\n"
+    script = """
+FLUXOMNI_DIR=$1
+CAPACITY_UPGRADE_MODE=drained
+ENV_FILE=$FLUXOMNI_DIR/.env
+FLUXOMNI_INSTALL_TARGET=full
+FLUXOMNI_UPGRADE_GARAGE=on
+unset FLUXOMNI_OBJECT_STORAGE_ENABLED
+read_env_file_value() { :; }
+download_asset() { printf 'download %s\\n' "$1"; }
+python3() { :; }
+upsert_env_value() { :; }
+""" + function + "configure_object_storage\n"
+    compose = tmp_path / "docker-compose.yml"
+    compose.write_text("include:\n  - path:\n      - compose.release.yml\n")
+    result = subprocess.run(["bash", "-c", script, "fixture", str(tmp_path)], capture_output=True, text=True, check=True)
+    assert "download docker-compose.object-storage.yml" in result.stdout
+    assert "docker-compose.object-storage.yml" in compose.read_text()
+
+
 class TestVerifyCompose:
     def test_accepts_secure_rendered_config(self, monkeypatch):
         monkeypatch.setenv("FLUXOMNI_OBJECT_STORAGE_ACCESS_KEY", "GK" + "a" * 32)

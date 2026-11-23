@@ -4,6 +4,7 @@ import subprocess
 from pathlib import Path
 
 SCRIPT = Path(__file__).resolve().parent.parent / "scripts" / "auto-https.sh"
+RUNTIME = Path(__file__).resolve().parent.parent / "scripts" / "install-runtime.sh"
 
 
 def run(*args: str) -> subprocess.CompletedProcess[str]:
@@ -16,6 +17,12 @@ def classify(host: str) -> str:
     result = run("classify", host)
     assert result.returncode == 0, result.stderr
     return result.stdout.strip()
+
+
+def test_installer_includes_https_overlay_without_compose_file() -> None:
+    text = RUNTIME.read_text()
+    assert "export COMPOSE_FILE=" not in text
+    assert "docker-compose.https.yml" in text
 
 
 def test_public_domains_classify_as_domain() -> None:
