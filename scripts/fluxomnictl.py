@@ -549,6 +549,122 @@ def doctor(install, host, out=None, environ=None):
     return 1 if report.failed else 0
 
 
+VERSION_PIN = re.compile(r"v[0-9]+\.[0-9]+\.[0-9]+\Z")
+RELEASE_SOURCE_VARS = ("FLUXOMNI_SELFHOST_REF", "FLUXOMNI_REPO_RAW")
+UPGRADE_MODES = {
+    "initial": ("full", "--confirm-execution-stopped"),
+    "drained": ("full", None),
+    "node": ("media-node", "--confirm-control-plane-ready"),
+}
+UPGRADE_LIMIT = (
+    "This does not replace backup, route drain, external execution stop, or the capacity guide"
+)
+
+
+def run_installer(argv, env):
+    """Run a downloaded install.sh through bash, as the upgrade guide does.
+
+    curl does not mark the download executable. bash runs that exact file.
+    A signal is returned as the shell status, 128 plus the signal number.
+    """
+    program, *args = argv
+    try:
+        completed = subprocess.run(["bash", program, *args], env=env, check=False)
+    except OSError as error:
+        raise CtlError(f"cannot run installer: {error}") from None
+    if completed.returncode < 0:
+        return 128 - completed.returncode
+    return completed.returncode
+
+
+def same_install_dir(value, selected, environ):
+    """True when value is the selected install after the same ~ expansion select_install uses."""
+    if not value.strip():
+        return False
+    if value == "~" or value.startswith("~/"):
+        value = str(home_directory(environ) / value[2:])
+    try:
+        return str(Path(value).resolve()) == selected
+    except OSError:
+        return False
+
+
+def require_installer(path):
+    """The operator's already downloaded install.sh. No fetch, and no symlink."""
+    if path is None or not str(path).strip():
+        raise CtlError("upgrade needs --installer pointing at an already downloaded install.sh")
+    installer = Path(path)
+    if installer.is_symlink():
+        raise CtlError(f"refusing symlink installer: {path}")
+    if not installer.exists():
+        raise CtlError(f"installer does not exist: {path}")
+    if installer.is_dir():
+        raise CtlError(f"installer is a directory: {path}")
+    if not installer.is_file():
+        raise CtlError(f"installer is not a file: {path}")
+    # Absolute path so a bare name cannot select a different file from PATH.
+    return str(installer.resolve())
+
+
+# @lat: [[installation#Pinned upgrade command]]
+def upgrade(args, install, environ, runner, interactive, ask):
+    """Run the release launcher for one explicit pin and one named maintenance mode.
+
+    The installer remains the authority for whether that pin is acceptable.
+    """
+    selected = str(install.path)
+    current_dir = environ.get("FLUXOMNI_DIR")
+    if current_dir is not None and not same_install_dir(current_dir, selected, environ):
+        raise CtlError(f"FLUXOMNI_DIR is set to {current_dir or 'empty'}, not {selected}. Refusing to override it")
+    pin = args.version
+    if not pin or not VERSION_PIN.fullmatch(pin):
+        raise CtlError("upgrade needs an explicit version pin like v26.4.1, not latest, edge, or an omitted version")
+    current_version = environ.get("FLUXOMNI_VERSION")
+    if current_version is not None and current_version != pin:
+        raise CtlError(f"FLUXOMNI_VERSION is set to {current_version or 'empty'}, not {pin}. Refusing to override it")
+    overrides = [name for name in RELEASE_SOURCE_VARS if environ.get(name)]
+    if overrides:
+        raise CtlError(
+            "refusing release source override "
+            + ", ".join(overrides)
+            + ". Unset it so the version pin selects the installer assets"
+        )
+    mode = args.capacity_upgrade
+    if mode not in UPGRADE_MODES:
+        raise CtlError("upgrade needs --capacity-upgrade initial, drained, or node")
+    expected, confirm = UPGRADE_MODES[mode]
+    if install.target != expected:
+        raise CtlError(f"--capacity-upgrade {mode} does not match this {install.target} install")
+    passed = []
+    if args.confirm_execution_stopped:
+        passed.append("--confirm-execution-stopped")
+    if args.confirm_control_plane_ready:
+        passed.append("--confirm-control-plane-ready")
+    wanted = [confirm] if confirm else []
+    if passed != wanted:
+        if confirm and confirm not in passed:
+            raise CtlError(f"--capacity-upgrade {mode} requires {confirm}")
+        extra = next(flag for flag in passed if flag != confirm)
+        raise CtlError(f"--capacity-upgrade {mode} does not take {extra}")
+    installer = require_installer(args.installer)
+    print(f"Upgrade plan: {selected!r} ({install.target}), version {pin}, maintenance mode {mode}.")
+    print("This command does not disable or restore routes, take a backup, or replace the capacity guide.", flush=True)
+    if interactive:
+        try:
+            answer = ask("Proceed with this upgrade? [y/N] ")
+        except (EOFError, KeyboardInterrupt):
+            raise CtlError("upgrade not confirmed") from None
+        if answer.strip().lower() not in ("y", "yes"):
+            raise CtlError("upgrade not confirmed")
+    elif not args.yes:
+        raise CtlError("upgrade confirmation requires a terminal or --yes")
+    child = dict(environ)
+    child["FLUXOMNI_DIR"] = selected
+    child["FLUXOMNI_VERSION"] = pin
+    argv = [installer, install.target, "--capacity-upgrade", mode, *wanted]
+    return runner(argv, child)
+
+
 def run_check(args, host, interactive, ask, environ=None):
     """Run the host checks, optionally enabling controllers first."""
     if args.enable_controllers:
@@ -570,6 +686,17 @@ def build_parser():
     commands.add_parser("where", help="print the selected install folder and target")
     commands.add_parser("check-support", help="fail when the installed version is not supported by this tool")
     commands.add_parser("doctor", help="check one install: prerequisites, config, ports, containers, disk")
+    upgrade_command = commands.add_parser(
+        "upgrade",
+        help=f"run a downloaded install.sh for one pinned upgrade. {UPGRADE_LIMIT}",
+        description=f"Print the upgrade plan and confirm before running a downloaded install.sh for one explicit version pin. {UPGRADE_LIMIT}.",
+    )
+    upgrade_command.add_argument("--installer", help="path to an already downloaded install.sh")
+    upgrade_command.add_argument("--version", help="explicit pin such as v26.4.1")
+    upgrade_command.add_argument("--capacity-upgrade", help="initial, drained, or node")
+    upgrade_command.add_argument("--confirm-execution-stopped", action="store_true", help="required with initial")
+    upgrade_command.add_argument("--confirm-control-plane-ready", action="store_true", help="required with node")
+    upgrade_command.add_argument("--yes", action="store_true", help="confirm the plan without a terminal; does not replace maintenance assertions")
     preparation = commands.add_parser("preparation", help="offline preparation limits")
     actions = preparation.add_subparsers(dest="action", metavar="ACTION", required=True)
     check = actions.add_parser("check", help="check every host requirement and list all problems")
@@ -578,7 +705,7 @@ def build_parser():
     return parser
 
 
-def main(argv=None, environ=None, cwd=None, interactive=None, host=None, ask=input):
+def main(argv=None, environ=None, cwd=None, interactive=None, host=None, ask=input, runner=None):
     parser = build_parser()
     args = parser.parse_args(argv)
     if not args.command:
@@ -586,6 +713,8 @@ def main(argv=None, environ=None, cwd=None, interactive=None, host=None, ask=inp
         return 0
     interactive = sys.stdin.isatty() and sys.stderr.isatty() if interactive is None else interactive
     host = host or Host()
+    environ = os.environ if environ is None else environ
+    runner = runner or run_installer
     try:
         if args.command == "preparation" and args.action == "check":
             return run_check(args, host, interactive, ask, environ)
@@ -597,6 +726,8 @@ def main(argv=None, environ=None, cwd=None, interactive=None, host=None, ask=inp
             print(f"{install.path}: Fluxomni {installed_version(install) or 'unknown'} is supported")
         elif args.command == "doctor":
             return doctor(install, host, environ=environ)
+        elif args.command == "upgrade":
+            return upgrade(args, install, environ, runner, interactive, ask)
     except CtlError as error:
         print(f"Error: {error}.", file=sys.stderr)
         return 1

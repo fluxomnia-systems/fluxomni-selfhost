@@ -2,7 +2,7 @@
 
 Fluxomni can store durable artifacts in S3-compatible object storage instead of only on the local disk. Self-hosted full installs use [Garage](https://garagehq.deuxfleurs.fr/), a small single-node object store, behind a Compose overlay.
 
-Object storage is enabled by default on full (single-host) installs. To disable it, set `FLUXOMNI_OBJECT_STORAGE_ENABLED=0` in `.env` and rerun `install.sh full`. Standalone media-node installs never include it.
+Fresh full installs enable object storage by default. Capacity upgrades do not turn it on by default for existing installs. The overlay keeps the local filesystem relay at `/app/fluxomni-data/videos` alongside Garage. To disable Garage, set `FLUXOMNI_OBJECT_STORAGE_ENABLED=0` in `.env` and follow the [capacity upgrade guide](capacity-upgrades.md) when rerunning the installer. Standalone media-node installs never include Garage.
 
 When enabled, the installer:
 

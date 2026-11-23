@@ -18,6 +18,21 @@ Use one mode. Do not run a plain `bash install.sh` on an existing install.
 
 Set `FLUXOMNI_DIR` when the install is not `~/fluxomni` or `~/fluxomni-media-node`. Set `FLUXOMNI_VERSION=v26.4.1` so the installer and images come from the same release.
 
+`fluxomnictl upgrade` runs that downloaded installer through bash with the same arguments as the bash commands above. It does not replace backup, route drain, external execution stop, or this guide. Download `install.sh` yourself and pass that regular file with `--installer`. A missing path, a directory, or a symlink is refused. Name the version with `--version`, for example `v26.4.1`. Name the same mode and confirmation flag. `install.sh tools` installs fluxomnictl only for v26.4.0 or newer, so the first move from an older release stays the bash command. Once the tool is installed, the later calls are:
+
+- `fluxomnictl upgrade --installer ./install.sh --version v26.4.1 --capacity-upgrade drained`
+- `fluxomnictl upgrade --installer ./install.sh --version v26.4.1 --capacity-upgrade node --confirm-control-plane-ready`
+
+Use `--dir` when the install is not `~/fluxomni` or `~/fluxomni-media-node`. Do not export a different `FLUXOMNI_DIR` or `FLUXOMNI_VERSION`. Do not give `FLUXOMNI_SELFHOST_REF` or `FLUXOMNI_REPO_RAW` a value. A value in either one selects installer assets separately from the version pin, so the command stops and does not run the installer. Export capability variables yourself when a node needs them. The command does not set those values.
+
+After checking the inputs, `fluxomnictl upgrade` prints the plan and asks `Proceed with this upgrade?` on a terminal. Answer `y` or `yes` to proceed. Without a terminal, pass `--yes` to approve the plan. This does not supply the version, mode, or any required maintenance confirmation.
+
+## Persisted media-node labels
+
+Before replacing the control plane, the installer checks saved media-node labels without editing SQLite. If it reports a node ID and invalid label lengths, stop and correct the labels through a supported operator workflow on the old release. v26.4.1 cannot load those rows. A fingerprint belongs in the toolchain field, not in labels. Do not rewrite the database with the installer.
+
+If the candidate admission API does not become ready, the installer reports the candidate control-plane log tail. Do not restart the old image on state the candidate has already opened. Keep the saved backup and follow the recovery guidance below.
+
 ## The existing control-plane container
 
 The upgrade reads the existing control-plane container. It uses that container's mounts to find the database and to prove this is the install being upgraded. It does not guess from the data folder alone, and it does not create a missing container.

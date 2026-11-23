@@ -12,6 +12,7 @@ from http.server import BaseHTTPRequestHandler, HTTPServer
 from pathlib import Path
 
 import pytest
+import yaml
 
 ROOT = Path(__file__).resolve().parents[1]
 
@@ -90,6 +91,44 @@ class TestInit:
         keys = {line.split("=", 1)[0] for line in lines}
         assert "FLUXOMNI_OBJECT_STORAGE_ACCESS_KEY" in keys
         assert "FLUXOMNI_OBJECT_STORAGE_SECRET_KEY" in keys
+
+
+def test_overlay_defaults_to_local_relay_and_private_garage():
+    overlay = yaml.safe_load((ROOT / "docker-compose.object-storage.yml").read_text())
+    value = overlay["services"]["control-plane"]["environment"]["FLUXOMNI_STORAGE_BACKEND"]
+    default = value.removeprefix("${FLUXOMNI_STORAGE_BACKEND:-").removesuffix("}")
+    default = default.replace("${FLUXOMNI_OBJECT_STORAGE_BUCKET:?set FLUXOMNI_OBJECT_STORAGE_BUCKET in .env}", "fluxomni-artifacts")
+    assert not any(char.isspace() for char in default)
+    relay, garage = [dict(item.split("=", 1) for item in entry.split(",")) for entry in default.split(";")]
+    assert relay["location_type"] == "CONTROL_PLANE_RELAY"
+    assert relay["kind"] == "filesystem"
+    assert relay["path"] == "/app/fluxomni-data/videos"
+    assert garage["location_type"] == "OBJECT_STORAGE"
+    assert garage["endpoint_url"] == "http://garage:3900"
+    assert garage["fetch_mode"] == "presigned"
+
+
+@pytest.mark.parametrize(("saved", "mode", "enabled"), [("", "drained", False), ("0", "initial", False), ("1", "drained", True), ("", "", True)])
+def test_upgrade_does_not_default_to_enabling_garage(tmp_path, saved, mode, enabled):
+    runtime = (ROOT / "scripts/install-runtime.sh").read_text()
+    function = "configure_object_storage() {" + runtime.split("configure_object_storage() {", 1)[1].split("\n}\n", 1)[0] + "\n}\n"
+    script = """
+FLUXOMNI_DIR=$1
+CAPACITY_UPGRADE_MODE=$2
+SAVED=$3
+ENV_FILE=$FLUXOMNI_DIR/.env
+FLUXOMNI_INSTALL_TARGET=full
+unset FLUXOMNI_OBJECT_STORAGE_ENABLED
+read_env_file_value() { if [ "$1" = FLUXOMNI_OBJECT_STORAGE_ENABLED ]; then printf '%s' "$SAVED"; fi; }
+download_asset() { printf 'download %s\\n' "$1"; }
+python3() { :; }
+upsert_env_value() { :; }
+""" + function + "configure_object_storage\n"
+    compose = tmp_path / "docker-compose.yml"
+    compose.write_text("include:\n  - path:\n      - compose.release.yml\n")
+    result = subprocess.run(["bash", "-c", script, "fixture", str(tmp_path), mode, saved], capture_output=True, text=True, check=True)
+    assert ("download docker-compose.object-storage.yml" in result.stdout) is enabled
+    assert ("docker-compose.object-storage.yml" in compose.read_text()) is enabled
 
 
 class TestVerifyCompose:

@@ -196,6 +196,46 @@ def test_demand_arriving_before_writer_stop_keeps_old_execution_available(databa
     assert docker.events[-1] == ("start", "control-plane")
 
 
+def test_invalid_persisted_labels_block_the_candidate_without_editing_sqlite(database):
+    with sqlite3.connect(database) as connection:
+        connection.execute("CREATE TABLE media_nodes(media_node_id TEXT, payload TEXT)")
+        for node, labels in [
+            ("old-node", ["a" * 84, "b" * 90]),
+            ("another-node", ["", "a,b", "x\u0085"]),
+            ("valid-node", ["é" * 70]),
+        ]:
+            connection.execute("INSERT INTO media_nodes VALUES(?,?)", (node, json.dumps({"labels": labels})))
+    before = database.read_bytes()
+    docker = Lifecycle(database)
+    with pytest.raises(upgrade.UpgradeError) as error:
+        upgrade.maintenance(docker, "initial", str(database))
+    message = str(error.value)
+    assert "v26.4.1 cannot load" in message and "toolchain field" in message
+    assert "'old-node': label lengths 84, 90" in message
+    assert "'another-node': label lengths 0, 3, 2" in message
+    assert "valid-node" not in message
+    assert docker.events == []
+    assert database.read_bytes() == before
+
+
+@pytest.mark.parametrize("log_failure", [False, True])
+def test_admission_timeout_reports_candidate_log_tail(monkeypatch, log_failure):
+    docker = upgrade.Docker(["docker"], 0)
+    calls = []
+
+    def compose(*args, **kwargs):
+        calls.append((args, kwargs))
+        if args[0] == "exec" or log_failure:
+            raise upgrade.UpgradeError("unavailable")
+        return "control-plane | Failed to load media-node projection\n"
+
+    monkeypatch.setattr(docker, "compose", compose)
+    with pytest.raises(upgrade.UpgradeError, match="admission API did not become ready") as error:
+        docker.api_ready()
+    assert calls[-1] == (("logs", "--no-color", "--tail=80", "control-plane"), {"timeout": 10, "include_stderr": True})
+    assert ("no logs available" if log_failure else "Failed to load media-node projection") in str(error.value)
+
+
 def test_candidate_mount_change_is_rejected_before_any_stop(database, tmp_path):
     write_ledger(database, True)
     docker = Lifecycle(database)

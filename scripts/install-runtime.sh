@@ -1050,14 +1050,17 @@ YAML
 }
 
 # @lat: [[installation#Preparation Compose enforcement]]
-# Garage object storage for artifact backends. Full installs enable it by
-# default; set FLUXOMNI_OBJECT_STORAGE_ENABLED=0 in .env to disable. Only full
+# Garage object storage for artifact backends. Fresh full installs enable it
+# by default; upgrades keep it off unless enabled. Only full
 # installs have a control-plane to configure, so media-node installs refuse an
 # explicit enable.
 configure_object_storage() {
   local enabled
   enabled="$(read_env_file_value FLUXOMNI_OBJECT_STORAGE_ENABLED "$ENV_FILE")"
   [ -n "${FLUXOMNI_OBJECT_STORAGE_ENABLED:-}" ] && enabled="$FLUXOMNI_OBJECT_STORAGE_ENABLED"
+  if [ -n "$CAPACITY_UPGRADE_MODE" ]; then
+    case "$enabled" in 1|true) ;; *) enabled=0 ;; esac
+  fi
   if [ "$FLUXOMNI_INSTALL_TARGET" != "full" ]; then
     if [ "$enabled" = 1 ] || [ "$enabled" = true ]; then
       echo 'Error: object storage requires a full install with a control-plane.' >&2

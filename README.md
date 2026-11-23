@@ -193,10 +193,12 @@ self-host tag. Each listed release with a tagged book also gets a permanent
 path, such as `/v26.4.1/`. Releases without a tagged book are omitted from
 the switcher.
 
-To publish stable docs, merge the release sync, tag the self-host commit
-that contains the matching docs and install assets, and publish the GitHub
-release. Until the matching tag exists, Pages keeps serving the previous
-tagged release at the root. Pages keeps the first artifact deployed for a
+To publish stable docs, prepare the release sync outputs on a branch with the
+matching installer assets. Publish the self-host tag on that release commit
+before running Release Sync. Release Sync checks the manifest's stable tags
+and installer assets before opening its pull request. Merge the sync pull
+request, then publish the GitHub release. Until the matching tag exists,
+Pages keeps serving the previous tagged release at the root. Pages keeps the first artifact deployed for a
 commit, so a retag of that same commit does not refresh the live site.
 Publish again from a new commit on main after the stable tag points at the
 docs to serve.

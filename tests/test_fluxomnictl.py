@@ -499,3 +499,294 @@ def test_doctor_reads_addresses_on_macos_and_survives_disk_errors(tmp_path, caps
     install = doctor_install(tmp_path, extra_env="FLUXOMNI_CONTROL_PLANE_INTERNAL_AUTH_TOKEN=t\n")
     ctl.doctor(install, host, environ={})
     assert "cannot read" in capsys.readouterr().out
+
+
+class StubRunner:
+    """Records launcher calls. A test that expects refusal leaves calls empty."""
+
+    def __init__(self, status=0):
+        self.status = status
+        self.calls = []
+
+    def __call__(self, argv, env):
+        self.calls.append((list(argv), dict(env)))
+        return self.status
+
+
+def installer_file(path):
+    path.write_text("#!/bin/sh\nexit 0\n")
+    return path
+
+
+def upgrade_main(home, folder, args, environ=None, runner=None, interactive=True, ask=lambda _: "yes"):
+    stub = runner or StubRunner()
+    code = ctl.main(
+        ["--dir", str(folder), "upgrade", *args],
+        environ={"HOME": str(home), **(environ or {})},
+        cwd=home,
+        interactive=interactive,
+        ask=ask,
+        runner=stub,
+    )
+    return code, stub
+
+
+def assert_refused(capsys, code, stub):
+    assert code == 1
+    assert stub.calls == []
+    assert capsys.readouterr().err.startswith("Error: ")
+
+
+# @lat: [[installation#Pinned upgrade command tests]]
+@pytest.mark.parametrize(
+    ("target", "mode", "confirm"),
+    [
+        ("full", "initial", "--confirm-execution-stopped"),
+        ("full", "drained", None),
+        ("media-node", "node", "--confirm-control-plane-ready"),
+    ],
+)
+def test_upgrade_passes_the_documented_launcher_call(home, tmp_path, target, mode, confirm):
+    folder = make_install(home / "install", target)
+    installer = installer_file(tmp_path / "fluxomni-install.sh")
+    caller = {
+        "FLUXOMNI_DIR": "~/install",
+        "FLUXOMNI_VERSION": "v26.4.1",
+        "FLUXOMNI_MEDIA_NODE_CAPABILITIES": "public_ingest",
+    }
+    args = ["--installer", str(installer), "--version", "v26.4.1", "--capacity-upgrade", mode]
+    if confirm:
+        args.append(confirm)
+    code, stub = upgrade_main(home, folder, args, caller)
+    assert code == 0
+    argv, env = stub.calls[0]
+    expected = [str(installer), target, "--capacity-upgrade", mode]
+    if confirm:
+        expected.append(confirm)
+    assert argv == expected
+    assert env["FLUXOMNI_DIR"] == str(folder.resolve())
+    assert env["FLUXOMNI_VERSION"] == "v26.4.1"
+    assert env["FLUXOMNI_MEDIA_NODE_CAPABILITIES"] == "public_ingest"
+    assert "FLUXOMNI_CAPACITY_UPGRADE_STOPPED" not in env
+    assert "FLUXOMNI_SELFHOST_REF" not in env
+    assert "FLUXOMNI_REPO_RAW" not in env
+    assert caller["FLUXOMNI_VERSION"] == "v26.4.1"
+
+
+def test_upgrade_help_keeps_the_manual_steps(capsys):
+    with pytest.raises(SystemExit) as caught:
+        ctl.main(["upgrade", "--help"])
+    assert caught.value.code == 0
+    text = " ".join(capsys.readouterr().out.split())
+    assert "This does not replace backup, route drain, external execution stop, or the capacity guide." in text
+
+
+@pytest.mark.parametrize("pin", ["", "latest", "edge", "26.4.1", "v26.4", "v26.4.1-rc1", "v26.4.1 "])
+def test_upgrade_refuses_unpinned_versions(home, tmp_path, capsys, pin):
+    folder = make_install(home / "fluxomni", "full")
+    installer = installer_file(tmp_path / "install.sh")
+    args = ["--installer", str(installer), "--capacity-upgrade", "drained"]
+    if pin is not None:
+        args.extend(["--version", pin])
+    code, stub = upgrade_main(home, folder, args)
+    assert_refused(capsys, code, stub)
+
+
+def test_upgrade_refuses_an_omitted_version_or_mode(home, tmp_path, capsys):
+    folder = make_install(home / "fluxomni", "full")
+    installer = installer_file(tmp_path / "install.sh")
+    code, stub = upgrade_main(home, folder, ["--installer", str(installer), "--capacity-upgrade", "drained"])
+    assert_refused(capsys, code, stub)
+    code, stub = upgrade_main(home, folder, ["--installer", str(installer), "--version", "v26.4.1"])
+    assert_refused(capsys, code, stub)
+
+
+def test_upgrade_refuses_a_missing_directory_or_symlink_installer(home, tmp_path, capsys):
+    folder = make_install(home / "fluxomni", "full")
+    missing = tmp_path / "missing.sh"
+    code, stub = upgrade_main(home, folder, ["--installer", str(missing), "--version", "v26.4.1", "--capacity-upgrade", "drained"])
+    assert_refused(capsys, code, stub)
+    directory = tmp_path / "install-dir"
+    directory.mkdir()
+    code, stub = upgrade_main(home, folder, ["--installer", str(directory), "--version", "v26.4.1", "--capacity-upgrade", "drained"])
+    assert_refused(capsys, code, stub)
+    target = installer_file(tmp_path / "real.sh")
+    link = tmp_path / "install.sh"
+    link.symlink_to(target)
+    code, stub = upgrade_main(home, folder, ["--installer", str(link), "--version", "v26.4.1", "--capacity-upgrade", "drained"])
+    assert_refused(capsys, code, stub)
+
+
+def test_upgrade_refuses_a_missing_installer_flag(home, capsys):
+    folder = make_install(home / "fluxomni", "full")
+    code, stub = upgrade_main(home, folder, ["--version", "v26.4.1", "--capacity-upgrade", "drained"])
+    assert_refused(capsys, code, stub)
+
+
+def test_upgrade_fails_closed_when_env_dir_or_version_differs(home, tmp_path, capsys):
+    folder = make_install(home / "fluxomni", "full")
+    installer = installer_file(tmp_path / "install.sh")
+    args = ["--installer", str(installer), "--version", "v26.4.1", "--capacity-upgrade", "drained"]
+    code, stub = upgrade_main(home, folder, args, {"FLUXOMNI_DIR": str(home / "other")})
+    assert_refused(capsys, code, stub)
+    code, stub = upgrade_main(home, folder, args, {"FLUXOMNI_VERSION": "v26.4.0"})
+    assert_refused(capsys, code, stub)
+    code, stub = upgrade_main(home, folder, args, {"FLUXOMNI_VERSION": ""})
+    assert_refused(capsys, code, stub)
+    code, stub = upgrade_main(home, folder, args, {"FLUXOMNI_DIR": " "})
+    assert_refused(capsys, code, stub)
+
+
+def test_upgrade_refuses_release_source_overrides(home, tmp_path, capsys):
+    folder = make_install(home / "fluxomni", "full")
+    installer = installer_file(tmp_path / "install.sh")
+    args = ["--installer", str(installer), "--version", "v26.4.1", "--capacity-upgrade", "drained"]
+    code, stub = upgrade_main(home, folder, args, {"FLUXOMNI_SELFHOST_REF": "main"})
+    assert code == 1 and stub.calls == []
+    assert "FLUXOMNI_SELFHOST_REF" in capsys.readouterr().err
+    code, stub = upgrade_main(home, folder, args, {"FLUXOMNI_REPO_RAW": "https://example.invalid/raw"})
+    assert code == 1 and stub.calls == []
+    assert "FLUXOMNI_REPO_RAW" in capsys.readouterr().err
+    code, stub = upgrade_main(
+        home,
+        folder,
+        args,
+        {"FLUXOMNI_SELFHOST_REF": "main", "FLUXOMNI_REPO_RAW": "https://example.invalid/raw"},
+    )
+    assert code == 1 and stub.calls == []
+    err = capsys.readouterr().err
+    assert err.startswith("Error: ")
+    assert "FLUXOMNI_SELFHOST_REF" in err and "FLUXOMNI_REPO_RAW" in err
+    code, stub = upgrade_main(home, folder, args, {"FLUXOMNI_SELFHOST_REF": " ", "FLUXOMNI_REPO_RAW": ""})
+    assert code == 1 and stub.calls == []
+    assert "FLUXOMNI_SELFHOST_REF" in capsys.readouterr().err
+    code, stub = upgrade_main(home, folder, args, {"FLUXOMNI_SELFHOST_REF": "", "FLUXOMNI_REPO_RAW": ""})
+    assert code == 0 and len(stub.calls) == 1
+
+
+@pytest.mark.parametrize(
+    ("target", "mode", "extra"),
+    [
+        ("full", "node", ["--confirm-control-plane-ready"]),
+        ("full", "initial", []),
+        ("full", "drained", ["--confirm-execution-stopped"]),
+        ("media-node", "initial", ["--confirm-execution-stopped"]),
+        ("media-node", "drained", []),
+        ("media-node", "node", []),
+        ("media-node", "node", ["--confirm-execution-stopped"]),
+        ("full", "initial", ["--confirm-execution-stopped", "--confirm-control-plane-ready"]),
+    ],
+)
+def test_upgrade_refuses_mode_mismatch_and_does_not_invent_confirmation(home, tmp_path, capsys, target, mode, extra):
+    folder = make_install(home / "install", target)
+    installer = installer_file(tmp_path / "install.sh")
+    args = ["--installer", str(installer), "--version", "v26.4.1", "--capacity-upgrade", mode, *extra]
+    code, stub = upgrade_main(home, folder, [*args, "--yes"], ask=must_not_ask)
+    assert_refused(capsys, code, stub)
+
+
+@pytest.mark.parametrize(("interactive", "yes", "answer", "status"), [
+    (True, False, "y", 0), (True, False, " YES ", 0), (True, False, "", 1),
+    (True, True, "no", 1), (True, False, EOFError(), 1),
+    (True, False, KeyboardInterrupt(), 1), (False, False, None, 1), (False, True, None, 0),
+])
+def test_upgrade_prints_plan_and_requires_proceed(home, tmp_path, capsys, interactive, yes, answer, status):
+    folder = make_install(home / "fluxomni", "full")
+    installer = installer_file(tmp_path / "install.sh")
+    args = ["--installer", str(installer), "--version", "v26.4.1", "--capacity-upgrade", "drained"]
+    prompts = []
+    output = []
+
+    def ask(question):
+        prompts.append(question)
+        output.append(capsys.readouterr().out)
+        if isinstance(answer, BaseException):
+            raise answer
+        return answer
+
+    code, stub = upgrade_main(home, folder, args + (["--yes"] if yes else []), interactive=interactive, ask=ask)
+    out = capsys.readouterr()
+    plan = "".join(output) + out.out
+    assert all(term in plan for term in (str(folder), "full", "v26.4.1", "drained"))
+    assert "does not disable or restore routes, take a backup, or replace the capacity guide" in plan
+    assert prompts == (["Proceed with this upgrade? [y/N] "] if interactive else [])
+    assert code == status and len(stub.calls) == (1 if status == 0 else 0)
+    if status:
+        assert out.err.startswith("Error: ")
+    else:
+        assert "--yes" not in stub.calls[0][0]
+
+
+def test_upgrade_propagates_a_nonzero_runner_status(home, tmp_path, capsys):
+    folder = make_install(home / "fluxomni", "full")
+    installer = installer_file(tmp_path / "install.sh")
+    code, stub = upgrade_main(
+        home,
+        folder,
+        ["--installer", str(installer), "--version", "v26.4.1", "--capacity-upgrade", "drained"],
+        runner=StubRunner(status=3),
+    )
+    assert code == 3
+    assert len(stub.calls) == 1
+    assert capsys.readouterr().err == ""
+
+
+def test_upgrade_resolves_the_installer_before_the_runner(home, tmp_path, monkeypatch):
+    folder = make_install(home / "fluxomni", "full")
+    work = tmp_path / "work"
+    work.mkdir()
+    installer = installer_file(work / "install.sh")
+    monkeypatch.chdir(work)
+    code, stub = upgrade_main(home, folder, ["--installer", "install.sh", "--version", "v26.4.1", "--capacity-upgrade", "drained"])
+    assert code == 0
+    assert stub.calls[0][0][0] == str(installer.resolve())
+
+
+def test_default_runner_uses_the_checked_file_even_when_it_is_not_executable(home, tmp_path, monkeypatch):
+    folder = make_install(home / "fluxomni", "full")
+    work = tmp_path / "work"
+    work.mkdir()
+    marker = tmp_path / "ran"
+    installer = work / "install.sh"
+    installer.write_text(f"#!/bin/sh\necho LOCAL > {marker}\n")
+    decoy_dir = tmp_path / "bin"
+    decoy_dir.mkdir()
+    decoy = decoy_dir / "install.sh"
+    decoy.write_text(f"#!/bin/sh\necho PATH > {marker}\n")
+    decoy.chmod(0o755)
+    monkeypatch.chdir(work)
+    code = ctl.main(
+        ["--dir", str(folder), "upgrade", "--installer", "install.sh", "--version", "v26.4.1", "--capacity-upgrade", "drained", "--yes"],
+        environ={"HOME": str(home), "PATH": f"{decoy_dir}:/usr/bin:/bin"},
+        cwd=home,
+        interactive=False,
+    )
+    assert code == 0
+    assert marker.read_text().strip() == "LOCAL"
+
+
+def test_default_runner_reports_a_killed_installer_as_a_shell_status(home, tmp_path, capsys):
+    folder = make_install(home / "fluxomni", "full")
+    script = tmp_path / "sig.sh"
+    script.write_text("#!/bin/sh\nkill -TERM $$\n")
+    code = ctl.main(
+        ["--dir", str(folder), "upgrade", "--installer", str(script), "--version", "v26.4.1", "--capacity-upgrade", "drained", "--yes"],
+        environ={"HOME": str(home), "PATH": "/usr/bin:/bin"},
+        cwd=home,
+        interactive=False,
+    )
+    assert code == 143
+    assert capsys.readouterr().err == ""
+
+
+def test_upgrade_does_not_call_the_runner_when_no_install_is_selected(home, tmp_path, capsys):
+    installer = installer_file(tmp_path / "install.sh")
+    stub = StubRunner()
+    code = ctl.main(
+        ["upgrade", "--installer", str(installer), "--version", "v26.4.1", "--capacity-upgrade", "drained"],
+        environ={"HOME": str(home)},
+        cwd=home,
+        interactive=False,
+        runner=stub,
+    )
+    assert_refused(capsys, code, stub)

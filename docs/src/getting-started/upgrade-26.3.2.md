@@ -1,5 +1,7 @@
 # Upgrade to 26.3.2
 
+This page is the historical procedure for 26.3.2. Current installations should follow [Upgrade to 26.4.1](upgrade-26.4.1.md) instead.
+
 Upgrade the frontend, control plane, and every media node to the same release. Custom GraphQL clients must use library pagination and file subscriptions for specific routes or files. Plan a maintenance window for active media workloads.
 
 ## Before upgrading
